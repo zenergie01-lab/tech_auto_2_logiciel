@@ -288,6 +288,19 @@ function vueOR(o) {
 const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
 let dictee = null;
 const champ = (id, html) => `<div class="dicte">${html}<button type="button" class="mic" title="Dicter" onclick="dicter('${id}',this)">🎤</button></div>`;
+// Chrome Android renvoie chaque phrase en entier à chaque mise à jour (« bonjour », « bonjour je »…),
+// Chrome ordinateur envoie des morceaux à la suite : on garde la version la plus longue de chaque phrase.
+function assembler(results) {
+  const segs = [], bas = s => s.toLowerCase();
+  for (const x of results) {
+    const t = String(x[0].transcript || '').trim(), der = segs[segs.length - 1];
+    if (!t) continue;
+    if (der && bas(t).startsWith(bas(der))) segs[segs.length - 1] = t;      // même phrase, plus complète
+    else if (der && bas(der).startsWith(bas(t))) continue;                   // répétition plus courte
+    else segs.push(t);
+  }
+  return segs.join(' ');
+}
 function dicter(id, btn) {
   if (dictee) { dictee.stop(); return; }
   if (!Reco || !window.isSecureContext) return feuille(`<h3>🎤 Dicter une remarque</h3>
@@ -297,7 +310,7 @@ function dicter(id, btn) {
   const el = document.getElementById(id); if (!el) return;
   const base = el.value ? el.value.replace(/\s*$/, ' ') : '';
   const r = new Reco(); r.lang = 'fr-FR'; r.interimResults = true; r.continuous = true;
-  r.onresult = e => { let t = ''; for (const x of e.results) t += x[0].transcript; el.value = base + t.trim(); el.dispatchEvent(new Event('input')); };
+  r.onresult = e => { el.value = base + assembler(e.results); el.dispatchEvent(new Event('input')); };
   r.onerror = e => toast(e.error === 'not-allowed' ? '⚠ Micro refusé : autorisez-le dans le navigateur' : e.error === 'network' ? '⚠ La dictée a besoin d\'Internet' : '⚠ Dictée interrompue');
   r.onend = () => { dictee = null; btn.classList.remove('on'); el.dispatchEvent(new Event('change')); };
   dictee = r; btn.classList.add('on'); toast('Parlez… touchez 🎤 pour arrêter');
