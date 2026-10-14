@@ -2,7 +2,7 @@
   "name": "TECH'AUTO — Liaison DMS (RDV, planning, SMS)",
   "nodes": [
     {
-      "id": "ta-13",
+      "id": "5e0c9b1a-0000-4000-8000-000000000013",
       "name": "Notice",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -17,7 +17,7 @@
       }
     },
     {
-      "id": "ta-14",
+      "id": "5e0c9b1a-0000-4000-8000-000000000014",
       "name": "A",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -33,7 +33,7 @@
       }
     },
     {
-      "id": "ta-15",
+      "id": "5e0c9b1a-0000-4000-8000-000000000015",
       "name": "B",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -49,7 +49,7 @@
       }
     },
     {
-      "id": "ta-16",
+      "id": "5e0c9b1a-0000-4000-8000-000000000016",
       "name": "C",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -65,7 +65,7 @@
       }
     },
     {
-      "id": "ta-01",
+      "id": "5e0c9b1a-0000-4000-8000-000000000001",
       "name": "Demande RDV / rappel",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -79,11 +79,11 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "webhookId": "techauto-rdv",
+      "webhookId": "7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a61",
       "onError": "continueRegularOutput"
     },
     {
-      "id": "ta-02",
+      "id": "5e0c9b1a-0000-4000-8000-000000000002",
       "name": "Lire la demande",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -96,7 +96,7 @@
       }
     },
     {
-      "id": "ta-03",
+      "id": "5e0c9b1a-0000-4000-8000-000000000003",
       "name": "Envoyer au DMS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -124,14 +124,13 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "TECH'AUTO DMS – clé API"
         }
       },
       "onError": "continueRegularOutput"
     },
     {
-      "id": "ta-04",
+      "id": "5e0c9b1a-0000-4000-8000-000000000004",
       "name": "Pièces manquantes ?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
@@ -165,7 +164,7 @@
       }
     },
     {
-      "id": "ta-05",
+      "id": "5e0c9b1a-0000-4000-8000-000000000005",
       "name": "Lancer Trouve-tout",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -193,14 +192,13 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "TECH'AUTO DMS – clé API"
         }
       },
       "onError": "continueRegularOutput"
     },
     {
-      "id": "ta-06",
+      "id": "5e0c9b1a-0000-4000-8000-000000000006",
       "name": "Répondre à la page",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -228,7 +226,7 @@
       }
     },
     {
-      "id": "ta-07",
+      "id": "5e0c9b1a-0000-4000-8000-000000000007",
       "name": "Planning public",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -242,11 +240,11 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "webhookId": "techauto-planning",
+      "webhookId": "7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a62",
       "onError": "continueRegularOutput"
     },
     {
-      "id": "ta-08",
+      "id": "5e0c9b1a-0000-4000-8000-000000000008",
       "name": "Lire le planning du DMS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -271,14 +269,13 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "TECH'AUTO DMS – clé API"
         }
       },
       "onError": "continueRegularOutput"
     },
     {
-      "id": "ta-09",
+      "id": "5e0c9b1a-0000-4000-8000-000000000009",
       "name": "Répondre au site",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -306,7 +303,7 @@
       }
     },
     {
-      "id": "ta-10",
+      "id": "5e0c9b1a-0000-4000-8000-000000000010",
       "name": "Événements du DMS",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -321,16 +318,15 @@
         "responseMode": "onReceived",
         "options": {}
       },
-      "webhookId": "techauto-evenements",
+      "webhookId": "7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a63",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "TECH'AUTO DMS – clé API"
         }
       }
     },
     {
-      "id": "ta-11",
+      "id": "5e0c9b1a-0000-4000-8000-000000000011",
       "name": "Choisir le SMS",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -343,7 +339,7 @@
       }
     },
     {
-      "id": "ta-12",
+      "id": "5e0c9b1a-0000-4000-8000-000000000012",
       "name": "Envoyer le SMS (Brevo)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -365,7 +361,6 @@
       },
       "credentials": {
         "httpHeaderAuth": {
-          "id": "",
           "name": "Brevo – clé API"
         }
       },

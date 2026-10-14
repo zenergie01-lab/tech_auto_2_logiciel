@@ -4,13 +4,13 @@ const fs = require('fs'), path = require('path');
 
 const DMS = 'http://IP-TAILSCALE-DU-PC:8080';          // ← adresse « Pour n8n (VPN) » affichée par demarrer.bat
 const ORIGINE = 'https://techauto-one.vercel.app';      // site qui a le droit de lire les réponses (CORS)
-const CRED_DMS = { httpHeaderAuth: { id: '', name: "TECH'AUTO DMS – clé API" } };
-const CRED_BREVO = { httpHeaderAuth: { id: '', name: 'Brevo – clé API' } };
+const CRED_DMS = { httpHeaderAuth: { name: "TECH'AUTO DMS – clé API" } };
+const CRED_BREVO = { httpHeaderAuth: { name: 'Brevo – clé API' } };
 const neverError = { response: { response: { fullResponse: true, neverError: true } }, timeout: 15000 };
 
 let n = 0;
 const node = (name, type, typeVersion, position, parameters, extra = {}) =>
-  ({ id: `ta-${String(++n).padStart(2, '0')}`, name, type: 'n8n-nodes-base.' + type, typeVersion, position, parameters, ...extra });
+  ({ id: `5e0c9b1a-0000-4000-8000-${String(++n).padStart(12, '0')}`, name, type: 'n8n-nodes-base.' + type, typeVersion, position, parameters, ...extra });
 const respond = (name, position, body) => node(name, 'respondToWebhook', 1.1, position, {
   respondWith: 'json', responseBody: body,
   options: { responseHeaders: { entries: [{ name: 'Access-Control-Allow-Origin', value: ORIGINE }, { name: 'Cache-Control', value: 'no-store' }] } }
@@ -31,7 +31,7 @@ return [{ json: {
 } }];`;
 
 const A = [
-  node('Demande RDV / rappel', 'webhook', 2.1, [0, 0], { httpMethod: 'POST', path: 'rdv-techauto', responseMode: 'responseNode', options: {} }, { webhookId: 'techauto-rdv', onError: 'continueRegularOutput' }),
+  node('Demande RDV / rappel', 'webhook', 2.1, [0, 0], { httpMethod: 'POST', path: 'rdv-techauto', responseMode: 'responseNode', options: {} }, { webhookId: '7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a61', onError: 'continueRegularOutput' }),
   node('Lire la demande', 'code', 2, [220, 0], { jsCode: lireDemande }),
   node('Envoyer au DMS', 'httpRequest', 4.2, [440, 0], {
     method: 'POST', url: `${DMS}/api/ext/rdv`, authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
@@ -56,7 +56,7 @@ const A = [
 
 /* ---------------- B. Planning public (créneaux libres pour l'appli RDV) ---------------- */
 const B = [
-  node('Planning public', 'webhook', 2.1, [0, 300], { httpMethod: 'GET', path: 'planning-techauto', responseMode: 'responseNode', options: {} }, { webhookId: 'techauto-planning', onError: 'continueRegularOutput' }),
+  node('Planning public', 'webhook', 2.1, [0, 300], { httpMethod: 'GET', path: 'planning-techauto', responseMode: 'responseNode', options: {} }, { webhookId: '7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a62', onError: 'continueRegularOutput' }),
   node('Lire le planning du DMS', 'httpRequest', 4.2, [220, 300], {
     method: 'GET', url: `=${DMS}/api/ext/planning?du={{ $json.query.du || $now.toFormat('yyyy-MM-dd') }}`,
     authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth', options: neverError
@@ -96,7 +96,7 @@ return sms.map(s => ({ json: { recipient: international(s.tel), content: s.texte
 
 const C = [
   node('Événements du DMS', 'webhook', 2.1, [0, 560], { httpMethod: 'POST', path: 'dms-evenements', authentication: 'headerAuth', responseMode: 'onReceived', options: {} },
-    { webhookId: 'techauto-evenements', credentials: CRED_DMS }),
+    { webhookId: '7a1c2e40-5b3d-4f6e-9a01-1c2d3e4f5a63', credentials: CRED_DMS }),
   node('Choisir le SMS', 'code', 2, [220, 560], { jsCode: choisirSms }),
   node('Envoyer le SMS (Brevo)', 'httpRequest', 4.2, [440, 560], {
     method: 'POST', url: 'https://api.brevo.com/v3/transactionalSMS/sms', authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
