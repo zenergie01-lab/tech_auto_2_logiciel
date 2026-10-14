@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TECH'AUTO DMS</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--mute:#6b7280;--line:#e5e7eb;--side:#1f2937;--acc:#ea580c;--acc2:#fff7ed;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+#app{display:flex;min-height:100vh}
+nav{width:215px;background:var(--side);color:#d1d5db;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
+nav .logo{padding:18px 16px;font-weight:800;font-size:18px;color:#fff;letter-spacing:.5px}
+nav .logo span{color:var(--acc)}
+nav a{display:flex;gap:10px;align-items:center;padding:9px 16px;color:#d1d5db;text-decoration:none;border-left:3px solid transparent}
+nav a:hover{background:#374151;color:#fff}
+nav a.on{background:#374151;color:#fff;border-left-color:var(--acc)}
+nav .sep{font-size:11px;text-transform:uppercase;color:#6b7280;padding:14px 16px 4px}
+main{flex:1;min-width:0}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0}
+#sync{font-size:12px;color:var(--mute)}
+#sync b{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+#view{padding:20px 24px 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:15px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:1000px){.g3,.g4{grid-template-columns:repeat(2,1fr)}nav{width:60px}nav a span,nav .logo,nav .sep{display:none}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.kpi small{color:var(--mute);display:block}
+.kpi b{font-size:22px}
+.kpi.acc{border-left:4px solid var(--acc)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line);padding:8px 6px}
+td{border-bottom:1px solid var(--line);padding:7px 6px;vertical-align:middle}
+tr.click{cursor:pointer}tr.click:hover{background:var(--acc2)}
+.r{text-align:right}.c{text-align:center}.mute{color:var(--mute)}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:7px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{filter:brightness(.93)}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.blue{background:var(--blue)}.btn.green{background:var(--ok)}.btn.red{background:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:default}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.bar .grow{flex:1}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid #d1d5db;border-radius:7px;background:#fff;width:100%}
+textarea{min-height:70px}
+input:disabled,select:disabled,textarea:disabled{background:#f9fafb;color:#374151}
+label{display:block;font-size:12px;color:var(--mute);font-weight:600}
+label input,label select,label textarea{margin-top:3px;color:var(--ink);font-weight:400}
+.fg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.fg .full{grid-column:1/-1}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:#e5e7eb;color:#374151}
+.t-ok{background:#dcfce7;color:#166534}.t-warn{background:#fef3c7;color:#92400e}.t-bad{background:#fee2e2;color:#991b1b}.t-blue{background:#dbeafe;color:#1e40af}.t-acc{background:var(--acc2);color:#9a3412}
+.a-MECA{background:#dbeafe;color:#1e40af}.a-CARRO{background:#fce7f3;color:#9d174d}.a-VITRAGE{background:#cffafe;color:#155e75}.a-VNVO{background:#ede9fe;color:#5b21b6}
+.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.tabs a{padding:7px 14px;border-radius:7px;text-decoration:none;color:var(--ink);background:#fff;border:1px solid var(--line);cursor:pointer}
+.tabs a.on{background:var(--side);color:#fff;border-color:var(--side)}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.col{background:#e5e7eb;border-radius:10px;padding:10px;min-height:300px}
+.col h4{margin:2px 4px 10px;font-size:13px;display:flex;justify-content:space-between}
+.kc{background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;box-shadow:0 1px 2px #0001}
+.kc .im{font-weight:800;font-size:15px;letter-spacing:.5px}
+.kc .act{display:flex;gap:4px;margin-top:8px}
+.chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding-top:10px}
+.chart div{flex:1;text-align:center;font-size:10px;color:var(--mute)}
+.chart i{display:block;background:var(--acc);border-radius:4px 4px 0 0;margin-bottom:4px;min-height:2px}
+.hbar{display:flex;align-items:center;gap:8px;margin:6px 0}
+.hbar span{width:150px;font-size:13px}.hbar i{height:14px;background:var(--acc);border-radius:3px;display:block}
+.hbar em{font-style:normal;font-size:12px;color:var(--mute)}
+.tot{margin-left:auto;width:300px}
+.tot div{display:flex;justify-content:space-between;padding:4px 0}
+.tot .big{font-size:18px;font-weight:800;border-top:2px solid var(--ink);margin-top:4px;padding-top:6px}
+.lines td{padding:4px}.lines input,.lines select{padding:5px 6px}
+#modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-start;justify-content:center;z-index:50;overflow:auto;padding:40px 10px}
+#modal.on{display:flex}
+#modal .box{background:#fff;border-radius:12px;width:640px;max-width:100%}
+#modal h3{margin:0;padding:16px 20px;border-bottom:1px solid var(--line)}
+#modal .mb{padding:20px}
+#modal .mf{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+.alert{padding:10px 14px;border-radius:8px;background:#fef3c7;color:#92400e;margin-bottom:14px}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--side);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.3s;z-index:99}
+#toast.on{opacity:1}
+#print{display:none}
+@media print{
+  body>*:not(#print){display:none!important}
+  #print{display:block;font-size:12px;color:#000}
+  #print table{width:100%;border-collapse:collapse}
+  #print th,#print td{border:1px solid #999;padding:5px}
+  #print th{background:#eee;color:#000}
+  @page{margin:12mm}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav id="nav"></nav>
+  <main>
+    <header><h1 id="title">Accueil</h1><div id="sync"></div></header>
+    <div id="view"></div>
+  </main>
+</div>
+<div id="modal"></div>
+<div id="toast"></div>
+<div id="print"></div>
+<datalist id="dl-clients"></datalist>
+
+<script src="pieces.js"></script>
+<script>
+/* =====================================================================
+   OUTILS
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const today = () => new Date().toISOString().slice(0, 10);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = n => (Number(n) || 0).toLocaleString('fr-FR', {style:'currency', currency:'EUR'});
+const num = n => (Number(n) || 0).toLocaleString('fr-FR', {maximumFractionDigits:2});
+const dfr = d => d ? d.split('-').reverse().join('/') : '';
+const n2 = x => (Number(x) || 0).toFixed(2).replace('.', ',');
+const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); };
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+
+const ACT  = {MECA:'Mécanique', CARRO:'Carrosserie', VITRAGE:'Vitrage', VNVO:'VN / VO'};
+const DOC  = {DEV:'Devis', OR:'Ordre de réparation', FAC:'Facture', AVO:'Avoir', CES:'Facture de cession'};
+const LTYP = {MO:"Main d'œuvre", PIECE:'Pièce', FORF:'Forfait / divers'};
+const MODES = ['Carte bancaire', 'Espèces', 'Chèque', 'Virement'];
+const ST = {
+  DEV:{en_attente:['En attente','t-warn'], accepte:['Accepté','t-ok'], refuse:['Refusé','t-bad'], transforme:['Transformé en OR','t-blue']},
+  OR:{attente:['En attente','t-warn'], en_cours:['En cours','t-blue'], termine:['Terminé','t-ok'], facture:['Facturé','']},
+  AVO:{brouillon:['Brouillon','t-warn'], emise:['Émis','t-ok']},
+  CES:{emise:['Émise','t-ok']}
+};
+
+/* =====================================================================
+   BASE DE DONNÉES  (serveur partagé si disponible, sinon ce poste seul)
+   ===================================================================== */
+function defaultDB() {
+  return {
+    settings:{
+      societe:"TECH'AUTO", adresse:'Kourou, Guyane française', tel:'', email:'', siret:'',
+      tva:0, mentionTva:'TVA non applicable — art. 294-1 du CGI',
+      taux:{MECA:60, CARRO:65, VITRAGE:55, VNVO:60},
+      techniciens:['Technicien 1','Technicien 2','Technicien 3'],
+      conditions:'Paiement à réception de facture. Les pièces remplacées sont tenues à la disposition du client.',
+      validiteDevis:30,
+      connecteurs:[
+        {nom:'Cattronic (Antilles-Guyane)', url:''},
+        {nom:'Recherche web réf. origine', url:'https://www.google.com/search?q={ref}+{marque}+r%C3%A9f%C3%A9rence+origine'}
+      ],
+      // Agent « Trouve-tout » et commandes pièces
+      margeRdv:1, n8nWebhook:'',
+      fournisseurs:[
+        {nom:'Cattronic', type:'local', tel:'', email:'', url:'', notes:'Réseau Antilles-Guyane'},
+        {nom:'Ho Hio Hen Automobile / Groupauto', type:'local', tel:'', email:'', url:'', notes:''},
+        {nom:'NPS Kourou', type:'local', tel:'', email:'', url:'', notes:''},
+        {nom:'Autodistribution Codima', type:'local', tel:'', email:'', url:'', notes:'544 route de Baduel'},
+        {nom:'Parking R4', type:'local', tel:'', email:'', url:'', notes:''},
+        {nom:'Mister Auto', type:'en ligne', tel:'', email:'', url:'', notes:'Livraison Kourou'},
+        {nom:'Pièce Auto 24', type:'en ligne', tel:'', email:'', url:'', notes:''},
+        {nom:'Autossimo', type:'catalogue', tel:'', email:'', url:'', notes:'Identification réf. constructeur (VIN)'},
+        {nom:'TecDoc (TecAlliance)', type:'catalogue', tel:'', email:'', url:'', notes:'Identification réf. constructeur et équivalences'}
+      ]
+    },
+    compteurs:{}, clients:[], vehicules:[], documents:[], articles:[], mouvements:[],
+    vnvo:[], flotte:[], prets:[], reglements:[],
+    besoins:[], offres:[], commandes:[], rdvs:[], journal:[]
+  };
+}
+function migrate(d) {
+  const base = defaultDB();
+  for (const k in base) if (d[k] === undefined) d[k] = base[k];
+  for (const k in base.settings) if (d.settings[k] === undefined) d.settings[k] = base.settings[k];
+  return d;
+}
+
+const Store = {
+  mode:'local', db:null, version:0,
+  async init() {
+    try {
+      const r = await fetch('/api/db', {cache:'no-store'});
+      if (!r.ok) throw 0;
+      const j = await r.json();
+      if (!j.data) {                                   // premier démarrage du serveur
+        const r2 = await fetch('/api/init', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({data:defaultDB()})});
+        Object.assign(j, await r2.json());
+      }
+      this.db = migrate(j.data); this.version = j.version; this.mode = 'server';
+      setInterval(() => this.poll(), 4000);
+    } catch (e) {
+      this.mode = 'local';
+      this.db = migrate(JSON.parse(localStorage.getItem('techauto_db') || 'null') || defaultDB());
+      this.saveLocal();
+    }
+    setSync(true);
+  },
+  saveLocal() { localStorage.setItem('techauto_db', JSON.stringify(this.db)); },
+  async api(path, body) {
+    const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if (r.status === 400) throw new Error((await r.json()).error);          // règle métier refusée
+    if (!r.ok) { setSync(false); throw new Error('Serveur injoignable'); }
+    const j = await r.json(); if (j.version) this.version = j.version; return j;
+  },
+  async poll() {
+    try {
+      const v = await (await fetch('/api/version', {cache:'no-store'})).json();
+      if (v.version !== this.version) {
+        const j = await (await fetch('/api/db', {cache:'no-store'})).json();
+        this.db = migrate(j.data); this.version = j.version;
+        softRefresh();
+      }
+      setSync(true);
+    } catch (e) { setSync(false); }
+  },
+  async upsert(coll, item) {
+    const arr = this.db[coll], i = arr.findIndex(x => x.id === item.id), sent = item;
+    if (coll === 'articles') item = Pieces.fusionArticle(arr[i], item);             // réservé / attendu : gérés par les actions
+    if (i >= 0) arr[i] = item; else arr.push(item);
+    if (this.mode === 'server') await this.api('/api/op', {op:'upsert', coll, item:sent}); else this.saveLocal();
+    return item;
+  },
+  async remove(coll, id) {
+    this.db[coll] = this.db[coll].filter(x => x.id !== id);
+    if (this.mode === 'server') await this.api('/api/op', {op:'delete', coll, id}); else this.saveLocal();
+  },
+  async saveSettings(s) {
+    this.db.settings = s;
+    if (this.mode === 'server') await this.api('/api/op', {op:'settings', settings:s}); else this.saveLocal();
+  },
+  async next(type) {                                   // n° unique, même avec 5 postes
+    const year = new Date().getFullYear(); let n;
+    if (this.mode === 'server') n = (await this.api('/api/next', {type, year})).n;
+    else { const k = type + year; n = this.db.compteurs[k] = (this.db.compteurs[k] || 0) + 1; this.saveLocal(); }
+    return `${type}${year}-${String(n).padStart(5, '0')}`;
+  },
+  // Logique pièces / commandes / RDV (pieces.js) : exécutée par le serveur pour être atomique entre les 5 postes
+  async action(name, args = {}) {
+    if (this.mode === 'server') {
+      const j = await this.api('/api/action', {name, args, par:poste()});
+      const d = await (await fetch('/api/db', {cache:'no-store'})).json();
+      this.db = migrate(d.data); this.version = d.version;
+      return j.result;
+    }
+    const copie = structuredClone(this.db);
+    const r = Pieces.run(copie, name, args, {par:poste(), source:'poste'});
+    this.db = copie; this.saveLocal(); return r;
+  },
+  async replace(data) {
+    this.db = migrate(data);
+    if (this.mode === 'server') await this.api('/api/replace', {data:this.db}); else this.saveLocal();
+  }
+};
+const db = () => Store.db;
+const S = () => Store.db.settings;
+const client = id => db().clients.find(x => x.id === id);
+const veh = id => db().vehicules.find(x => x.id === id);
+const cName = c => c ? `${(c.nom || '').toUpperCase()} ${c.prenom || ''}`.trim() : '—';
+const vName = v => v ? `${v.immat || ''} · ${v.marque || ''} ${v.modele || ''}` : '—';
+const poste = () => localStorage.getItem('techauto_poste') || 'Poste';
+
+function setSync(ok) {
+  const srv = Store.mode === 'server';
+  $('#sync').innerHTML = srv
+    ? `<b style="background:${ok ? 'var(--ok)' : 'var(--bad)'}"></b>${ok ? 'Connecté au serveur' : 'Serveur injoignable !'} · ${esc(poste())}`
+    : `<b style="background:var(--warn)"></b>Mode autonome (données sur ce poste uniquement)`;
+}
+
+/* =====================================================================
+   CALCULS
+   ===================================================================== */
+const lineHT = l => (+l.qte || 0) * (+l.pu || 0) * (1 - (+l.remise || 0) / 100);
+function totals(d) {
+  const ht = d.lignes.reduce((s, l) => s + lineHT(l), 0);
+  const tva = ht * (+d.tva || 0) / 100;
+  return {ht, tva, ttc:ht + tva,
+    mo:d.lignes.filter(l => l.type === 'MO').reduce((s, l) => s + lineHT(l), 0),
+    pieces:d.lignes.filter(l => l.type === 'PIECE').reduce((s, l) => s + lineHT(l), 0),
+    heures:d.lignes.filter(l => l.type === 'MO').reduce((s, l) => s + (+l.qte || 0), 0)};
+}
+const paid = id => db().reglements.filter(r => r.docId === id).reduce((s, r) => s + (+r.montant || 0), 0);
+const reste = d => Math.round((totals(d).ttc - paid(d.id)) * 100) / 100;
+const locked = d => (d.type === 'FAC' || d.type === 'AVO') ? d.statut !== 'brouillon' : d.type === 'CES' ? !!d.numero : d.statut === 'facture' || d.statut === 'transforme';
+// Ventes validées (signe négatif pour les avoirs)
+function ventes(types = ['FAC', 'AVO', 'CES']) {
+  return db().documents.filter(d => types.includes(d.type) && d.statut !== 'brouillon')
+    .map(d => ({...d, t:totals(d), s:d.type === 'AVO' ? -1 : 1}));
+}
+function statusTag(d) {
+  if (d.type === 'FAC') {
+    if (d.statut === 'brouillon') return '<span class="tag t-warn">Brouillon</span>';
+    const r = reste(d);
+    return r <= 0.004 ? '<span class="tag t-ok">Payée</span>' : paid(d.id) > 0 ? '<span class="tag t-blue">Partiel</span>' : '<span class="tag t-bad">À régler</span>';
+  }
+  const s = (ST[d.type] || {})[d.statut] || [d.statut, ''];
+  return `<span class="tag ${s[1]}">${s[0]}</span>`;
+}
+const actTag = a => `<span class="tag a-${a}">${ACT[a] || a}</span>`;
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+const MENU = [
+  ['', 'Quotidien'], ['accueil', '🏠', 'Accueil'], ['atelier', '🔧', 'Atelier (temps réel)'],
+  ['docs/DEV', '📝', 'Devis'], ['docs/OR', '📋', 'Ordres de réparation'], ['docs/FAC', '🧾', 'Factures'], ['docs/AVO', '↩️', 'Avoirs'],
+  ['', 'Fichiers'], ['clients', '👤', 'Clients'], ['vehicules', '🚗', 'Véhicules'], ['stock', '📦', 'Stock pièces'], ['commandes', '🛒', 'Commandes pièces'],
+  ['vnvo', '🏷️', 'VN / VO'], ['prets', '🔑', 'Véhicules de prêt'],
+  ['', 'Gestion'], ['reglements', '💶', 'Règlements'], ['compta', '📒', 'Comptabilité'], ['stats', '📊', 'Statistiques'], ['params', '⚙️', 'Paramètres']
+];
+function renderNav() {
+  const h = location.hash.slice(1) || 'accueil';
+  $('#nav').innerHTML = `<div class="logo">TECH'<span>AUTO</span></div>` + MENU.map(m =>
+    m[0] === '' ? `<div class="sep">${m[1]}</div>` :
+    `<a href="#${m[0]}" class="${h === m[0] || (h.startsWith('doc/') && false) ? 'on' : ''}">${m[1]}<span>${m[2]}</span></a>`).join('');
+}
+function render() {
+  renderNav();
+  const [path, q] = (location.hash.slice(1) || 'accueil').split('?');
+  const params = Object.fromEntries(new URLSearchParams(q || ''));
+  const [r, a, b] = path.split('/');
+  const V = {
+    accueil:[vAccueil, 'Accueil'], atelier:[vAtelier, 'Atelier — suivi en temps réel'],
+    docs:[() => vDocs(a), DOC[a] ? (a === 'OR' ? 'Ordres de réparation' : DOC[a] + 's') : 'Documents'],
+    doc:[() => vDoc(a, b, params), 'Document'],
+    clients:[vClients, 'Clients'], client:[() => vClient(a), 'Fiche client'],
+    vehicules:[vVehicules, 'Véhicules'], vehicule:[() => vVehicule(a), 'Fiche véhicule'],
+    stock:[vStock, 'Stock pièces'], commandes:[vCommandes, 'Commandes pièces — agent Trouve-tout'], vnvo:[vVnvo, 'Véhicules neufs & occasion'], prets:[vPrets, 'Véhicules de prêt'],
+    reglements:[vReglements, 'Règlements'], compta:[vCompta, 'Comptabilité'], stats:[vStats, 'Statistiques'], params:[vParams, 'Paramètres']
+  }[r] || [vAccueil, 'Accueil'];
+  $('#title').textContent = V[1];
+  $('#view').innerHTML = V[0]();
+  window.scrollTo(0, 0);
+}
+// Rafraîchit l'écran quand un autre poste modifie les données (sauf si on est en train de saisir)
+function softRefresh() {
+  const r = location.hash.slice(1);
+  if ($('#modal').classList.contains('on') || r.startsWith('doc/') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+  const y = window.scrollY; render(); window.scrollTo(0, y);
+}
+window.onhashchange = render;
+
+/* =====================================================================
+   FENÊTRES (modales)
+   ===================================================================== */
+function modal(title, html, onOk, okLabel = 'Enregistrer') {
+  const m = $('#modal');
+  m.innerHTML = `<div class="box"><h3>${title}</h3><div class="mb">${html}</div><div class="mf">
+    <button class="btn ghost" id="mX">${onOk ? 'Annuler' : 'Fermer'}</button>${onOk ? `<button class="btn" id="mOk">${okLabel}</button>` : ''}</div></div>`;
+  m.classList.add('on');
+  $('#mX').onclick = closeModal;
+  if (onOk) $('#mOk').onclick = async () => { try { if (await onOk(m) !== false) closeModal(); } catch (e) { alert(e.message); } };
+  const f = m.querySelector('input,select'); if (f) f.focus();
+  return m;
+}
+function closeModal() { $('#modal').classList.remove('on'); $('#modal').innerHTML = ''; }
+function F(name, label, val = '', type = 'text', opts = [], cls = '') {
+  if (type === 'select') return `<label class="${cls}">${label}<select name="${name}">${opts.map(o => {
+    const [v, t] = Array.isArray(o) ? o : [o, o];
+    return `<option value="${esc(v)}" ${String(v) === String(val ?? '') ? 'selected' : ''}>${esc(t)}</option>`; }).join('')}</select></label>`;
+  if (type === 'textarea') return `<label class="${cls}">${label}<textarea name="${name}">${esc(val)}</textarea></label>`;
+  return `<label class="${cls}">${label}<input name="${name}" type="${type}" ${type === 'number' ? 'step="any"' : ''} value="${esc(val)}"></label>`;
+}
+function vals(m) {
+  const o = {};
+  m.querySelectorAll('[name]').forEach(e => o[e.name] = e.type === 'number' ? (e.value === '' ? '' : +e.value) : e.value.trim());
+  return o;
+}
+function dl(name, content, type = 'text/csv;charset=utf-8') {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], {type})); a.download = name; a.click();
+}
+const csv = rows => '\ufeff' + rows.map(r => r.map(x => { x = String(x ?? ''); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }).join(';')).join('\r\n');
+
+/* =====================================================================
+   ACCUEIL — chiffre d'affaires et alertes
+   ===================================================================== */
+function caHT(prefix, types = ['FAC', 'AVO']) {
+  return ventes(types).filter(d => d.date.startsWith(prefix)).reduce((s, d) => s + d.t.ht * d.s, 0);
+}
+function vAccueil() {
+  const t = today(), m = t.slice(0, 7), y = t.slice(0, 4), d = db();
+  const orOuverts = d.documents.filter(x => x.type === 'OR' && x.statut !== 'facture');
+  const devisAtt = d.documents.filter(x => x.type === 'DEV' && x.statut === 'en_attente');
+  const impayes = d.documents.filter(x => x.type === 'FAC' && x.statut !== 'brouillon' && reste(x) > 0.004);
+  const pretsOut = d.prets.filter(p => !p.retour);
+  const alertes = d.articles.filter(a => (+a.stock || 0) <= (+a.stockMin || 0) && a.stockMin !== '');
+  // 12 derniers mois
+  const months = []; const now = new Date();
+  for (let i = 11; i >= 0; i--) { const dt = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push(dt.toISOString().slice(0, 7)); }
+  const vals12 = months.map(mm => caHT(mm)); const max = Math.max(1, ...vals12);
+  return `
+  <div class="bar"><b class="grow">Bonjour 👋 — ${new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})}</b>
+    <button class="btn" onclick="go('doc/new/DEV')">+ Devis</button><button class="btn blue" onclick="go('doc/new/OR')">+ Ordre de réparation</button>
+    <button class="btn ghost" onclick="go('doc/new/FAC')">+ Facture comptoir</button></div>
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="kpi acc"><small>CA atelier du jour (HT)</small><b>${eur(caHT(t))}</b></div>
+    <div class="kpi acc"><small>CA atelier du mois (HT)</small><b>${eur(caHT(m))}</b></div>
+    <div class="kpi acc"><small>CA atelier de l'année (HT)</small><b>${eur(caHT(y))}</b></div>
+    <div class="kpi"><small>Ventes VN/VO du mois</small><b>${eur(caHT(m, ['CES']))}</b></div>
+    <div class="kpi"><small>Véhicules à l'atelier</small><b>${orOuverts.length}</b></div>
+    <div class="kpi"><small>Devis en attente</small><b>${devisAtt.length}</b></div>
+    <div class="kpi"><small>Impayés</small><b style="color:var(--bad)">${eur(impayes.reduce((s, x) => s + reste(x), 0))}</b></div>
+    <div class="kpi"><small>Véhicules de prêt sortis</small><b>${pretsOut.length} / ${d.flotte.length}</b></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Chiffre d'affaires atelier — 12 mois (HT)</h3>
+      <div class="chart">${vals12.map((v, i) => `<div title="${eur(v)}"><i style="height:${Math.max(0, v) / max * 130}px"></i>${months[i].slice(5)}/${months[i].slice(2, 4)}</div>`).join('')}</div></div>
+    <div class="card"><h3>À l'atelier en ce moment</h3>${orOuverts.length ? `<table>${orOuverts.slice(0, 8).map(o => `
+      <tr class="click" onclick="go('doc/${o.id}')"><td><b>${esc(veh(o.vehiculeId)?.immat || '—')}</b></td><td>${esc(cName(client(o.clientId)))}</td><td>${actTag(o.activite)}</td><td>${statusTag(o)}</td></tr>`).join('')}</table>` : '<div class="empty">Aucun véhicule en cours</div>'}</div>
+    <div class="card"><h3>⚠ Stock sous le minimum</h3>${alertes.length ? `<table>${alertes.slice(0, 8).map(a => `<tr><td>${esc(a.ref)}</td><td>${esc(a.designation)}</td><td class="r"><span class="tag t-bad">${num(a.stock)} / min ${num(a.stockMin)}</span></td></tr>`).join('')}</table>` : '<div class="empty">Rien à commander</div>'}</div>
+    ${cartePiecesAccueil()}
+    <div class="card"><h3>🔑 Prêts en cours</h3>${pretsOut.length ? `<table>${pretsOut.map(p => { const f = d.flotte.find(x => x.id === p.flotteId); const late = p.retourPrevu && p.retourPrevu < t;
+      return `<tr><td><b>${esc(f?.immat)}</b> ${esc(f?.modele)}</td><td>${esc(cName(client(p.clientId)))}</td><td>${late ? '<span class="tag t-bad">Retard</span> ' : ''}retour ${dfr(p.retourPrevu)}</td></tr>`; }).join('')}</table>` : '<div class="empty">Tous les véhicules de prêt sont au garage</div>'}</div>
+  </div>`;
+}
+const go = h => location.hash = h;
+
+/* =====================================================================
+   ATELIER — tableau en temps réel (se met à jour sur les 5 postes)
+   ===================================================================== */
+let atelierFiltre = '';
+function vAtelier() {
+  const cols = [['attente', 'En attente'], ['en_cours', 'En cours'], ['termine', 'Terminé — à facturer']];
+  const ors = db().documents.filter(o => o.type === 'OR' && o.statut !== 'facture' && (!atelierFiltre || o.activite === atelierFiltre));
+  const charge = {}; ors.filter(o => o.statut !== 'termine').forEach(o => { const k = o.technicien || 'Non affecté'; charge[k] = (charge[k] || 0) + totals(o).heures; });
+  return `<div class="bar"><div class="tabs" style="margin:0">
+    <a class="${!atelierFiltre ? 'on' : ''}" onclick="atelierFiltre='';render()">Toutes activités</a>
+    ${Object.keys(ACT).filter(k => k !== 'VNVO').map(k => `<a class="${atelierFiltre === k ? 'on' : ''}" onclick="atelierFiltre='${k}';render()">${ACT[k]}</a>`).join('')}</div>
+    <span class="grow"></span><button class="btn blue" onclick="go('doc/new/OR')">+ Nouvel OR</button></div>
+  <div class="card"><b>Charge par technicien (heures prévues) :</b> ${Object.entries(charge).map(([k, v]) => `<span class="tag t-acc" style="margin-left:6px">${esc(k)} : ${num(v)} h</span>`).join('') || '<span class="mute">aucune</span>'}</div>
+  <div class="kanban">${cols.map(([k, lab], ci) => { const list = ors.filter(o => o.statut === k); return `
+    <div class="col"><h4>${lab}<span class="tag">${list.length}</span></h4>${list.map(o => { const v = veh(o.vehiculeId); return `
+      <div class="kc"><div style="display:flex;justify-content:space-between"><span class="im">${esc(v?.immat || '—')}</span>${actTag(o.activite)}</div>
+        <div>${esc(v ? v.marque + ' ' + v.modele : '')}</div>
+        <div class="mute">${esc(cName(client(o.clientId)))} · ${esc(o.numero)}</div>
+        <div class="mute">🔧 ${esc(o.technicien || 'Non affecté')} · ${num(totals(o).heures)} h · entré le ${dfr(o.date)}</div>
+        ${badgePieces(o.id)}
+        <div class="act">${ci > 0 ? `<button class="btn ghost sm" onclick="setOR('${o.id}','${cols[ci - 1][0]}')">◀</button>` : ''}
+          <button class="btn ghost sm" onclick="go('doc/${o.id}')">Ouvrir</button>
+          ${ci < 2 ? `<button class="btn sm" onclick="setOR('${o.id}','${cols[ci + 1][0]}')">▶</button>` : `<button class="btn green sm" onclick="facturerOR('${o.id}')">Facturer</button>`}</div></div>`; }).join('')}</div>`; }).join('')}</div>`;
+}
+async function setOR(id, statut) { const o = db().documents.find(x => x.id === id); o.statut = statut; await Store.upsert('documents', o); render(); }
+
+/* =====================================================================
+   LISTES DE DOCUMENTS
+   ===================================================================== */
+let docQ = '';
+function vDocs(type) {
+  const q = docQ.toLowerCase();
+  const list = db().documents.filter(d => d.type === type).filter(d => !q || [d.numero, cName(client(d.clientId)), veh(d.vehiculeId)?.immat].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => (b.date + b.numero).localeCompare(a.date + a.numero));
+  return `<div class="bar"><input class="grow" placeholder="🔍 Rechercher n°, client, immatriculation…" value="${esc(docQ)}" oninput="docQ=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{render();const i=$('#view input');i.focus();i.setSelectionRange(99,99)},300)" style="max-width:420px">
+    <span class="grow"></span>${type !== 'AVO' && type !== 'CES' ? `<button class="btn" onclick="go('doc/new/${type}')">+ ${DOC[type]}</button>` : ''}</div>
+  <div class="card">${list.length ? `<table><tr><th>N°</th><th>Date</th><th>Client</th><th>Véhicule</th><th>Activité</th><th>Statut</th><th class="r">Total TTC</th></tr>
+  ${list.map(d => `<tr class="click" onclick="go('doc/${d.id}')"><td><b>${esc(d.numero || 'Brouillon')}</b></td><td>${dfr(d.date)}</td><td>${esc(cName(client(d.clientId)))}</td>
+    <td>${esc(veh(d.vehiculeId)?.immat || '')}</td><td>${actTag(d.activite)}</td><td>${statusTag(d)}</td><td class="r">${eur(totals(d).ttc)}</td></tr>`).join('')}</table>`
+    : `<div class="empty">Aucun document${type === 'AVO' ? ' — un avoir se crée depuis une facture validée' : ''}</div>`}</div>`;
+}
+
+/* =====================================================================
+   ÉDITEUR DE DOCUMENT  (Devis → OR → Facture → Avoir, Cession)
+   ===================================================================== */
+let cur = null;
+function newDoc(type, p = {}) {
+  return {id:uid(), type, numero:'', date:today(), clientId:p.client || '', vehiculeId:p.veh || '', activite:p.act || 'MECA',
+    statut:{DEV:'en_attente', OR:'attente', FAC:'brouillon', AVO:'brouillon', CES:'emise'}[type],
+    lignes:[], km:'', technicien:'', notes:'', tva:S().tva, origineId:'', creePar:poste(), cree:new Date().toISOString()};
+}
+function vDoc(id, type, params) {
+  if (id === 'new') cur = newDoc(type, params);
+  else { const d = db().documents.find(x => x.id === id); if (!d) return '<div class="empty">Document introuvable</div>'; cur = JSON.parse(JSON.stringify(d)); }
+  return docHTML();
+}
+function docHTML() {
+  const d = cur, lk = locked(d), dis = lk ? 'disabled' : '', c = client(d.clientId);
+  const vehs = db().vehicules.filter(v => v.clientId === d.clientId);
+  fillClientList();
+  const origine = d.origineId && db().documents.find(x => x.id === d.origineId);
+  const statusSel = ST[d.type] && d.type !== 'AVO' && d.type !== 'CES'
+    ? `<label>Statut<select ${d.statut === 'facture' || d.statut === 'transforme' ? 'disabled' : ''} onchange="cur.statut=this.value">${Object.entries(ST[d.type]).filter(([k]) => !['facture', 'transforme'].includes(k) || k === d.statut).map(([k, v]) => `<option value="${k}" ${k === d.statut ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></label>` : '';
+  const t = totals(d);
+  return `
+  <div class="bar"><button class="btn ghost" onclick="history.back()">← Retour</button>
+    <h2 style="margin:0 8px">${DOC[d.type]} <span class="mute">${esc(d.numero || (d.type === 'FAC' || d.type === 'AVO' ? '(brouillon — n° attribué à la validation)' : '(nouveau)'))}</span></h2>${statusTag(d)}
+    ${origine ? `<a href="#doc/${origine.id}" class="mute" style="margin-left:8px">issu de ${esc(origine.numero)}</a>` : ''}</div>
+  ${lk ? `<div class="alert">🔒 Document validé : il ne peut plus être modifié${d.type === 'FAC' ? ' (obligation légale). Pour corriger, créez un avoir.' : '.'}</div>` : ''}
+  <div class="grid g2">
+    <div class="card"><h3>Client & véhicule</h3><div class="fg">
+      <label class="full">Client <input list="dl-clients" ${dis} value="${esc(c ? clientLabel(c) : '')}" placeholder="Tapez le nom ou le téléphone…" onchange="pickClient(this.value)"></label>
+      <label>Véhicule<select ${dis} onchange="cur.vehiculeId=this.value;const v=veh(this.value);if(v&&!cur.km)cur.km=v.km||'';refreshDoc()"><option value="">—</option>
+        ${vehs.map(v => `<option value="${v.id}" ${v.id === d.vehiculeId ? 'selected' : ''}>${esc(vName(v))}</option>`).join('')}</select></label>
+      <label>Kilométrage<input type="number" ${dis} value="${esc(d.km)}" onchange="cur.km=this.value"></label>
+      <div class="full" style="display:flex;gap:6px">${!lk ? `<button class="btn ghost sm" onclick="editClient(null,c=>{cur.clientId=c.id;cur.vehiculeId='';refreshDoc()})">+ Nouveau client</button>
+        <button class="btn ghost sm" ${d.clientId ? '' : 'disabled'} onclick="editVehicule(null,'${d.clientId}',v=>{cur.vehiculeId=v.id;refreshDoc()})">+ Nouveau véhicule</button>` : ''}
+        ${c ? `<a class="btn ghost sm" href="#client/${c.id}">Fiche client</a>` : ''}</div>
+    </div></div>
+    <div class="card"><h3>Informations</h3><div class="fg">
+      <label>Date<input type="date" ${dis} value="${d.date}" onchange="cur.date=this.value"></label>
+      <label>Activité<select ${dis} onchange="cur.activite=this.value">${Object.entries(ACT).map(([k, v]) => `<option value="${k}" ${k === d.activite ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label>Technicien<select ${dis} onchange="cur.technicien=this.value"><option value="">—</option>${S().techniciens.map(x => `<option ${x === d.technicien ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+      ${statusSel}
+      <label class="full">${d.type === 'OR' || d.type === 'DEV' ? 'Demande du client / constat' : 'Notes'}<textarea ${dis} onchange="cur.notes=this.value">${esc(d.notes)}</textarea></label>
+    </div></div>
+  </div>
+  <div class="card"><h3>Lignes</h3>
+    <table class="lines"><tr><th style="width:120px">Type</th><th style="width:130px">Référence</th><th>Désignation</th><th style="width:80px">Qté / h</th><th style="width:100px">PU HT</th><th style="width:70px">Remise %</th><th class="r" style="width:100px">Total HT</th><th></th></tr>
+    ${d.lignes.map((l, i) => `<tr>
+      <td><select ${dis} onchange="setL(${i},'type',this.value)">${Object.entries(LTYP).map(([k, v]) => `<option value="${k}" ${k === l.type ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+      <td><input ${dis} value="${esc(l.ref)}" onchange="setL(${i},'ref',this.value)" title="${esc(l.refOrigine ? 'Réf. origine : ' + l.refOrigine : '')}"></td>
+      <td><input ${dis} value="${esc(l.designation)}" onchange="setL(${i},'designation',this.value)"></td>
+      <td><input ${dis} type="number" step="any" value="${esc(l.qte)}" oninput="setL(${i},'qte',this.value)"></td>
+      <td><input ${dis} type="number" step="any" value="${esc(l.pu)}" oninput="setL(${i},'pu',this.value)"></td>
+      <td><input ${dis} type="number" step="any" value="${esc(l.remise)}" oninput="setL(${i},'remise',this.value)"></td>
+      <td class="r" id="lt${i}">${eur(lineHT(l))}</td>
+      <td>${lk ? '' : `<button class="btn ghost sm" onclick="cur.lignes.splice(${i},1);refreshDoc()">✕</button>`}</td></tr>`).join('')}
+    </table>
+    ${d.lignes.length ? '' : '<div class="empty">Aucune ligne — ajoutez de la main d\'œuvre ou des pièces</div>'}
+    ${lk ? '' : `<div class="bar" style="margin-top:10px">
+      <button class="btn ghost" onclick="addL('MO')">+ Main d'œuvre</button>
+      <button class="btn ghost" onclick="pickPiece()">+ Pièce (stock / catalogues)</button>
+      <button class="btn ghost" onclick="addL('FORF')">+ Forfait / divers</button></div>`}
+    <div class="tot" id="totals">${totHTML(t, d)}</div>
+  </div>
+  ${d.type === 'OR' ? piecesCardHTML(d) : ''}
+  <div class="card bar" style="position:sticky;bottom:0;margin:0">
+    ${!lk ? `<button class="btn" onclick="saveDoc()">💾 Enregistrer</button>` : ''}
+    <button class="btn ghost" onclick="printDoc(cur)">🖨 Imprimer</button>
+    ${d.type === 'OR' ? `<button class="btn ghost" onclick="printDoc(cur,true)">🖨 Fiche atelier (sans prix)</button>` : ''}
+    ${d.type === 'DEV' && d.statut !== 'transforme' ? `<button class="btn blue" onclick="convert('OR')">➜ Transformer en OR</button>` : ''}
+    ${d.type === 'OR' && d.statut !== 'facture' ? `<button class="btn green" onclick="facturerOR(cur.id)">➜ Facturer</button><button class="btn ghost" onclick="sortirPret(cur)">🔑 Véhicule de prêt</button>` : ''}
+    ${(d.type === 'FAC' || d.type === 'AVO') && d.statut === 'brouillon' ? `<button class="btn green" onclick="validerDoc()">✔ Valider ${d.type === 'FAC' ? 'la facture' : "l'avoir"}</button>` : ''}
+    ${d.type === 'FAC' && d.statut !== 'brouillon' ? `${reste(d) > 0.004 ? `<button class="btn green" onclick="encaisser('${d.id}')">💶 Encaisser (reste ${eur(reste(d))})</button>` : ''}<button class="btn ghost" onclick="convert('AVO')">↩ Créer un avoir</button>` : ''}
+    <span class="grow"></span>
+    ${!lk && db().documents.some(x => x.id === d.id) && !(d.type === 'FAC' && d.numero) ? `<button class="btn red sm" onclick="delDoc()">Supprimer</button>` : ''}
+  </div>`;
+}
+function totHTML(t, d) {
+  const p = d.type === 'FAC' && d.statut !== 'brouillon' ? paid(d.id) : 0;
+  return `<div><span>Main d'œuvre HT</span><span>${eur(t.mo)}</span></div><div><span>Pièces HT</span><span>${eur(t.pieces)}</span></div>
+  <div><span>Total HT</span><b>${eur(t.ht)}</b></div><div><span>TVA ${num(d.tva)} %</span><span>${eur(t.tva)}</span></div>
+  <div class="big"><span>Total TTC</span><span>${eur(t.ttc)}</span></div>${p ? `<div><span>Déjà réglé</span><span>${eur(p)}</span></div><div><b>Reste dû</b><b>${eur(t.ttc - p)}</b></div>` : ''}`;
+}
+function refreshDoc() { const y = window.scrollY; $('#view').innerHTML = docHTML(); window.scrollTo(0, y); }
+function setL(i, k, v) {
+  cur.lignes[i][k] = ['qte', 'pu', 'remise'].includes(k) ? (v === '' ? '' : +v) : v;
+  if (k === 'type') return refreshDoc();
+  const el = $('#lt' + i); if (el) el.textContent = eur(lineHT(cur.lignes[i]));
+  $('#totals').innerHTML = totHTML(totals(cur), cur);
+}
+function addL(type, extra = {}) {
+  cur.lignes.push({lid:uid(), type, ref:'', refOrigine:'', designation:type === 'MO' ? "Main d'œuvre " + (ACT[cur.activite] || '').toLowerCase() : '', qte:1,
+    pu:type === 'MO' ? (S().taux[cur.activite] || 0) : 0, remise:0, articleId:'', ...extra});
+  refreshDoc();
+}
+const clientLabel = c => `${cName(c)}${c.tel ? ' — ' + c.tel : ''} [${c.id.slice(-4)}]`;
+function fillClientList() { $('#dl-clients').innerHTML = db().clients.map(c => `<option value="${esc(clientLabel(c))}">`).join(''); }
+function pickClient(label) {
+  const c = db().clients.find(x => clientLabel(x) === label);
+  cur.clientId = c ? c.id : ''; const vs = db().vehicules.filter(v => v.clientId === cur.clientId);
+  cur.vehiculeId = vs.length === 1 ? vs[0].id : ''; if (vs.length === 1 && !cur.km) cur.km = vs[0].km || '';
+  refreshDoc();
+}
+async function saveDoc(silent) {
+  if (!cur.clientId) { alert('Choisissez un client.'); return false; }
+  if (!cur.numero && ['DEV', 'OR', 'CES'].includes(cur.type)) cur.numero = await Store.next(cur.type);
+  const v = veh(cur.vehiculeId);
+  if (v && cur.km && +cur.km > (+v.km || 0)) { v.km = +cur.km; await Store.upsert('vehicules', v); }   // met à jour le km du véhicule
+  cur.lignes.forEach(l => { if (!l.lid) l.lid = uid(); });
+  await Store.upsert('documents', JSON.parse(JSON.stringify(cur)));
+  if (cur.type === 'OR' && cur.statut !== 'facture') {                       // réserve aussitôt ce qui est en stock
+    const e = await Store.action('verifierOR', {orId:cur.id});
+    if (!silent && e.manquants.length) toast(`Enregistré ✔ — ${e.manquants.length} pièce(s) à commander`);
+    else if (!silent) toast('Enregistré ✔');
+  } else if (!silent) toast('Enregistré ✔');
+  if (location.hash !== '#doc/' + cur.id) history.replaceState(null, '', '#doc/' + cur.id);
+  refreshDoc(); return true;
+}
+async function delDoc() {
+  if (!confirm('Supprimer définitivement ce document ?')) return;
+  await Store.remove('documents', cur.id);
+  if (cur.type === 'OR') await Store.action('libererOR', {orId:cur.id});        // rend les pièces réservées au stock
+  toast('Supprimé'); history.back();
+}
+// Transformation : Devis → OR, Facture → Avoir
+async function convert(toType) {
+  if (!locked(cur) && await saveDoc(true) === false) return;
+  const src = cur, n = newDoc(toType, {client:src.clientId, veh:src.vehiculeId, act:src.activite});
+  Object.assign(n, {lignes:JSON.parse(JSON.stringify(src.lignes)), km:src.km, technicien:src.technicien, notes:src.notes, tva:src.tva, origineId:src.id});
+  n.lignes.forEach(l => { if (!l.lid) l.lid = uid(); });
+  if (toType === 'OR') { n.numero = await Store.next('OR'); src.statut = 'transforme'; await Store.upsert('documents', src); }
+  await Store.upsert('documents', n);
+  if (toType === 'OR') await Store.action('verifierOR', {orId:n.id});
+  toast(DOC[toType] + ' créé ✔' + (toType === 'AVO' ? ' — retirez les lignes à ne pas rembourser puis validez' : ''));
+  go('doc/' + n.id);
+}
+async function facturerOR(id) {
+  if (cur && cur.id === id && location.hash.startsWith('#doc/') && await saveDoc(true) === false) return;
+  const o = db().documents.find(x => x.id === id);
+  if (!o.lignes.length) return alert("L'OR ne contient aucune ligne.");
+  const exist = db().documents.find(x => x.type === 'FAC' && x.origineId === id);
+  if (exist) return go('doc/' + exist.id);
+  const f = newDoc('FAC', {client:o.clientId, veh:o.vehiculeId, act:o.activite});
+  Object.assign(f, {lignes:JSON.parse(JSON.stringify(o.lignes)), km:o.km, technicien:o.technicien, notes:'', tva:o.tva, origineId:o.id});
+  await Store.upsert('documents', f); toast('Facture préparée — vérifiez puis validez'); go('doc/' + f.id);
+}
+async function validerDoc() {
+  if (!cur.lignes.length) return alert('Aucune ligne.');
+  if (!confirm(`Valider ${cur.type === 'FAC' ? 'la facture' : "l'avoir"} ? Un numéro définitif sera attribué et le document ne sera plus modifiable.`)) return;
+  if (await saveDoc(true) === false) return;
+  cur.numero = await Store.next(cur.type); cur.statut = 'emise'; cur.valideLe = new Date().toISOString();
+  await Store.upsert('documents', JSON.parse(JSON.stringify(cur)));
+  await Store.action('mouvementDocument', {docId:cur.id, sign:cur.type === 'FAC' ? -1 : 1});   // sortie (facture) ou retour (avoir) + fin des réservations
+  const o = db().documents.find(x => x.id === cur.origineId && x.type === 'OR');
+  if (o) { o.statut = 'facture'; await Store.upsert('documents', o); }
+  toast(`${DOC[cur.type]} ${cur.numero} validé${cur.type === 'FAC' ? 'e' : ''} ✔`); refreshDoc();
+}
+
+/* ---------- Recherche pièce : stock interne + catalogues externes ---------- */
+function connecteurUrl(cn, q) {
+  const v = veh(cur?.vehiculeId) || {};
+  return cn.url.replace(/\{ref\}|\{q\}/g, encodeURIComponent(q || '')).replace('{vin}', encodeURIComponent(v.vin || ''))
+    .replace('{immat}', encodeURIComponent(v.immat || '')).replace('{marque}', encodeURIComponent(v.marque || '')).replace('{modele}', encodeURIComponent(v.modele || ''));
+}
+function pickPiece() {
+  const v = veh(cur.vehiculeId);
+  const m = modal('Ajouter une pièce', `
+    ${v ? `<div class="alert" style="background:#eff6ff;color:#1e40af">Véhicule : <b>${esc(vName(v))}</b> · VIN ${esc(v.vin || 'non renseigné')}</div>` : ''}
+    <input id="pq" placeholder="Référence, réf. origine ou désignation…" oninput="ppSearch()">
+    <div id="pres" style="max-height:280px;overflow:auto;margin-top:10px"></div>
+    <h4 style="margin:16px 0 6px">Catalogues externes</h4>
+    <div class="bar">${S().connecteurs.map((c, i) => c.url ? `<button class="btn ghost sm" onclick="window.open(connecteurUrl(S().connecteurs[${i}], $('#pq').value),'_blank')">🔗 ${esc(c.nom)}</button>`
+      : `<span class="tag t-warn" title="Renseignez l'adresse dans Paramètres">${esc(c.nom)} : à configurer</span>`).join('')}</div>
+    <h4 style="margin:16px 0 6px">Pièce hors stock (commandée)</h4>
+    <div class="fg">${F('ref', 'Référence fournisseur')}${F('refOrigine', "Réf. d'origine constructeur")}${F('designation', 'Désignation', '', 'text', [], 'full')}${F('pu', 'Prix de vente HT', '', 'number')}${F('qte', 'Quantité', 1, 'number')}</div>`,
+    m => { const o = vals(m); if (!o.designation) { alert('Désignation obligatoire'); return false; }
+      addL('PIECE', {ref:o.ref, refOrigine:o.refOrigine, designation:o.designation, pu:+o.pu || 0, qte:+o.qte || 1}); }, 'Ajouter la pièce hors stock');
+  ppSearch();
+}
+function ppSearch() {
+  const q = ($('#pq')?.value || '').toLowerCase();
+  const list = db().articles.filter(a => !q || [a.ref, a.refOrigine, a.designation].join(' ').toLowerCase().includes(q)).slice(0, 30);
+  $('#pres').innerHTML = list.length ? `<table><tr><th>Réf.</th><th>Désignation</th><th class="r">Stock</th><th class="r">PV HT</th><th></th></tr>${list.map(a => `
+    <tr><td>${esc(a.ref)}<div class="mute" style="font-size:11px">${esc(a.refOrigine)}</div></td><td>${esc(a.designation)}</td>
+    <td class="r"><span class="tag ${(+a.stock || 0) > 0 ? 't-ok' : 't-bad'}">${num(a.stock)}</span></td><td class="r">${eur(a.pv)}</td>
+    <td><button class="btn sm" onclick="closeModal();addL('PIECE',{ref:${esc(JSON.stringify(a.ref))},refOrigine:${esc(JSON.stringify(a.refOrigine || ''))},designation:${esc(JSON.stringify(a.designation))},pu:${+a.pv || 0},articleId:'${a.id}'})">Ajouter</button></td></tr>`).join('')}</table>`
+    : '<div class="empty">Aucune pièce en stock ne correspond — cherchez dans un catalogue externe ci-dessous</div>';
+}
+
+/* ---------- Impression ---------- */
+function printDoc(d, sansPrix) {
+  const s = S(), c = client(d.clientId) || {}, v = veh(d.vehiculeId) || {}, t = totals(d);
+  const titre = sansPrix ? 'FICHE ATELIER' : DOC[d.type].toUpperCase();
+  $('#print').innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><div style="font-size:22px;font-weight:800">${esc(s.societe)}</div>${esc(s.adresse)}<br>${esc(s.tel)} ${esc(s.email)}<br>${s.siret ? 'SIRET ' + esc(s.siret) : ''}</div>
+    <div style="text-align:right"><div style="font-size:20px;font-weight:800">${titre}</div>N° ${esc(d.numero || 'BROUILLON')}<br>Date : ${dfr(d.date)}
+      ${d.type === 'DEV' ? `<br>Valable ${s.validiteDevis} jours` : ''}${d.technicien ? '<br>Technicien : ' + esc(d.technicien) : ''}</div></div>
+  <div style="display:flex;gap:20px;margin:20px 0">
+    <div style="flex:1;border:1px solid #999;padding:8px"><b>Client</b><br>${esc(cName(c))}<br>${esc(c.adresse || '')}<br>${esc(c.tel || '')} ${esc(c.email || '')}</div>
+    <div style="flex:1;border:1px solid #999;padding:8px"><b>Véhicule</b><br>${esc(v.immat || '')} — ${esc(v.marque || '')} ${esc(v.modele || '')}<br>VIN : ${esc(v.vin || '')}<br>Kilométrage : ${num(d.km)} km · ${ACT[d.activite] || ''}</div></div>
+  ${d.notes ? `<p><b>${d.type === 'OR' || d.type === 'DEV' ? 'Demande / constat' : 'Notes'} :</b> ${esc(d.notes)}</p>` : ''}
+  <table><tr><th>Réf.</th><th>Désignation</th><th>Qté</th>${sansPrix ? '<th>Fait ✓</th>' : '<th>PU HT</th><th>Rem.</th><th>Total HT</th>'}</tr>
+  ${d.lignes.map(l => `<tr><td>${esc(l.ref)}</td><td>${esc(l.designation)}</td><td>${num(l.qte)}${l.type === 'MO' ? ' h' : ''}</td>${sansPrix ? '<td style="width:60px"></td>' : `<td>${eur(l.pu)}</td><td>${l.remise ? l.remise + ' %' : ''}</td><td style="text-align:right">${eur(lineHT(l))}</td>`}</tr>`).join('')}</table>
+  ${sansPrix ? '<p style="margin-top:30px">Observations du technicien :</p><div style="border:1px solid #999;height:120px"></div>' : `
+  <table style="width:260px;margin:12px 0 0 auto"><tr><td>Total HT</td><td style="text-align:right">${eur(t.ht)}</td></tr><tr><td>TVA ${num(d.tva)} %</td><td style="text-align:right">${eur(t.tva)}</td></tr>
+  <tr><th>Total TTC</th><th style="text-align:right">${eur(t.ttc)}</th></tr></table>
+  ${(+d.tva || 0) === 0 ? `<p><i>${esc(s.mentionTva)}</i></p>` : ''}
+  ${d.type === 'FAC' && d.statut !== 'brouillon' ? `<p>Réglé : ${eur(paid(d.id))} — Reste dû : ${eur(reste(d))}</p>` : ''}
+  ${d.type === 'AVO' && d.origineId ? `<p>Avoir sur facture ${esc(db().documents.find(x => x.id === d.origineId)?.numero || '')}</p>` : ''}
+  ${d.type === 'CES' ? '<p><i>Le certificat de cession officiel (Cerfa n° 15776) est à établir en parallèle via l\'ANTS.</i></p>' : ''}
+  <p style="font-size:11px">${esc(s.conditions)}</p>`}
+  ${d.type === 'DEV' || d.type === 'OR' ? '<div style="display:flex;justify-content:space-between;margin-top:30px"><div>Signature du client<br>« Bon pour accord »<div style="height:60px"></div></div><div>Cachet du garage</div></div>' : ''}`;
+  window.print();
+}
+
+/* =====================================================================
+   CLIENTS & VÉHICULES
+   ===================================================================== */
+let cliQ = '';
+function vClients() {
+  const q = cliQ.toLowerCase();
+  const list = db().clients.filter(c => !q || [c.nom, c.prenom, c.tel, c.email, ...db().vehicules.filter(v => v.clientId === c.id).map(v => v.immat)].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => cName(a).localeCompare(cName(b)));
+  return `<div class="bar"><input placeholder="🔍 Nom, téléphone, immatriculation…" value="${esc(cliQ)}" style="max-width:420px"
+    oninput="cliQ=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{render();const i=$('#view input');i.focus();i.setSelectionRange(99,99)},300)">
+    <span class="grow"></span><button class="btn" onclick="editClient(null,c=>go('client/'+c.id))">+ Nouveau client</button></div>
+  <div class="card">${list.length ? `<table><tr><th>Client</th><th>Type</th><th>Téléphone</th><th>Véhicules</th><th class="r">Solde dû</th></tr>
+  ${list.map(c => { const vs = db().vehicules.filter(v => v.clientId === c.id); const du = soldeClient(c.id); return `
+    <tr class="click" onclick="go('client/${c.id}')"><td><b>${esc(cName(c))}</b></td><td>${esc(c.type)}</td><td>${esc(c.tel)}</td>
+    <td>${vs.map(v => `<span class="tag">${esc(v.immat)}</span>`).join(' ')}</td><td class="r" style="color:${du > 0 ? 'var(--bad)' : ''}">${du > 0 ? eur(du) : '—'}</td></tr>`; }).join('')}</table>`
+    : '<div class="empty">Aucun client</div>'}</div>`;
+}
+const soldeClient = id => db().documents.filter(d => d.type === 'FAC' && d.clientId === id && d.statut !== 'brouillon').reduce((s, d) => s + Math.max(0, reste(d)), 0);
+function editClient(id, after) {
+  const c = id ? {...client(id)} : {id:uid(), type:'Particulier', nom:'', prenom:'', tel:'', email:'', adresse:'', notes:'', cree:today()};
+  modal(id ? 'Modifier le client' : 'Nouveau client', `<div class="fg">
+    ${F('type', 'Type', c.type, 'select', ['Particulier', 'Professionnel', 'Flotte / société', 'Administration'])}${F('tel', 'Téléphone', c.tel, 'tel')}
+    ${F('nom', 'Nom / raison sociale *', c.nom)}${F('prenom', 'Prénom', c.prenom)}${F('email', 'E-mail', c.email, 'email')}${F('siret', 'SIRET (pro)', c.siret)}
+    ${F('adresse', 'Adresse', c.adresse, 'text', [], 'full')}${F('notes', 'Notes', c.notes, 'textarea', [], 'full')}</div>`,
+    async m => { const o = vals(m); if (!o.nom) { alert('Le nom est obligatoire'); return false; }
+      Object.assign(c, o); await Store.upsert('clients', c); toast('Client enregistré'); after ? after(c) : render(); });
+}
+function vClient(id) {
+  const c = client(id); if (!c) return '<div class="empty">Client introuvable</div>';
+  const vs = db().vehicules.filter(v => v.clientId === id);
+  const docs = db().documents.filter(d => d.clientId === id).sort((a, b) => b.date.localeCompare(a.date));
+  const ca = ventes(['FAC', 'AVO']).filter(d => d.clientId === id).reduce((s, d) => s + d.t.ht * d.s, 0);
+  return `<div class="bar"><button class="btn ghost" onclick="history.back()">← Retour</button><h2 style="margin:0 8px">${esc(cName(c))}</h2><span class="tag">${esc(c.type)}</span>
+    <span class="grow"></span><button class="btn ghost" onclick="editClient('${id}')">Modifier</button>
+    <button class="btn" onclick="go('doc/new/DEV?client=${id}')">+ Devis</button><button class="btn blue" onclick="go('doc/new/OR?client=${id}')">+ OR</button></div>
+  <div class="grid g3" style="margin-bottom:16px">
+    <div class="kpi"><small>Contact</small>${esc(c.tel)}<br>${esc(c.email)}<br>${esc(c.adresse)}</div>
+    <div class="kpi"><small>CA total HT</small><b>${eur(ca)}</b></div>
+    <div class="kpi"><small>Solde dû</small><b style="color:${soldeClient(id) > 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(soldeClient(id))}</b></div></div>
+  ${c.notes ? `<div class="alert">📌 ${esc(c.notes)}</div>` : ''}
+  <div class="card"><h3>Véhicules <button class="btn sm" style="float:right" onclick="editVehicule(null,'${id}')">+ Véhicule</button></h3>
+    ${vs.length ? `<table>${vs.map(v => `<tr class="click" onclick="go('vehicule/${v.id}')"><td><b>${esc(v.immat)}</b></td><td>${esc(v.marque)} ${esc(v.modele)}</td><td>${esc(v.vin)}</td><td class="r">${num(v.km)} km</td></tr>`).join('')}</table>` : '<div class="empty">Aucun véhicule</div>'}</div>
+  <div class="card"><h3>Historique</h3>${docTable(docs)}</div>`;
+}
+function docTable(docs) {
+  return docs.length ? `<table><tr><th>Type</th><th>N°</th><th>Date</th><th>Véhicule</th><th>Km</th><th>Statut</th><th class="r">TTC</th></tr>${docs.map(d => `
+    <tr class="click" onclick="go('doc/${d.id}')"><td>${DOC[d.type]}</td><td>${esc(d.numero || 'Brouillon')}</td><td>${dfr(d.date)}</td><td>${esc(veh(d.vehiculeId)?.immat || '')}</td>
+    <td>${d.km ? num(d.km) : ''}</td><td>${statusTag(d)}</td><td class="r">${eur(totals(d).ttc)}</td></tr>`).join('')}</table>` : '<div class="empty">Aucun document</div>';
+}
+let vehQ = '';
+function vVehicules() {
+  const q = vehQ.toLowerCase();
+  const list = db().vehicules.filter(v => !q || [v.immat, v.vin, v.marque, v.modele, cName(client(v.clientId))].join(' ').toLowerCase().includes(q));
+  return `<div class="bar"><input placeholder="🔍 Immatriculation, VIN, marque, client…" value="${esc(vehQ)}" style="max-width:420px"
+    oninput="vehQ=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{render();const i=$('#view input');i.focus();i.setSelectionRange(99,99)},300)"></div>
+  <div class="card">${list.length ? `<table><tr><th>Immat.</th><th>Véhicule</th><th>VIN</th><th>Propriétaire</th><th>Mise en circ.</th><th class="r">Km</th></tr>${list.map(v => `
+    <tr class="click" onclick="go('vehicule/${v.id}')"><td><b>${esc(v.immat)}</b></td><td>${esc(v.marque)} ${esc(v.modele)}</td><td class="mute">${esc(v.vin)}</td>
+    <td>${esc(cName(client(v.clientId)))}</td><td>${dfr(v.mec)}</td><td class="r">${num(v.km)}</td></tr>`).join('')}</table>` : '<div class="empty">Aucun véhicule — ajoutez-les depuis la fiche client</div>'}</div>`;
+}
+function editVehicule(id, clientId, after) {
+  const v = id ? {...veh(id)} : {id:uid(), clientId, immat:'', vin:'', marque:'', modele:'', energie:'Essence', mec:'', km:''};
+  modal(id ? 'Modifier le véhicule' : 'Nouveau véhicule', `<div class="fg">
+    ${F('immat', 'Immatriculation *', v.immat)}${F('vin', 'N° de série (VIN)', v.vin)}${F('marque', 'Marque', v.marque)}${F('modele', 'Modèle', v.modele)}
+    ${F('energie', 'Énergie', v.energie, 'select', ['Essence', 'Diesel', 'Hybride', 'Électrique', 'GPL'])}${F('mec', 'Mise en circulation', v.mec, 'date')}
+    ${F('km', 'Kilométrage', v.km, 'number')}${F('clientId', 'Propriétaire', v.clientId, 'select', db().clients.map(c => [c.id, cName(c)]))}</div>`,
+    async m => { const o = vals(m); if (!o.immat) { alert("L'immatriculation est obligatoire"); return false; }
+      o.immat = o.immat.toUpperCase().replace(/\s/g, ''); o.vin = o.vin.toUpperCase();
+      Object.assign(v, o); await Store.upsert('vehicules', v); toast('Véhicule enregistré'); after ? after(v) : render(); });
+}
+function vVehicule(id) {
+  const v = veh(id); if (!v) return '<div class="empty">Véhicule introuvable</div>';
+  const docs = db().documents.filter(d => d.vehiculeId === id).sort((a, b) => b.date.localeCompare(a.date));
+  return `<div class="bar"><button class="btn ghost" onclick="history.back()">← Retour</button><h2 style="margin:0 8px">${esc(v.immat)}</h2><span>${esc(v.marque)} ${esc(v.modele)}</span>
+    <span class="grow"></span><button class="btn ghost" onclick="editVehicule('${id}')">Modifier</button>
+    <button class="btn blue" onclick="go('doc/new/OR?client=${v.clientId}&veh=${id}')">+ OR</button></div>
+  <div class="grid g4" style="margin-bottom:16px"><div class="kpi"><small>Propriétaire</small><a href="#client/${v.clientId}">${esc(cName(client(v.clientId)))}</a></div>
+    <div class="kpi"><small>VIN</small>${esc(v.vin || '—')}</div><div class="kpi"><small>Kilométrage</small><b>${num(v.km)} km</b></div>
+    <div class="kpi"><small>Mise en circulation</small>${dfr(v.mec) || '—'} · ${esc(v.energie)}</div></div>
+  <div class="card"><h3>Historique d'entretien</h3>${docTable(docs)}</div>`;
+}
+
+/* =====================================================================
+   STOCK
+   ===================================================================== */
+let stkQ = '', stkAlerte = false;
+function vStock() {
+  const q = stkQ.toLowerCase();
+  const list = db().articles.filter(a => (!q || [a.ref, a.refOrigine, a.designation, a.fournisseur, a.famille].join(' ').toLowerCase().includes(q)) && (!stkAlerte || (+a.stock || 0) <= (+a.stockMin || 0)))
+    .sort((a, b) => (a.ref || '').localeCompare(b.ref || ''));
+  const valeur = db().articles.reduce((s, a) => s + (+a.stock || 0) * (+a.pa || 0), 0);
+  return `<div class="bar"><input placeholder="🔍 Réf., réf. origine, désignation, fournisseur…" value="${esc(stkQ)}" style="max-width:360px"
+    oninput="stkQ=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{render();const i=$('#view input');i.focus();i.setSelectionRange(99,99)},300)">
+    <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${stkAlerte ? 'checked' : ''} onchange="stkAlerte=this.checked;render()"> Sous le minimum</label>
+    <span class="grow"></span><span class="mute">Valeur du stock : <b>${eur(valeur)}</b></span>
+    <button class="btn ghost" onclick="reception()">📥 Réception</button><button class="btn ghost" onclick="importCSV()">Import tarif CSV</button>
+    <button class="btn ghost" onclick="voirMouvements()">Mouvements</button><button class="btn" onclick="editArticle()">+ Article</button></div>
+  <div class="card">${list.length ? `<table><tr><th>Réf.</th><th>Réf. origine</th><th>Désignation</th><th>Fournisseur</th><th>Empl.</th><th class="r">Stock</th><th class="r" title="Réservé pour des OR">Réservé</th><th class="r" title="Stock − réservé">Dispo</th><th class="r" title="Commandé, pas encore reçu">Attendu</th><th class="r">PA HT</th><th class="r">PV HT</th><th class="r">Marge</th><th></th></tr>
+  ${list.map(a => { const low = (+a.stock || 0) <= (+a.stockMin || 0); return `<tr><td><b>${esc(a.ref)}</b></td><td class="mute">${esc(a.refOrigine)}</td><td>${esc(a.designation)}</td>
+    <td>${esc(a.fournisseur)}</td><td>${esc(a.emplacement)}</td><td class="r">${num(a.stock)}</td>
+    <td class="r">${+a.reserve ? `<a href="javascript:void 0" onclick="voirReservations('${a.id}')">${num(a.reserve)}</a>` : '<span class="mute">0</span>'}</td>
+    <td class="r"><span class="tag ${Pieces.dispo(a) <= 0 ? 't-bad' : low ? 't-warn' : 't-ok'}">${num(Pieces.dispo(a))}</span></td>
+    <td class="r">${+a.attendu ? `<a href="javascript:void 0" onclick="voirReservations('${a.id}')">${num(a.attendu)}</a>` : '<span class="mute">0</span>'}</td>
+    <td class="r">${eur(a.pa)}</td><td class="r">${eur(a.pv)}</td><td class="r">${+a.pv ? Math.round((1 - (+a.pa || 0) / a.pv) * 100) + ' %' : ''}</td>
+    <td><button class="btn ghost sm" onclick="editArticle('${a.id}')">Modifier</button></td></tr>`; }).join('')}</table>` : '<div class="empty">Aucun article</div>'}</div>`;
+}
+function editArticle(id) {
+  const a = id ? {...db().articles.find(x => x.id === id)} : {id:uid(), ref:'', refOrigine:'', designation:'', famille:'', fournisseur:'Cattronic', emplacement:'', pa:'', pv:'', stock:0, stockMin:1};
+  modal(id ? "Modifier l'article" : 'Nouvel article', `<div class="fg">
+    ${F('ref', 'Référence fournisseur *', a.ref)}${F('refOrigine', "Réf. d'origine constructeur", a.refOrigine)}${F('designation', 'Désignation *', a.designation, 'text', [], 'full')}
+    ${F('famille', 'Famille (freinage, filtration…)', a.famille)}${F('fournisseur', 'Fournisseur', a.fournisseur)}${F('emplacement', 'Emplacement (rayon)', a.emplacement)}
+    ${F('stock', 'Quantité en stock', a.stock, 'number')}${F('stockMin', "Stock minimum (alerte)", a.stockMin, 'number')}${F('pa', "Prix d'achat HT", a.pa, 'number')}${F('pv', 'Prix de vente HT', a.pv, 'number')}</div>
+    ${id ? `<div class="bar" style="margin-top:12px">${S().connecteurs.filter(c => c.url).map(c => `<a class="btn ghost sm" target="_blank" href="${esc(c.url.replace(/\{ref\}|\{q\}/g, encodeURIComponent(a.refOrigine || a.ref)).replace(/\{\w+\}/g, ''))}">🔗 ${esc(c.nom)}</a>`).join('')}
+      <span class="grow"></span><button class="btn red sm" onclick="if(confirm('Supprimer cet article ?')){Store.remove('articles','${id}').then(()=>{closeModal();render()})}">Supprimer</button></div>` : ''}`,
+    async m => { const o = vals(m); if (!o.ref || !o.designation) { alert('Référence et désignation obligatoires'); return false; }
+      const base = a.stock;                                 // la correction de stock s'applique en écart
+      Object.assign(a, o, id ? {_base:base} : {}); await Store.upsert('articles', a); toast('Article enregistré'); render(); });
+}
+function reception() {
+  modal('Réception de pièces', `<div class="fg">${F('articleId', 'Article', '', 'select', db().articles.map(a => [a.id, a.ref + ' — ' + a.designation]), 'full')}
+    ${F('qte', 'Quantité reçue', 1, 'number')}${F('pa', "Nouveau prix d'achat HT (optionnel)", '', 'number')}${F('bl', 'N° bon de livraison', '', 'text', [], 'full')}</div>`,
+    async m => { const o = vals(m); if (!o.articleId || !o.qte) return false;
+      await Store.action('receptionLibre', o); toast('Stock mis à jour'); render(); }, 'Entrer en stock');
+}
+function voirMouvements() {
+  const list = [...db().mouvements].reverse().slice(0, 150);
+  modal('Derniers mouvements de stock', list.length ? `<table><tr><th>Date</th><th>Article</th><th class="r">Qté</th><th>Motif</th></tr>${list.map(mv => { const a = db().articles.find(x => x.id === mv.articleId);
+    return `<tr><td>${dfr(mv.date)}</td><td>${esc(a?.ref)} ${esc(a?.designation)}</td><td class="r" style="color:${mv.qte < 0 ? 'var(--bad)' : 'var(--ok)'}">${mv.qte > 0 ? '+' : ''}${num(mv.qte)}</td><td>${esc(mv.motif)}</td></tr>`; }).join('')}</table>` : '<div class="empty">Aucun mouvement</div>');
+}
+function importCSV() {
+  modal('Importer un tarif / catalogue (CSV)', `<p>Fichier CSV (séparateur <b>;</b>) avec les colonnes dans cet ordre :</p>
+    <code>ref;ref_origine;designation;fournisseur;prix_achat;prix_vente;stock</code>
+    <p class="mute">Si la référence existe déjà, l'article est mis à jour (prix), sinon il est créé. La 1ʳᵉ ligne (en-têtes) est ignorée.</p>
+    <input type="file" id="csvf" accept=".csv,.txt">`,
+    async () => { const f = $('#csvf').files[0]; if (!f) return false;
+      const txt = await f.text(); const rows = txt.replace(/^\ufeff/, '').split(/\r?\n/).slice(1).filter(x => x.trim());
+      const nb = n => +(String(n || '').replace(',', '.')) || 0; let cr = 0, maj = 0;
+      for (const r of rows) { const [ref, ro, des, fo, pa, pv, st] = r.split(/;/).map(x => x.replace(/^"|"$/g, '').trim()); if (!ref) continue;
+        let a = db().articles.find(x => x.ref === ref);
+        if (a) { Object.assign(a, {refOrigine:ro || a.refOrigine, designation:des || a.designation, fournisseur:fo || a.fournisseur, pa:nb(pa), pv:nb(pv)}); maj++; }
+        else { a = {id:uid(), ref, refOrigine:ro, designation:des, fournisseur:fo, pa:nb(pa), pv:nb(pv), stock:nb(st), stockMin:'', famille:'', emplacement:''}; cr++; }
+        await Store.upsert('articles', a); }
+      toast(`${cr} créés, ${maj} mis à jour`); render(); }, 'Importer');
+}
+
+/* =====================================================================
+   VN / VO
+   ===================================================================== */
+let vnTab = 'stock';
+function vVnvo() {
+  const list = db().vnvo.filter(x => vnTab === 'stock' ? x.statut !== 'vendu' : x.statut === 'vendu');
+  const enStock = db().vnvo.filter(x => x.statut !== 'vendu');
+  return `<div class="bar"><div class="tabs" style="margin:0"><a class="${vnTab === 'stock' ? 'on' : ''}" onclick="vnTab='stock';render()">En stock (${enStock.length})</a>
+    <a class="${vnTab === 'vendu' ? 'on' : ''}" onclick="vnTab='vendu';render()">Vendus</a></div><span class="grow"></span>
+    <span class="mute">Valeur du parc : <b>${eur(enStock.reduce((s, x) => s + (+x.prixAchat || 0) + (+x.frais || 0), 0))}</b></span>
+    <button class="btn" onclick="editVnvo()">+ Entrée véhicule</button></div>
+  <div class="card">${list.length ? `<table><tr><th>Type</th><th>Immat.</th><th>Véhicule</th><th>Année</th><th class="r">Km</th><th class="r">Achat + frais</th><th class="r">Prix vente</th><th class="r">Marge</th><th>${vnTab === 'stock' ? 'Jours en stock' : 'Acheteur'}</th><th></th></tr>
+  ${list.map(x => { const cout = (+x.prixAchat || 0) + (+x.frais || 0), marge = (+x.prixVente || 0) - cout, j = daysBetween(x.dateEntree, today()); return `
+    <tr><td><span class="tag a-VNVO">${x.type}</span></td><td><b>${esc(x.immat)}</b></td><td>${esc(x.marque)} ${esc(x.modele)}</td><td>${esc(x.annee)}</td><td class="r">${num(x.km)}</td>
+    <td class="r">${eur(cout)}</td><td class="r">${eur(x.prixVente)}</td><td class="r" style="color:${marge < 0 ? 'var(--bad)' : 'var(--ok)'}">${eur(marge)}</td>
+    <td>${vnTab === 'stock' ? `<span class="tag ${j > 90 ? 't-bad' : j > 45 ? 't-warn' : 't-ok'}">${j} j</span> ${x.statut === 'reserve' ? '<span class="tag t-blue">Réservé</span>' : ''}` : esc(cName(client(x.clientId)))}</td>
+    <td>${vnTab === 'stock' ? `<button class="btn ghost sm" onclick="editVnvo('${x.id}')">Modifier</button> <button class="btn green sm" onclick="vendre('${x.id}')">Vendre</button>`
+      : x.docId ? `<button class="btn ghost sm" onclick="go('doc/${x.docId}')">Cession</button>` : ''}</td></tr>`; }).join('')}</table>` : '<div class="empty">Aucun véhicule</div>'}</div>`;
+}
+function editVnvo(id) {
+  const x = id ? {...db().vnvo.find(v => v.id === id)} : {id:uid(), type:'VO', immat:'', vin:'', marque:'', modele:'', annee:'', km:'', prixAchat:'', frais:'', prixVente:'', statut:'stock', dateEntree:today(), notes:''};
+  modal(id ? 'Modifier' : 'Entrée en stock VN / VO', `<div class="fg">
+    ${F('type', 'Type', x.type, 'select', [['VO', 'Occasion (VO)'], ['VN', 'Neuf (VN)']])}${F('statut', 'Statut', x.statut, 'select', [['stock', 'En stock'], ['reserve', 'Réservé']])}
+    ${F('immat', 'Immatriculation', x.immat)}${F('vin', 'VIN', x.vin)}${F('marque', 'Marque', x.marque)}${F('modele', 'Modèle', x.modele)}
+    ${F('annee', 'Année', x.annee, 'number')}${F('km', 'Kilométrage', x.km, 'number')}${F('prixAchat', "Prix d'achat", x.prixAchat, 'number')}
+    ${F('frais', 'Frais de remise en état', x.frais, 'number')}${F('prixVente', 'Prix de vente affiché', x.prixVente, 'number')}${F('dateEntree', "Date d'entrée", x.dateEntree, 'date')}
+    ${F('notes', 'Notes (options, état, historique)', x.notes, 'textarea', [], 'full')}</div>`,
+    async m => { Object.assign(x, vals(m)); x.immat = (x.immat || '').toUpperCase(); await Store.upsert('vnvo', x); toast('Enregistré'); render(); });
+}
+function vendre(id) {
+  const x = db().vnvo.find(v => v.id === id);
+  modal(`Vendre ${esc(x.marque)} ${esc(x.modele)} — ${esc(x.immat)}`, `<div class="fg">
+    ${F('clientId', 'Acheteur (créez-le d\'abord dans Clients si besoin)', '', 'select', db().clients.map(c => [c.id, cName(c)]), 'full')}
+    ${F('prix', 'Prix de vente final', x.prixVente, 'number')}${F('date', 'Date de vente', today(), 'date')}</div>`,
+    async m => { const o = vals(m); if (!o.clientId) { alert('Choisissez un acheteur'); return false; }
+      const d = newDoc('CES', {client:o.clientId, act:'VNVO'}); d.date = o.date; d.km = x.km;
+      const v = {id:uid(), clientId:o.clientId, immat:x.immat, vin:x.vin, marque:x.marque, modele:x.modele, energie:'', mec:'', km:x.km};
+      await Store.upsert('vehicules', v); d.vehiculeId = v.id;
+      d.lignes = [{type:'FORF', ref:x.type, refOrigine:'', designation:`Cession véhicule ${x.type === 'VN' ? 'neuf' : "d'occasion"} ${x.marque} ${x.modele} — ${x.immat} — VIN ${x.vin}`, qte:1, pu:+o.prix || 0, remise:0, articleId:''}];
+      d.numero = await Store.next('CES'); await Store.upsert('documents', d);
+      Object.assign(x, {statut:'vendu', clientId:o.clientId, dateVente:o.date, prixVente:+o.prix, docId:d.id}); await Store.upsert('vnvo', x);
+      toast('Vente enregistrée ✔'); go('doc/' + d.id); }, 'Enregistrer la vente');
+}
+
+/* =====================================================================
+   VÉHICULES DE PRÊT
+   ===================================================================== */
+function vPrets() {
+  const d = db(), t = today(), enCours = d.prets.filter(p => !p.retour), hist = d.prets.filter(p => p.retour).slice(-20).reverse();
+  return `<div class="bar"><span class="grow"></span><button class="btn ghost" onclick="editFlotte()">+ Véhicule de prêt</button><button class="btn" onclick="sortirPret()">🔑 Nouveau prêt</button></div>
+  <div class="card"><h3>Flotte</h3>${d.flotte.length ? `<table><tr><th>Immat.</th><th>Modèle</th><th class="r">Km</th><th>État</th><th></th></tr>${d.flotte.map(f => { const p = enCours.find(x => x.flotteId === f.id); return `
+    <tr><td><b>${esc(f.immat)}</b></td><td>${esc(f.modele)}</td><td class="r">${num(f.km)}</td><td>${p ? `<span class="tag t-warn">Prêté à ${esc(cName(client(p.clientId)))}</span>` : '<span class="tag t-ok">Disponible</span>'}</td>
+    <td><button class="btn ghost sm" onclick="editFlotte('${f.id}')">Modifier</button></td></tr>`; }).join('')}</table>` : '<div class="empty">Ajoutez vos véhicules de courtoisie</div>'}</div>
+  <div class="card"><h3>Prêts en cours</h3>${enCours.length ? `<table><tr><th>Véhicule</th><th>Client</th><th>OR lié</th><th>Départ</th><th>Retour prévu</th><th>Km / carburant départ</th><th></th></tr>${enCours.map(p => { const f = d.flotte.find(x => x.id === p.flotteId), o = d.documents.find(x => x.id === p.orId); return `
+    <tr><td><b>${esc(f?.immat)}</b></td><td>${esc(cName(client(p.clientId)))}</td><td>${o ? `<a href="#doc/${o.id}">${esc(o.numero)}</a>` : ''}</td><td>${dfr(p.depart)}</td>
+    <td>${p.retourPrevu < t ? '<span class="tag t-bad">En retard</span> ' : ''}${dfr(p.retourPrevu)}</td><td>${num(p.kmDepart)} km · ${esc(p.carbuDepart)}</td>
+    <td><button class="btn green sm" onclick="retourPret('${p.id}')">Retour</button></td></tr>`; }).join('')}</table>` : '<div class="empty">Aucun prêt en cours</div>'}</div>
+  <div class="card"><h3>Derniers retours</h3>${hist.length ? `<table>${hist.map(p => { const f = d.flotte.find(x => x.id === p.flotteId); return `<tr><td>${esc(f?.immat)}</td><td>${esc(cName(client(p.clientId)))}</td>
+    <td>${dfr(p.depart)} → ${dfr(p.retour)}</td><td>${num((+p.kmRetour || 0) - (+p.kmDepart || 0))} km parcourus</td><td>${esc(p.obs)}</td></tr>`; }).join('')}</table>` : '<div class="empty">—</div>'}</div>`;
+}
+function editFlotte(id) {
+  const f = id ? {...db().flotte.find(x => x.id === id)} : {id:uid(), immat:'', modele:'', km:''};
+  modal('Véhicule de prêt', `<div class="fg">${F('immat', 'Immatriculation', f.immat)}${F('modele', 'Modèle', f.modele)}${F('km', 'Kilométrage', f.km, 'number')}</div>`,
+    async m => { Object.assign(f, vals(m)); f.immat = f.immat.toUpperCase(); await Store.upsert('flotte', f); render(); });
+}
+function sortirPret(or) {
+  const busy = db().prets.filter(p => !p.retour).map(p => p.flotteId), dispo = db().flotte.filter(f => !busy.includes(f.id));
+  if (!dispo.length) return alert('Aucun véhicule de prêt disponible.');
+  const CARB = ['Plein', '3/4', '1/2', '1/4', 'Réserve'];
+  modal('Sortie véhicule de prêt', `<div class="fg">
+    ${F('flotteId', 'Véhicule', '', 'select', dispo.map(f => [f.id, f.immat + ' — ' + f.modele]))}${F('clientId', 'Client', or?.clientId || '', 'select', [['', '—'], ...db().clients.map(c => [c.id, cName(c)])])}
+    ${F('depart', 'Date de départ', today(), 'date')}${F('retourPrevu', 'Retour prévu', today(), 'date')}
+    ${F('kmDepart', 'Km au départ', dispo[0].km, 'number')}${F('carbuDepart', 'Carburant au départ', 'Plein', 'select', CARB)}
+    ${F('etat', 'État / rayures constatées', '', 'textarea', [], 'full')}</div>`,
+    async m => { const o = vals(m); if (!o.clientId) { alert('Choisissez le client'); return false; }
+      await Store.upsert('prets', {id:uid(), ...o, orId:or?.id || ''}); toast('Prêt enregistré ✔'); if (!or) render(); }, 'Valider la sortie');
+}
+function retourPret(id) {
+  const p = {...db().prets.find(x => x.id === id)};
+  modal('Retour du véhicule de prêt', `<div class="fg">${F('retour', 'Date de retour', today(), 'date')}${F('kmRetour', 'Km au retour', p.kmDepart, 'number')}
+    ${F('carbuRetour', 'Carburant au retour', p.carbuDepart, 'select', ['Plein', '3/4', '1/2', '1/4', 'Réserve'])}${F('obs', 'Observations (dégâts, PV…)', '', 'textarea', [], 'full')}</div>`,
+    async m => { Object.assign(p, vals(m)); await Store.upsert('prets', p);
+      const f = db().flotte.find(x => x.id === p.flotteId); if (f) { f.km = p.kmRetour; await Store.upsert('flotte', f); }
+      toast('Retour enregistré'); render(); }, 'Valider le retour');
+}
+
+/* =====================================================================
+   RÈGLEMENTS
+   ===================================================================== */
+let regMois = today().slice(0, 7);
+function encaisser(docId) {
+  const d = db().documents.find(x => x.id === docId);
+  modal(`Encaisser — facture ${esc(d.numero)}`, `<p>Client : <b>${esc(cName(client(d.clientId)))}</b> · Reste dû : <b>${eur(reste(d))}</b></p><div class="fg">
+    ${F('montant', 'Montant', reste(d), 'number')}${F('mode', 'Mode de règlement', 'Carte bancaire', 'select', MODES)}
+    ${F('date', 'Date', today(), 'date')}${F('ref', 'Référence (n° chèque…)', '')}</div>`,
+    async m => { const o = vals(m); if (!(+o.montant > 0)) { alert('Montant invalide'); return false; }
+      await Store.upsert('reglements', {id:uid(), docId, clientId:d.clientId, ...o, poste:poste()});
+      toast('Règlement enregistré ✔'); location.hash.startsWith('#doc/') ? (cur = JSON.parse(JSON.stringify(db().documents.find(x => x.id === docId))), refreshDoc()) : render(); }, 'Encaisser');
+}
+function vReglements() {
+  const imp = db().documents.filter(d => d.type === 'FAC' && d.statut !== 'brouillon' && reste(d) > 0.004).sort((a, b) => a.date.localeCompare(b.date));
+  const regs = db().reglements.filter(r => r.date.startsWith(regMois)).sort((a, b) => b.date.localeCompare(a.date));
+  const parMode = MODES.map(md => [md, regs.filter(r => r.mode === md).reduce((s, r) => s + +r.montant, 0)]);
+  return `<div class="card"><h3>Factures à encaisser (${imp.length}) — ${eur(imp.reduce((s, d) => s + reste(d), 0))}</h3>${imp.length ? `<table><tr><th>Facture</th><th>Date</th><th>Client</th><th>Ancienneté</th><th class="r">TTC</th><th class="r">Reste dû</th><th></th></tr>
+    ${imp.map(d => { const j = daysBetween(d.date, today()); return `<tr><td><a href="#doc/${d.id}">${esc(d.numero)}</a></td><td>${dfr(d.date)}</td><td>${esc(cName(client(d.clientId)))}</td>
+      <td><span class="tag ${j > 30 ? 't-bad' : j > 7 ? 't-warn' : ''}">${j} j</span></td><td class="r">${eur(totals(d).ttc)}</td><td class="r"><b>${eur(reste(d))}</b></td>
+      <td><button class="btn green sm" onclick="encaisser('${d.id}')">Encaisser</button></td></tr>`; }).join('')}</table>` : '<div class="empty">Tout est encaissé 👍</div>'}</div>
+  <div class="card"><div class="bar"><h3 style="margin:0" class="grow">Encaissements du mois</h3><input type="month" value="${regMois}" style="width:180px" onchange="regMois=this.value;render()"></div>
+    <div class="grid g4" style="margin-bottom:12px">${parMode.map(([md, v]) => `<div class="kpi"><small>${md}</small><b>${eur(v)}</b></div>`).join('')}</div>
+    ${regs.length ? `<table><tr><th>Date</th><th>Facture</th><th>Client</th><th>Mode</th><th>Réf.</th><th class="r">Montant</th><th></th></tr>${regs.map(r => { const d = db().documents.find(x => x.id === r.docId); return `
+      <tr><td>${dfr(r.date)}</td><td>${d ? `<a href="#doc/${d.id}">${esc(d.numero)}</a>` : ''}</td><td>${esc(cName(client(r.clientId)))}</td><td>${esc(r.mode)}</td><td>${esc(r.ref)}</td>
+      <td class="r">${eur(r.montant)}</td><td><button class="btn ghost sm" onclick="if(confirm('Annuler ce règlement ?'))Store.remove('reglements','${r.id}').then(render)">✕</button></td></tr>`; }).join('')}</table>` : '<div class="empty">Aucun encaissement ce mois-ci</div>'}</div>`;
+}
+
+/* =====================================================================
+   COMPTABILITÉ  (journaux à transmettre à l'expert-comptable)
+   ===================================================================== */
+let cptMois = today().slice(0, 7);
+function vCompta() {
+  const vs = ventes().filter(d => d.date.startsWith(cptMois)).sort((a, b) => (a.date + a.numero).localeCompare(b.date + b.numero));
+  const regs = db().reglements.filter(r => r.date.startsWith(cptMois));
+  const tot = k => vs.reduce((s, d) => s + d.t[k] * d.s, 0);
+  return `<div class="bar"><input type="month" value="${cptMois}" style="width:180px" onchange="cptMois=this.value;render()"><span class="grow"></span>
+    <button class="btn ghost" onclick="expVentes()">⬇ Journal des ventes (CSV)</button><button class="btn ghost" onclick="expRegs()">⬇ Journal des encaissements (CSV)</button></div>
+  <div class="grid g4" style="margin-bottom:16px"><div class="kpi acc"><small>Total HT</small><b>${eur(tot('ht'))}</b></div><div class="kpi"><small>TVA collectée</small><b>${eur(tot('tva'))}</b></div>
+    <div class="kpi"><small>Total TTC</small><b>${eur(tot('ttc'))}</b></div><div class="kpi"><small>Encaissé</small><b>${eur(regs.reduce((s, r) => s + +r.montant, 0))}</b></div></div>
+  <div class="card"><h3>Journal des ventes</h3>${vs.length ? `<table><tr><th>Date</th><th>Pièce</th><th>Client</th><th>Activité</th><th class="r">HT</th><th class="r">TVA</th><th class="r">TTC</th></tr>
+    ${vs.map(d => `<tr class="click" onclick="go('doc/${d.id}')"><td>${dfr(d.date)}</td><td>${esc(d.numero)}</td><td>${esc(cName(client(d.clientId)))}</td><td>${actTag(d.activite)}</td>
+      <td class="r">${eur(d.t.ht * d.s)}</td><td class="r">${eur(d.t.tva * d.s)}</td><td class="r">${eur(d.t.ttc * d.s)}</td></tr>`).join('')}</table>` : '<div class="empty">Aucune vente sur la période</div>'}</div>
+  <p class="mute">Les factures validées sont numérotées sans trou et ne sont plus modifiables. Transmettez ces deux fichiers CSV à votre expert-comptable chaque mois.</p>`;
+}
+function expVentes() {
+  const vs = ventes().filter(d => d.date.startsWith(cptMois)).sort((a, b) => (a.date + a.numero).localeCompare(b.date + b.numero));
+  dl(`journal-ventes-${cptMois}.csv`, csv([['Date', 'Pièce', 'Type', 'Client', 'Activité', 'MO HT', 'Pièces HT', 'Total HT', 'TVA', 'TTC'],
+    ...vs.map(d => [dfr(d.date), d.numero, DOC[d.type], cName(client(d.clientId)), ACT[d.activite], n2(d.t.mo * d.s), n2(d.t.pieces * d.s), n2(d.t.ht * d.s), n2(d.t.tva * d.s), n2(d.t.ttc * d.s)])]));
+}
+function expRegs() {
+  const rs = db().reglements.filter(r => r.date.startsWith(cptMois));
+  dl(`journal-encaissements-${cptMois}.csv`, csv([['Date', 'Facture', 'Client', 'Mode', 'Référence', 'Montant'],
+    ...rs.map(r => [dfr(r.date), db().documents.find(x => x.id === r.docId)?.numero, cName(client(r.clientId)), r.mode, r.ref, n2(r.montant)])]));
+}
+
+/* =====================================================================
+   STATISTIQUES
+   ===================================================================== */
+let statP = today().slice(0, 7);
+function vStats() {
+  const inP = d => d.date.startsWith(statP), d = db();
+  const fac = ventes(['FAC', 'AVO']).filter(inP), ces = ventes(['CES']).filter(inP);
+  const ors = d.documents.filter(x => x.type === 'OR' && inP(x)), devis = d.documents.filter(x => x.type === 'DEV' && inP(x));
+  const sum = k => fac.reduce((s, x) => s + x.t[k] * x.s, 0);
+  const nbFac = fac.filter(x => x.type === 'FAC').length;
+  const byAct = {}, byTech = {}, presta = {};
+  fac.forEach(x => { byAct[x.activite] = (byAct[x.activite] || 0) + x.t.ht * x.s; const k = x.technicien || 'Non affecté'; byTech[k] = (byTech[k] || 0) + x.t.ht * x.s;
+    x.lignes.filter(l => l.type !== 'PIECE').forEach(l => { const k2 = l.designation || '—'; presta[k2] = (presta[k2] || 0) + 1; }); });
+  const transfo = devis.length ? Math.round(devis.filter(x => ['accepte', 'transforme'].includes(x.statut)).length / devis.length * 100) : 0;
+  const margeVO = d.vnvo.filter(x => x.statut === 'vendu' && (x.dateVente || '').startsWith(statP)).reduce((s, x) => s + (+x.prixVente || 0) - (+x.prixAchat || 0) - (+x.frais || 0), 0);
+  const bars = (obj, money = true) => { const e = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 8), mx = Math.max(1, ...e.map(x => x[1]));
+    return e.length ? e.map(([k, v]) => `<div class="hbar"><span>${esc(ACT[k] || k)}</span><i style="width:${Math.max(0, v) / mx * 60}%"></i><em>${money ? eur(v) : v}</em></div>`).join('') : '<div class="empty">Pas de données</div>'; };
+  const years = [...new Set(d.documents.map(x => x.date.slice(0, 4)).concat(today().slice(0, 4)))].sort().reverse();
+  return `<div class="bar"><label style="display:flex;gap:8px;align-items:center">Période :
+    <input type="month" value="${statP.length === 7 ? statP : ''}" style="width:170px" onchange="statP=this.value;render()"></label> ou année
+    <select style="width:110px" onchange="if(this.value){statP=this.value;render()}"><option value="">—</option>${years.map(y => `<option ${statP === y ? 'selected' : ''}>${y}</option>`).join('')}</select></div>
+  <div class="grid g4" style="margin-bottom:16px">
+    <div class="kpi acc"><small>Entrées atelier (OR)</small><b>${ors.length}</b></div><div class="kpi acc"><small>CA atelier HT</small><b>${eur(sum('ht'))}</b></div>
+    <div class="kpi"><small>Ticket moyen HT</small><b>${eur(nbFac ? sum('ht') / nbFac : 0)}</b></div><div class="kpi"><small>Panier pièces moyen HT</small><b>${eur(nbFac ? sum('pieces') / nbFac : 0)}</b></div>
+    <div class="kpi"><small>Main d'œuvre HT</small><b>${eur(sum('mo'))}</b></div><div class="kpi"><small>Heures vendues</small><b>${num(sum('heures'))} h</b></div>
+    <div class="kpi"><small>Taux de transformation devis</small><b>${transfo} %</b><small>${devis.length} devis</small></div><div class="kpi"><small>Ventes VN/VO · marge</small><b>${ces.length}</b><small>marge ${eur(margeVO)}</small></div></div>
+  <div class="grid g3"><div class="card"><h3>CA par activité</h3>${bars(byAct)}</div><div class="card"><h3>CA par technicien</h3>${bars(byTech)}</div>
+    <div class="card"><h3>Prestations les plus vendues</h3>${bars(presta, false)}</div></div>`;
+}
+
+/* =====================================================================
+   PARAMÈTRES
+   ===================================================================== */
+function vParams() {
+  const s = S();
+  return `<div class="grid g2"><div class="card"><h3>Entreprise</h3><div class="fg" id="pSoc">
+    ${F('societe', 'Raison sociale', s.societe)}${F('siret', 'SIRET', s.siret)}${F('adresse', 'Adresse', s.adresse, 'text', [], 'full')}${F('tel', 'Téléphone', s.tel)}${F('email', 'E-mail', s.email)}
+    ${F('tva', 'Taux de TVA (%)', s.tva, 'number')}${F('validiteDevis', 'Validité des devis (jours)', s.validiteDevis, 'number')}
+    ${F('mentionTva', 'Mention si TVA à 0 %', s.mentionTva, 'text', [], 'full')}${F('conditions', 'Conditions (bas de facture)', s.conditions, 'textarea', [], 'full')}
+    ${Object.keys(ACT).map(k => F('taux_' + k, `Taux horaire ${ACT[k]} (HT)`, s.taux[k], 'number')).join('')}
+    ${F('techniciens', 'Techniciens (séparés par des virgules)', s.techniciens.join(', '), 'text', [], 'full')}
+    <label class="full">Connecteurs pièces — une ligne par catalogue : <code>Nom | URL</code><br><span style="font-weight:400">Variables : {ref} {vin} {immat} {marque} {modele}</span>
+      <textarea name="connecteurs" style="min-height:90px">${esc(s.connecteurs.map(c => c.nom + ' | ' + c.url).join('\n'))}</textarea></label>
+    <div class="full"><button class="btn" onclick="saveParams()">Enregistrer les paramètres</button></div></div></div>
+  <div><div class="card"><h3>🤖 Pièces & agent Trouve-tout</h3><div class="fg" id="pAgent">
+    ${F('margeRdv', 'Marge avant RDV après livraison (jours ouvrés)', s.margeRdv, 'number')}
+    ${F('n8nWebhook', 'Adresse du webhook n8n (événements)', s.n8nWebhook, 'text', [], 'full')}
+    <label class="full">Fournisseurs — une ligne : <code>Nom | type | téléphone | e-mail | URL de recherche {ref} | notes</code><br><span style="font-weight:400">type : local, en ligne, catalogue</span>
+      <textarea name="fournisseurs" style="min-height:150px">${esc((s.fournisseurs || []).map(f => [f.nom, f.type, f.tel, f.email, f.url, f.notes].map(x => x || '').join(' | ')).join('\n'))}</textarea></label>
+    <p class="mute full" style="margin:0">La clé de l'API pour n8n est dans <code>data/config.json</code> sur le PC serveur. Aucune commande ne part sans validation humaine.</p></div>
+    <button class="btn" style="margin-top:10px" onclick="saveParams()">Enregistrer</button></div>
+  <div class="card"><h3>Ce poste</h3><div class="fg">${F('poste', 'Nom du poste (ex. Accueil, Atelier 1, Magasin)', poste(), 'text', [], 'full')}</div>
+    <button class="btn ghost" style="margin-top:10px" onclick="localStorage.setItem('techauto_poste',$('[name=poste]').value);setSync(true);toast('Nom du poste enregistré')">Enregistrer</button>
+    <p class="mute">Mode : <b>${Store.mode === 'server' ? 'serveur partagé (5 postes)' : 'autonome — lancez server.js pour partager entre postes'}</b></p></div>
+  <div class="card"><h3>Sauvegarde</h3><p class="mute">Le serveur fait aussi une copie automatique chaque jour dans <code>data/sauvegardes</code>.</p>
+    <div class="bar"><button class="btn ghost" onclick="dl('techauto-sauvegarde-'+today()+'.json',JSON.stringify(Store.db),'application/json')">⬇ Exporter tout</button>
+    <button class="btn ghost" onclick="restaurer()">⬆ Restaurer une sauvegarde</button></div></div>
+  <div class="card"><h3>Démonstration</h3><p class="mute">Ajoute quelques clients, véhicules, pièces et un VO fictifs pour tester.</p><button class="btn ghost" onclick="demo()">Charger des données de démo</button></div></div></div>`;
+}
+async function saveParams() {
+  const o = vals($('#pSoc')), s = {...S()};
+  ['societe', 'siret', 'adresse', 'tel', 'email', 'mentionTva', 'conditions'].forEach(k => s[k] = o[k]);
+  s.tva = +o.tva || 0; s.validiteDevis = +o.validiteDevis || 30;
+  s.taux = Object.fromEntries(Object.keys(ACT).map(k => [k, +o['taux_' + k] || 0]));
+  s.techniciens = o.techniciens.split(',').map(x => x.trim()).filter(Boolean);
+  const g = vals($('#pAgent'));
+  s.margeRdv = g.margeRdv === '' ? 1 : +g.margeRdv; s.n8nWebhook = g.n8nWebhook;
+  s.fournisseurs = g.fournisseurs.split('\n').map(l => { const [nom, type, tel, email, url, notes] = l.split('|').map(x => (x || '').trim()); return {nom, type:type || 'local', tel, email, url, notes}; }).filter(f => f.nom);
+  s.connecteurs = o.connecteurs.split('\n').map(l => { const [nom, ...u] = l.split('|'); return {nom:(nom || '').trim(), url:u.join('|').trim()}; }).filter(c => c.nom);
+  await Store.saveSettings(s); toast('Paramètres enregistrés ✔'); render();
+}
+function restaurer() {
+  modal('Restaurer une sauvegarde', `<div class="alert">⚠ Toutes les données actuelles (sur les 5 postes) seront remplacées.</div><input type="file" id="rf" accept=".json">`,
+    async () => { const f = $('#rf').files[0]; if (!f) return false; const data = JSON.parse(await f.text());
+      if (!data.settings || !data.clients) { alert('Fichier invalide'); return false; } await Store.replace(data); toast('Restauré ✔'); render(); }, 'Restaurer');
+}
+async function demo() {
+  if (!confirm('Ajouter des données fictives de démonstration ?')) return;
+  const cl = [['Particulier', 'BRUNET', 'Lucie', '0694 12 34 56'], ['Professionnel', 'TRANSPORTS KOUROU', '', '0594 32 10 00'], ['Particulier', 'DA SILVA', 'Marco', '0694 98 76 54']]
+    .map(([type, nom, prenom, tel]) => ({id:uid(), type, nom, prenom, tel, email:'', adresse:'Kourou', notes:'', cree:today()}));
+  for (const c of cl) await Store.upsert('clients', c);
+  const vs = [[0, 'GA123AB', 'Renault', 'Clio IV', 84200, 'VF15RBF0A12345678'], [1, 'GB456CD', 'Toyota', 'Hilux', 152000, 'AHTFR22G300123456'], [2, 'GC789EF', 'Peugeot', '208', 41000, 'VR3UPHNKSKT123456']]
+    .map(([i, immat, marque, modele, km, vin]) => ({id:uid(), clientId:cl[i].id, immat, marque, modele, km, vin, energie:'Diesel', mec:''}));
+  for (const v of vs) await Store.upsert('vehicules', v);
+  const arts = [['FH-1023', '7701478543', 'Filtre à huile', 8, 4.2, 12.5, 2], ['PF-4410', '410608481R', 'Plaquettes de frein AV', 3, 22, 55, 2], ['HM-5W30', '', 'Huile moteur 5W30 (litre)', 40, 5.5, 13.9, 15],
+    ['FA-778', '165469466R', 'Filtre à air', 1, 7.8, 19.9, 2], ['ES-650', '', 'Balai essuie-glace 650 mm', 6, 6, 16, 3]]
+    .map(([ref, refOrigine, designation, stock, pa, pv, stockMin]) => ({id:uid(), ref, refOrigine, designation, stock, pa, pv, stockMin, fournisseur:'Cattronic', famille:'', emplacement:'A1'}));
+  for (const a of arts) await Store.upsert('articles', a);
+  await Store.upsert('vnvo', {id:uid(), type:'VO', immat:'GD321GH', vin:'VF1RFB00X12345678', marque:'Dacia', modele:'Duster', annee:2019, km:68000, prixAchat:9500, frais:650, prixVente:12900, statut:'stock', dateEntree:today(), notes:''});
+  await Store.upsert('flotte', {id:uid(), immat:'GE999PR', modele:'Renault Twingo', km:35000});
+  toast('Données de démo ajoutées'); go('accueil');
+}
+
+/* =====================================================================
+   PIÈCES PAR OR, COMMANDES FOURNISSEURS, AGENT « TROUVE-TOUT »
+   La logique (réservations, commandes, réceptions) est dans pieces.js
+   et s'exécute sur le serveur : les 5 postes et l'agent n8n voient la même chose.
+   La RÉFÉRENCE CONSTRUCTEUR (OE) fait foi : pas de commande sans elle.
+   ===================================================================== */
+const bTag = b => { const s = Pieces.STATUTS[b.statut] || [b.statut, '']; return `<span class="tag ${s[1]}">${s[0]}</span>`; };
+const RDVST = {provisoire:['RDV provisoire', 't-warn'], confirme:['RDV confirmé', 't-ok'], a_decaler:['RDV à décaler', 't-bad'], annule:['RDV annulé', ''], termine:['RDV terminé', '']};
+const rdvTag = r => r ? `<span class="tag ${(RDVST[r.statut] || [])[1] || ''}">${(RDVST[r.statut] || [r.statut])[0]} ${dfr(r.date)} ${esc(r.heure || '')}</span>` : '';
+const besoin = id => db().besoins.find(x => x.id === id);
+const fournisseurs = () => S().fournisseurs || [];
+async function act(name, args, msg) {                          // action + message + rafraîchissement de l'écran
+  try { const r = await Store.action(name, args); if (msg) toast(msg); location.hash.startsWith('#doc/') ? refreshDoc() : render(); return r; }
+  catch (e) { alert(e.message); }
+}
+
+// Badge sur les cartes Atelier
+function badgePieces(orId) {
+  const e = Pieces.etatOR(db(), orId); let h = rdvTag(e.rdv);
+  if (e.besoins.length) h += e.complet ? ' <span class="tag t-ok">✓ Pièces OK</span>'
+    : ` <span class="tag ${e.date ? 't-acc' : 't-bad'}" title="${esc(e.texte)}">⏳ Pièces ${e.date ? 'le ' + dfr(e.date) : 'à commander'}</span>`;
+  return h ? `<div style="margin-top:4px">${h}</div>` : '';
+}
+
+// Bloc « Pièces & disponibilité » dans l'OR
+function besoinDetail(b) {
+  const a = b.articleId && db().articles.find(x => x.id === b.articleId), no = db().offres.filter(o => o.besoinId === b.id).length;
+  if (b.statut === 'reserve') return `Rayon ${esc(a?.emplacement || '?')}`;
+  if (b.statut === 'commande') return `Livraison prévue ${dfr(b.dateLivraisonPrevue)}`;
+  if (b.statut === 'a_commander') return `Dispo en stock : ${num(b.dispoConstatee)}`;
+  return no ? `${no} offre(s)` : '';
+}
+function piecesCardHTML(d) {
+  if (!db().documents.some(x => x.id === d.id)) return '<div class="card"><h3>Pièces & disponibilité</h3><div class="empty">Enregistrez l\'OR : les pièces en stock seront réservées automatiquement.</div></div>';
+  const e = Pieces.etatOR(db(), d.id), r = e.rdv || {};
+  const aTrouver = e.besoins.filter(b => Pieces.A_TROUVER.includes(b.statut) && b.statut !== 'recherche' && !b.commandeId);
+  const rows = e.besoins.map(b => `<tr>
+      <td><b>${esc(b.ref)}</b> ${esc(b.designation)}</td>
+      <td>${b.refOrigine ? esc(b.refOrigine) : ['reserve', 'sorti'].includes(b.statut) ? '<span class="mute">—</span>' : '<span class="tag t-bad">à renseigner</span>'}</td>
+      <td class="r">${num(b.qte)}</td>
+      <td>${bTag(b)}${b.alerte ? ` <span class="tag t-bad" title="${esc(b.alerte)}">!</span>` : ''}</td>
+      <td class="mute">${besoinDetail(b)}</td>
+      <td>${['sorti', 'reserve', 'commande'].includes(b.statut) ? '' : `<button class="btn ghost sm" onclick="voirOffres('${b.id}')">Offres / réf. OE</button>`}</td></tr>`).join('');
+  return `<div class="card"><h3>Pièces & disponibilité ${e.besoins.length ? (e.complet ? '<span class="tag t-ok">Toutes réservées</span>' : '<span class="tag t-bad">Pièces manquantes</span>') : ''}</h3>
+    ${e.besoins.length ? `<table><tr><th>Pièce</th><th>Réf. constructeur (OE)</th><th class="r">Qté</th><th>Statut</th><th>Détail</th><th></th></tr>${rows}</table>` : '<div class="empty">Aucune ligne « Pièce » dans cet OR</div>'}
+    <div class="bar" style="margin-top:10px">
+      <button class="btn ghost" onclick="saveDoc()">🔄 Vérifier le stock et réserver</button>
+      ${aTrouver.length ? `<button class="btn blue" onclick="act('lancerRecherche',{orId:'${d.id}'},'Demande envoyée à l\\'agent Trouve-tout')">🔎 Lancer Trouve-tout (${aTrouver.length} pièce${aTrouver.length > 1 ? 's' : ''})</button>` : ''}
+      <span class="grow"></span><span class="mute">${esc(e.texte)}${e.date && !e.complet ? ' → RDV possible dès le <b>' + dfr(e.date) + '</b>' : ''}</span></div>
+    <h4 style="margin:14px 0 6px">Rendez-vous ${rdvTag(e.rdv)}</h4>
+    <div class="bar" id="rdvBox"><input type="date" name="date" value="${esc(r.date || '')}" style="max-width:160px">
+      <input name="heure" placeholder="08h30" value="${esc(r.heure || '')}" style="max-width:90px">
+      <select name="statut" style="max-width:170px">${Object.entries(RDVST).map(([k, v]) => `<option value="${k}" ${k === (r.statut || 'provisoire') ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>
+      <button class="btn ghost" onclick="act('majRdv',{orId:'${d.id}',...vals($('#rdvBox'))},'RDV enregistré')">Enregistrer le RDV</button>
+      ${e.date && e.date !== r.date ? `<button class="btn ghost sm" onclick="act('majRdv',{orId:'${d.id}',date:'${e.date}'},'RDV calé sur la date des pièces')">Caler au ${dfr(e.date)}</button>` : ''}
+      ${r.idExterne ? `<span class="mute">Réf. appli RDV : ${esc(r.idExterne)}</span>` : ''}</div></div>`;
+}
+
+// Réservations et commandes d'un article (clic sur Réservé / Attendu dans le stock)
+function voirReservations(articleId) {
+  const a = db().articles.find(x => x.id === articleId), bs = db().besoins.filter(b => b.articleId === articleId && ['reserve', 'commande', 'libre'].includes(b.statut));
+  modal(`${esc(a.ref)} — ${esc(a.designation)}`, bs.length ? `<table><tr><th>OR</th><th>Immat.</th><th class="r">Qté</th><th>Statut</th><th>Date</th></tr>${bs.map(b => `
+    <tr class="click" onclick="closeModal();go('doc/${b.orId || b.ancienOrId}')"><td>${esc(b.numeroOR)}</td><td>${esc(b.immat)}</td><td class="r">${num(b.qte)}</td><td>${bTag(b)}</td>
+    <td>${dfr(b.statut === 'reserve' ? b.reserveLe : b.dateLivraisonPrevue)}</td></tr>`).join('')}</table>` : '<div class="empty">Aucune réservation</div>');
+}
+
+// Offres d'un besoin + réf. constructeur + script d'appel
+function offreRow(o, b) {
+  const src = o.source ? ` · ${/^https?:/.test(o.source) ? `<a href="${esc(o.source)}" target="_blank">source</a>` : esc(o.source)}` : '';
+  const oe = o.oeEcart ? `<span class="tag t-bad">OE ${esc(o.refOrigine)} ≠</span>` : o.refOrigine ? `<span class="tag t-ok">OE ${esc(o.refOrigine)}</span>` : '<span class="mute">OE non annoncée</span>';
+  const bloque = o.oeEcart || !b.refOrigine;
+  return `<tr><td><b>${esc(o.fournisseur)}</b><div class="mute" style="font-size:11px">${esc(o.canal)}${src}</div></td>
+    <td>${esc(o.refFournisseur)} ${esc(o.marque)}<div style="font-size:11px">${oe}</div></td>
+    <td class="r">${eur(o.coutTotal)}<div class="mute" style="font-size:11px">${eur(o.prixHT)} × ${num(o.qte)} + port ${eur(o.fraisPort)}</div></td>
+    <td>${dfr(o.dateLivraison) || '?'}${o.delaiJours != null ? ` <span class="mute">(${o.delaiJours} j)</span>` : ''}</td>
+    <td><button class="btn sm" ${bloque ? 'disabled title="Réf. constructeur manquante ou différente"' : ''} onclick="closeModal();act('proposerCommande',{offreIds:['${o.id}']},'Commande proposée — à valider dans Commandes pièces')">Choisir</button></td></tr>`;
+}
+function voirOffres(id) {
+  const b = besoin(id); if (!b) return;
+  const v = veh(b.vehiculeId) || {}, c = b.certitude;
+  const offs = db().offres.filter(o => o.besoinId === id).sort((x, y) => (x.dateLivraison || '9').localeCompare(y.dateLivraison || '9') || x.coutTotal - y.coutTotal);
+  const script = `Bonjour, ici ${S().societe} à Kourou. Avez-vous la pièce réf. constructeur ${b.refOrigine || '(à préciser)'} — ${b.designation} ×${b.qte} — pour ${v.marque || ''} ${v.modele || ''}, VIN ${v.vin || '?'} ? Quel prix HT et quel délai de livraison à Kourou ?`;
+  modal(`${esc(b.designation)} — OR ${esc(b.numeroOR)} ${esc(b.immat)}`, `
+    <div class="fg" id="oeBox"><label class="full">Référence constructeur (OE) exacte — c'est elle qui fait foi pour commander
+      <input name="refOrigine" value="${esc(b.refOrigine)}" placeholder="ex. 410608481R"></label></div>
+    <div class="bar" style="margin-top:6px">
+      <button class="btn ghost sm" onclick="act('majBesoin',{besoinId:'${id}',refOrigine:vals($('#oeBox')).refOrigine,note:'Réf. OE saisie au poste'},'Réf. constructeur enregistrée').then(()=>voirOffres('${id}'))">Enregistrer la réf. OE</button>
+      ${c ? `<span class="tag ${c.valide ? 't-ok' : 't-warn'}" title="${esc((c.sources || []).join(' | '))}">Certitude agent : ${esc(c.score ?? '?')}${c.valide ? ' ✓' : ''}</span>` : ''}
+      ${b.note ? `<span class="mute">${esc(b.note)}</span>` : ''}</div>
+    <div class="mute" style="margin-top:6px">Véhicule : ${esc(vName(v))} · VIN ${esc(v.vin || 'non renseigné')}</div>
+    <h4 style="margin:14px 0 6px">Offres</h4>
+    ${offs.length ? `<table><tr><th>Fournisseur</th><th>Réf. / OE annoncée</th><th class="r">Coût total HT</th><th>Livré Kourou</th><th></th></tr>${offs.map(o => offreRow(o, b)).join('')}</table>` : '<div class="empty">Aucune offre pour l\'instant</div>'}
+    <div class="bar" style="margin-top:10px"><button class="btn ghost" onclick="saisirOffre('${id}')">+ Saisir une offre (appel, comptoir…)</button></div>
+    <details style="margin-top:12px"><summary>📞 Script d'appel et numéros des fournisseurs</summary>
+      <p style="background:#f9fafb;padding:8px;border-radius:6px">${esc(script)}</p>
+      ${fournisseurs().filter(f => f.tel).map(f => `<div><a href="tel:${esc(f.tel)}">📞 ${esc(f.nom)} — ${esc(f.tel)}</a></div>`).join('') || '<span class="mute">Ajoutez les téléphones dans Paramètres → Fournisseurs</span>'}</details>`);
+}
+function saisirOffre(id) {
+  const b = besoin(id);
+  modal('Saisir une offre fournisseur', `<datalist id="dl-four">${fournisseurs().map(f => `<option value="${esc(f.nom)}">`).join('')}</datalist><div class="fg">
+    <label class="full">Fournisseur *<input name="fournisseur" list="dl-four"></label>
+    ${F('refFournisseur', 'Réf. fournisseur')}${F('refOrigine', 'Réf. constructeur (OE) annoncée', b.refOrigine)}${F('marque', 'Marque de la pièce')}
+    ${F('prixHT', 'Prix unitaire HT *', '', 'number')}${F('fraisPort', 'Frais de port / transitaire HT', '', 'number')}${F('delaiJours', 'Délai (jours)', '', 'number')}
+    ${F('dateLivraison', 'ou date de livraison à Kourou', '', 'date')}${F('notes', 'Notes (interlocuteur, conditions…)', '', 'text', [], 'full')}</div>`,
+    async m => { await Store.action('ajouterOffre', {...vals(m), besoinId:id, canal:'saisie', source:'Saisie ' + poste()}); toast('Offre enregistrée'); setTimeout(() => voirOffres(id)); }, "Enregistrer l'offre");
+}
+
+// Onglet Commandes pièces
+function vCommandes() {
+  const d = db(), t = today();
+  const aTrouver = d.besoins.filter(b => Pieces.A_TROUVER.includes(b.statut) && !(b.commandeId && d.commandes.some(c => c.id === b.commandeId && c.statut === 'proposee')));
+  const prop = d.commandes.filter(c => c.statut === 'proposee'), enCours = d.commandes.filter(c => c.statut === 'validee');
+  const retards = enCours.filter(c => c.dateLivraisonPrevue && c.dateLivraisonPrevue < t);
+  const recues = d.commandes.filter(c => c.statut === 'recue').slice(-10).reverse();
+  const stats = Pieces.statsFournisseurs(d);
+  const lignesCmd = c => c.lignes.map(l => `${esc(l.designation)} ×${num(l.qte)} <span class="mute">(OE ${esc(l.refOrigine)} · ${esc(l.numeroOR)} ${esc(l.immat)})</span>`).join('<br>');
+  const red = n => n ? 'color:var(--bad)' : '';
+  return `<div class="grid g4" style="margin-bottom:16px">
+    <div class="kpi"><small>Pièces à trouver</small><b style="${red(aTrouver.length)}">${aTrouver.length}</b></div>
+    <div class="kpi"><small>Commandes à valider</small><b>${prop.length}</b></div>
+    <div class="kpi"><small>Commandes en cours</small><b>${enCours.length}</b></div>
+    <div class="kpi"><small>En retard</small><b style="${red(retards.length)}">${retards.length}</b></div></div>
+
+  <div class="card"><h3>🔎 Pièces à trouver</h3>${aTrouver.length ? `<table><tr><th>OR</th><th>Immat.</th><th>Pièce</th><th>Réf. OE</th><th class="r">Qté</th><th>Statut</th><th>RDV</th><th></th></tr>${aTrouver.map(b => `<tr>
+    <td><a href="#doc/${b.orId}">${esc(b.numeroOR)}</a></td><td>${esc(b.immat)}</td><td>${esc(b.designation)} <span class="mute">${esc(b.ref)}</span></td>
+    <td>${b.refOrigine ? esc(b.refOrigine) : '<span class="tag t-bad">?</span>'}</td><td class="r">${num(b.qte)}</td><td>${bTag(b)}</td><td>${rdvTag(d.rdvs.find(x => x.orId === b.orId))}</td>
+    <td style="white-space:nowrap"><button class="btn ghost sm" onclick="voirOffres('${b.id}')">Offres (${d.offres.filter(o => o.besoinId === b.id).length})</button>
+      ${b.statut !== 'recherche' ? `<button class="btn blue sm" title="Lancer Trouve-tout" onclick="act('lancerRecherche',{besoinIds:['${b.id}']},'Envoyé à l\\'agent Trouve-tout')">🔎</button>` : ''}</td></tr>`).join('')}</table>`
+    : '<div class="empty">Rien à chercher : toutes les pièces sont réservées ou commandées 👍</div>'}</div>
+
+  <div class="card"><h3>✋ Commandes proposées — validation humaine</h3>${prop.length ? `<table><tr><th>Fournisseur</th><th>Lignes</th><th class="r">Total HT</th><th>Livraison prévue</th><th>Proposée par</th><th></th></tr>${prop.map(c => `<tr>
+    <td><b>${esc(c.fournisseur)}</b></td><td>${lignesCmd(c)}</td><td class="r">${eur(c.totalHT)}<div class="mute">+ port ${eur(c.fraisPort)}</div></td>
+    <td>${dfr(c.dateLivraisonPrevue) || '?'}</td><td class="mute">${esc(c.proposeePar)}</td>
+    <td style="white-space:nowrap"><button class="btn green sm" onclick="validerCommandeUI('${c.id}')">✔ Valider</button>
+      <button class="btn ghost sm" onclick="act('annulerCommande',{commandeId:'${c.id}',motif:'refusée au poste'},'Proposition annulée')">✕</button></td></tr>`).join('')}</table>`
+    : '<div class="empty">Aucune commande à valider</div>'}</div>
+
+  <div class="card"><h3>🚚 Commandes en cours</h3>${enCours.length ? `<table><tr><th>N°</th><th>Fournisseur</th><th>Lignes</th><th>Commandée le</th><th>Livraison prévue</th><th></th></tr>${enCours.map(c => `<tr>
+    <td><b>${esc(c.numero)}</b><div class="mute">${esc(c.numeroFournisseur)}</div></td><td>${esc(c.fournisseur)}</td><td>${lignesCmd(c)}</td>
+    <td>${dfr(c.dateCommande)}<div class="mute">par ${esc(c.valideePar)}</div></td>
+    <td>${c.dateLivraisonPrevue && c.dateLivraisonPrevue < t ? `<span class="tag t-bad">Retard : ${dfr(c.dateLivraisonPrevue)}</span>` : dfr(c.dateLivraisonPrevue)}</td>
+    <td style="white-space:nowrap"><button class="btn green sm" onclick="receptionCommande('${c.id}')">📥 Réceptionner</button>
+      <button class="btn ghost sm" onclick="annulerCommandeUI('${c.id}')">✕</button></td></tr>`).join('')}</table>`
+    : '<div class="empty">Aucune commande en cours</div>'}</div>
+
+  <div class="grid g2">
+    <div class="card"><h3>📦 Dernières réceptions</h3>${recues.length ? `<table>${recues.map(c => `<tr><td>${esc(c.numero)}</td><td>${esc(c.fournisseur)}</td><td>${dfr(c.recueLe)}</td>
+      <td>${c.dateLivraisonPrevue && c.recueLe > c.dateLivraisonPrevue ? '<span class="tag t-bad">en retard</span>' : '<span class="tag t-ok">à l\'heure</span>'}</td></tr>`).join('')}</table>` : '<div class="empty">Aucune réception</div>'}</div>
+    <div class="card"><h3>⏱ Délais réels des fournisseurs</h3>${stats.length ? `<table><tr><th>Fournisseur</th><th class="r">Reçues</th><th class="r">Délai moyen</th><th class="r">Retards</th></tr>${stats.map(x => `<tr>
+      <td>${esc(x.nom)}</td><td class="r">${x.recues}</td><td class="r">${num(x.delaiMoyen)} j</td><td class="r">${x.retards}</td></tr>`).join('')}</table>` : '<div class="empty">Se remplit à chaque réception</div>'}</div></div>
+
+  <div class="card"><h3>🧾 Journal (agent IA et postes)</h3>${d.journal.length ? `<table>${d.journal.slice(-40).reverse().map(j => `<tr>
+    <td class="mute" style="white-space:nowrap">${dfr(j.date.slice(0, 10))} ${j.date.slice(11, 16)}</td><td>${j.source === 'api' ? '🤖' : '🖥'} ${esc(j.par)}</td><td>${esc(j.action)}</td><td>${esc(j.details)}</td></tr>`).join('')}</table>`
+    : '<div class="empty">Vide</div>'}</div>`;
+}
+function validerCommandeUI(id) {
+  const c = db().commandes.find(x => x.id === id);
+  modal('Valider la commande — ' + esc(c.fournisseur), `<p>${c.lignes.map(l => `${esc(l.designation)} ×${num(l.qte)} — <b>OE ${esc(l.refOrigine)}</b> — ${eur(l.prixHT)} HT`).join('<br>')}</p>
+    <p>Total : <b>${eur(c.totalHT)} HT</b> + port ${eur(c.fraisPort)} · livraison prévue <b>${dfr(c.dateLivraisonPrevue) || '?'}</b></p>
+    <div class="fg">${F('numeroFournisseur', 'N° de commande chez le fournisseur (si déjà passée)', '', 'text', [], 'full')}</div>`,
+    async m => { await Store.action('validerCommande', {commandeId:id, ...vals(m)}); toast('Commande validée ✔ — les OR concernés affichent la date de livraison'); render(); }, '✔ Valider la commande');
+}
+function annulerCommandeUI(id) {
+  modal('Annuler la commande', F('motif', "Motif de l'annulation", '', 'text', [], 'full'),
+    async m => { await Store.action('annulerCommande', {commandeId:id, ...vals(m)}); toast('Commande annulée'); render(); }, 'Annuler la commande');
+}
+function receptionCommande(id) {
+  const c = db().commandes.find(x => x.id === id);
+  modal('Réception ' + esc(c.numero) + ' — ' + esc(c.fournisseur), `<p>${c.lignes.map(l => `${esc(l.designation)} ×${num(l.qte)} <span class="mute">OE ${esc(l.refOrigine)} → OR ${esc(l.numeroOR)} ${esc(l.immat)}</span>`).join('<br>')}</p>
+    <div class="alert">Vérifiez que la <b>référence constructeur</b> inscrite sur chaque boîte correspond avant de valider.</div>
+    <div class="fg">${F('bl', 'N° bon de livraison')}${F('date', 'Date de réception', today(), 'date')}</div>`,
+    async m => { await Store.action('receptionnerCommande', {commandeId:id, ...vals(m)}); toast('Reçu ✔ — pièces réservées pour leurs OR'); render(); }, 'Entrer en stock');
+}
+
+// Accueil : pièces bloquantes
+function cartePiecesAccueil() {
+  const d = db(), t = today(), n = d.besoins.filter(b => Pieces.A_TROUVER.includes(b.statut)).length;
+  const prop = d.commandes.filter(c => c.statut === 'proposee').length, late = d.commandes.filter(c => c.statut === 'validee' && c.dateLivraisonPrevue && c.dateLivraisonPrevue < t);
+  return `<div class="card"><h3>🛒 Pièces & commandes</h3>${n || prop || late.length ? `<table>
+    ${n ? `<tr class="click" onclick="go('commandes')"><td>Pièces à trouver</td><td class="r"><span class="tag t-bad">${n}</span></td></tr>` : ''}
+    ${prop ? `<tr class="click" onclick="go('commandes')"><td>Commandes à valider</td><td class="r"><span class="tag t-warn">${prop}</span></td></tr>` : ''}
+    ${late.map(c => `<tr class="click" onclick="go('commandes')"><td>Retard ${esc(c.fournisseur)} (${esc(c.numero)})</td><td class="r"><span class="tag t-bad">prévu ${dfr(c.dateLivraisonPrevue)}</span></td></tr>`).join('')}</table>`
+    : '<div class="empty">Aucune pièce bloquante</div>'}</div>`;
+}
+
+/* =====================================================================
+   DÉMARRAGE
+   ===================================================================== */
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+Store.init().then(render);
+</script>
+</body>
+</html>

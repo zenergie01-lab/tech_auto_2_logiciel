@@ -1,0 +1,3 @@
+code_client;type;nom;prenom;telephone;email;adresse;code_postal;ville;siret;notes
+C0001;Particulier;BRUNET;Lucie;0694123456;lucie@exemple.fr;12 rue des Palmiers;97310;Kourou;;Préfère être appelée le matin
+C0002;Professionnel;TRANSPORTS KOUROU;;0594321000;contact@tk.gf;"ZI Pariacabo; Lot 4";97310;Kourou;12345678900012;Flotte 6 véhicules
