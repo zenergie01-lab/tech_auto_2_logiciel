@@ -1,0 +1,491 @@
+{
+  "name": "TECH'AUTO — Liaison DMS (RDV, planning, SMS)",
+  "nodes": [
+    {
+      "id": "ta-13",
+      "name": "Notice",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -120
+      ],
+      "parameters": {
+        "width": 380,
+        "height": 820,
+        "content": "## TECH'AUTO — Liaison DMS\n**1. Identifiants** (Credentials → Header Auth)\n- *TECH'AUTO DMS – clé API* : nom `X-API-Key`, valeur = `apiKey` de `data/config.json` sur le PC serveur\n- *Brevo – clé API* : nom `api-key`, valeur = clé API Brevo (SMS)\n\n**2. Adresse du DMS** : remplacer `IP-TAILSCALE-DU-PC` dans les 3 nœuds HTTP vers le DMS (ligne « Pour n8n (VPN) » de demarrer.bat)\n\n**3. Numéros internes** : nœud *Choisir le SMS*\n\n**4. Activer** le workflow, puis coller les URL de production :\n- `…/webhook/rdv-techauto` → `SHEET_URL` (appli RDV) et `ENDPOINT` (site vitrine)\n- `…/webhook/planning-techauto` → `PLANNING_URL` (appli RDV)\n- `…/webhook/dms-evenements` → DMS › Paramètres › Webhook n8n"
+      }
+    },
+    {
+      "id": "ta-14",
+      "name": "A",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -160
+      ],
+      "parameters": {
+        "width": 1260,
+        "height": 300,
+        "color": 5,
+        "content": "### A · RDV en ligne et « Être rappelé » → DMS (+ Trouve-tout si pièces manquantes)"
+      }
+    },
+    {
+      "id": "ta-15",
+      "name": "B",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        180
+      ],
+      "parameters": {
+        "width": 640,
+        "height": 260,
+        "color": 4,
+        "content": "### B · Créneaux libres pour l'appli RDV (aucune donnée client)"
+      }
+    },
+    {
+      "id": "ta-16",
+      "name": "C",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        460
+      ],
+      "parameters": {
+        "width": 640,
+        "height": 260,
+        "color": 6,
+        "content": "### C · Événements du DMS → SMS (véhicule prêt, travaux signalés, rappel)"
+      }
+    },
+    {
+      "id": "ta-01",
+      "name": "Demande RDV / rappel",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rdv-techauto",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "techauto-rdv",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ta-02",
+      "name": "Lire la demande",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// L'appli RDV envoie du texte (text/plain) pour éviter la pré-vérification CORS : on relit le JSON.\nlet b = $input.first().json.body;\nif (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }\nif (b && typeof b === 'object' && !b.action && Object.keys(b).length === 1) {   // texte rangé comme une clé\n  try { b = JSON.parse(Object.keys(b)[0]); } catch (e) {}\n}\nb = b || {};\nconst rappel = b.action === 'rappel';\nreturn [{ json: {\n  action: rappel ? 'rappel' : 'demande',\n  corps: rappel ? { action: 'rappel', rappel: b.rappel || b } : { action: 'demande', rdv: b.rdv || b }\n} }];"
+      }
+    },
+    {
+      "id": "ta-03",
+      "name": "Envoyer au DMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://IP-TAILSCALE-DU-PC:8080/api/ext/rdv",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.corps) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "TECH'AUTO DMS – clé API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ta-04",
+      "name": "Pièces manquantes ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.statusCode === 200 && $('Lire la demande').first().json.action === 'demande' && !$json.body.deja && $json.body.complet === false && ($json.body.manquants || []).length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ta-05",
+      "name": "Lancer Trouve-tout",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://IP-TAILSCALE-DU-PC:8080/api/ext/action",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: 'lancerRecherche', args: { orId: $json.body.orId }, par: 'Appli RDV (n8n)' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "TECH'AUTO DMS – clé API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ta-06",
+      "name": "Répondre à la page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify((() => {\n  const r = $('Envoyer au DMS').first().json;\n  if (r.statusCode !== 200) return { ok: false, erreur: (r.body && r.body.error) || \"L'atelier est injoignable\" };\n  const b = r.body || {};\n  return { ok: true, numero: b.numero || '', complet: b.complet, datePossible: b.date || null };\n})()) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://techauto-one.vercel.app"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "ta-07",
+      "name": "Planning public",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "planning-techauto",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "techauto-planning",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ta-08",
+      "name": "Lire le planning du DMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=http://IP-TAILSCALE-DU-PC:8080/api/ext/planning?du={{ $json.query.du || $now.toFormat('yyyy-MM-dd') }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "TECH'AUTO DMS – clé API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ta-09",
+      "name": "Répondre au site",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.statusCode === 200 ? $json.body : { mecanos: [], occupation: [], erreur: \"Planning de l'atelier injoignable\" }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://techauto-one.vercel.app"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "ta-10",
+      "name": "Événements du DMS",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        560
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dms-evenements",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "techauto-evenements",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "TECH'AUTO DMS – clé API"
+        }
+      }
+    },
+    {
+      "id": "ta-11",
+      "name": "Choisir le SMS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        560
+      ],
+      "parameters": {
+        "jsCode": "// 🔧 RÉGLAGES — numéros qui reçoivent les alertes internes (laisser vide pour ne rien envoyer)\nconst NUMERO_CHEF = '';      // chef d'atelier : travaux signalés par un mécano\nconst NUMERO_ACCUEIL = '';   // accueil : demandes « Être rappelé » du site\nconst EXPEDITEUR = 'TECHAUTO'; // nom affiché sur le téléphone (11 caractères max, lettres et chiffres)\n\n// 0694 12 34 56 → 594694123456 (format international attendu par Brevo, sans le +)\nconst PREFIXES = { '594': ['0594', '0694'], '590': ['0590', '0690', '0691'], '596': ['0596', '0696', '0697'], '262': ['0262', '0692', '0693', '0269', '0639'] };\nfunction international(tel) {\n  let d = String(tel || '').replace(/\\D/g, '');\n  if (d.startsWith('00')) d = d.slice(2);\n  if (d.length === 10 && d.startsWith('0')) {\n    const pays = Object.keys(PREFIXES).find(p => PREFIXES[p].some(x => d.startsWith(x))) || '33';\n    d = pays + d.slice(1);\n  }\n  return d.length >= 11 ? d : '';\n}\n\nconst ev = $input.first().json.body || {}, d = ev.data || {}, sms = [];\nif (ev.type === 'or.termine' && d.sms && d.sms.texte)\n  sms.push({ tel: d.sms.tel, texte: d.sms.texte, tag: 'vehicule-pret' });\nif (ev.type === 'or.signalement' && d.signalement)\n  sms.push({ tel: NUMERO_CHEF, tag: 'atelier', texte: `${d.signalement.urgent ? '🚨 URGENT ' : ''}${d.signalement.par} sur ${(d.vehicule || {}).immat || d.numero} : ${d.signalement.texte}. Devis à faire (DMS > Planning).` });\nif (ev.type === 'rappel.demande')\n  sms.push({ tel: NUMERO_ACCUEIL, tag: 'rappel', texte: `📞 Site web : rappeler ${d.nom || '?'} au ${d.tel}${d.prestation ? ' (' + d.prestation + ')' : ''}${d.message ? ' - ' + d.message : ''}` });\n\n// Les autres événements (rdv.maj, commande.*, trouve_tout.demande…) seront traités par les prochains workflows.\nreturn sms.map(s => ({ json: { recipient: international(s.tel), content: s.texte.slice(0, 600), sender: EXPEDITEUR, tag: s.tag, evenement: ev.type, ref: d.numero || '' } }))\n  .filter(x => x.json.recipient);"
+      }
+    },
+    {
+      "id": "ta-12",
+      "name": "Envoyer le SMS (Brevo)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        560
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brevo.com/v3/transactionalSMS/sms",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'transactional', sender: $json.sender, recipient: $json.recipient, content: $json.content, tag: $json.tag }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Brevo – clé API"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Demande RDV / rappel": {
+      "main": [
+        [
+          {
+            "node": "Lire la demande",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lire la demande": {
+      "main": [
+        [
+          {
+            "node": "Envoyer au DMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer au DMS": {
+      "main": [
+        [
+          {
+            "node": "Pièces manquantes ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pièces manquantes ?": {
+      "main": [
+        [
+          {
+            "node": "Lancer Trouve-tout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre à la page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lancer Trouve-tout": {
+      "main": [
+        [
+          {
+            "node": "Répondre à la page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planning public": {
+      "main": [
+        [
+          {
+            "node": "Lire le planning du DMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lire le planning du DMS": {
+      "main": [
+        [
+          {
+            "node": "Répondre au site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Événements du DMS": {
+      "main": [
+        [
+          {
+            "node": "Choisir le SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choisir le SMS": {
+      "main": [
+        [
+          {
+            "node": "Envoyer le SMS (Brevo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "pinData": {}
+}

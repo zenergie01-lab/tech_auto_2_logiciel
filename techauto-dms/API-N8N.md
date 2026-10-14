@@ -90,3 +90,20 @@ Le workflow des demandes fait ensuite trois choses :
 3. Si `complet` est faux, il enchaîne sur `lancerRecherche` pour les pièces manquantes.
 
 Les réf. pièces des prestations de l'appli (`HUILE-5W30`, `FH-UNIV`…) doivent exister dans le stock du DMS avec leur **réf. constructeur**. Sinon, la ligne passe « à commander » avec le libellé reçu.
+
+## 7. Workflow prêt à importer : `n8n/techauto-liaison-dms.json`
+
+Un seul workflow, trois entrées (n8n → Workflows → Import from file) :
+
+| Entrée | URL de production | Rôle |
+|---|---|---|
+| A · `POST /webhook/rdv-techauto` | à coller dans `SHEET_URL` (appli RDV) et `ENDPOINT` (site vitrine) | transmet RDV et « Être rappelé » au DMS ; lance Trouve-tout si des pièces manquent ; répond `{ok}` à la page |
+| B · `GET /webhook/planning-techauto` | à coller dans `PLANNING_URL` (appli RDV) | renvoie les vrais créneaux pris (aucune donnée client) |
+| C · `POST /webhook/dms-evenements` | à coller dans DMS › Paramètres › Webhook n8n | `or.termine` → SMS « véhicule prêt » au client ; `or.signalement` → SMS au chef ; `rappel.demande` → SMS à l'accueil |
+
+Avant d'activer :
+1. **Identifiants** (Header Auth) : *TECH'AUTO DMS – clé API* (`X-API-Key` = `apiKey` de `data/config.json`, sert aussi à vérifier les appels du DMS sur l'entrée C) et *Brevo – clé API* (`api-key`).
+2. Remplacer `IP-TAILSCALE-DU-PC` dans les 3 nœuds HTTP vers le DMS.
+3. Renseigner les numéros du chef d'atelier et de l'accueil dans le nœud *Choisir le SMS* (vides = pas d'alerte).
+
+Les numéros sont convertis au format international (0694… → 594694…, DOM et métropole). Autre fournisseur SMS que Brevo : seul le nœud *Envoyer le SMS* change. Pour régénérer le fichier après modification : `node n8n/generer-workflow.js`.
