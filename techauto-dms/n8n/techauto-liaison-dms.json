@@ -106,7 +106,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://IP-TAILSCALE-DU-PC:8080/api/ext/rdv",
+        "url": "http://100.88.105.84:8080/api/ext/rdv",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -174,7 +174,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "http://IP-TAILSCALE-DU-PC:8080/api/ext/action",
+        "url": "http://100.88.105.84:8080/api/ext/action",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -254,7 +254,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "=http://IP-TAILSCALE-DU-PC:8080/api/ext/planning?du={{ $json.query.du || $now.toFormat('yyyy-MM-dd') }}",
+        "url": "=http://100.88.105.84:8080/api/ext/planning?du={{ $json.query.du || $now.toFormat('yyyy-MM-dd') }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {

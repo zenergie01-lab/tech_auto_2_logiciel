@@ -2,7 +2,7 @@
 // Écrit en JS plutôt qu'en JSON pour garder le code des nœuds lisible.
 const fs = require('fs'), path = require('path');
 
-const DMS = 'http://IP-TAILSCALE-DU-PC:8080';          // ← adresse « Pour n8n (VPN) » affichée par demarrer.bat
+const DMS = 'http://100.88.105.84:8080';           // ← adresse « Pour n8n (VPN) » affichée par demarrer.bat (PC de démo actuel)
 const ORIGINE = 'https://techauto-one.vercel.app';      // site qui a le droit de lire les réponses (CORS)
 const CRED_DMS = { httpHeaderAuth: { name: "TECH'AUTO DMS – clé API" } };
 const CRED_BREVO = { httpHeaderAuth: { name: 'Brevo – clé API' } };
