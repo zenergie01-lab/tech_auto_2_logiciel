@@ -72,7 +72,8 @@ Format : `{id, type, date, source:'poste'|'api', par, data}`. Une boîte d'envoi
 | `or.pieces_ok` | toutes les pièces de l'OR sont réservées | **confirmer le RDV** au client |
 | `rdv.maj` | RDV modifié dans le DMS | répercuter dans l'appli RDV, SMS au client |
 | `or.demarre` | le mécano démarre l'intervention (appli mécano) | facultatif : SMS « votre véhicule est pris en charge » |
-| `or.termine` | le mécano appuie sur **Terminé** | **envoyer le SMS** : `data.sms.tel` et `data.sms.texte` (texte réglable dans Paramètres), `data.montantTTC`, `data.factureId` (brouillon au comptoir) |
+| `or.termine` | le mécano appuie sur **Terminé** (devis mis à jour envoyé au bureau) | si `data.sms` n'est pas vide : **envoyer le SMS** (`data.sms.tel`, `data.sms.texte`). `data.sms` est vide quand le mécano a ajouté des lignes à chiffrer |
+| `facture.confirmee` | la secrétaire confirme le devis mis à jour en facture | **envoyer le SMS** retenu, au montant définitif (`data.montantTTC`, `data.facture`) |
 | `or.signalement` | le mécano signale un travail supplémentaire | prévenir le chef d'atelier ; `data.signalement.texte`, `urgent` |
 | `rappel.demande` | formulaire « Être rappelé » du site | prévenir l'accueil (WhatsApp) |
 

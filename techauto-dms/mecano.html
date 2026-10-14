@@ -74,6 +74,18 @@ input:focus,textarea:focus{outline:none;border-color:var(--acc)}
 .fini .big{font-size:64px;line-height:1}
 .alert{background:var(--warn2);color:#92400e;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
 .empty{color:var(--mute);text-align:center;padding:18px}
+/* Dictée vocale */
+.dicte{position:relative}
+.dicte textarea,.dicte input{padding-right:58px}
+.mic{position:absolute;right:6px;top:6px;width:44px;height:44px;border-radius:50%;border:0;background:var(--acc2);font-size:22px;cursor:pointer}
+.mic.on{background:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px #dc262633}}
+.new{display:inline-block;background:var(--blue2);color:#1e40af;border-radius:6px;font-size:12px;font-weight:700;padding:0 6px;margin-left:4px}
+.x{border:0;background:none;color:var(--bad);font-size:20px;padding:4px 8px;cursor:pointer}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.types button,.quick button{padding:12px 6px;border-radius:10px;border:2px solid var(--line);background:#fff;font:inherit;font-weight:600}
+.types button.on,.quick button.on{border-color:var(--acc);background:var(--acc2);color:#9a3412}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.quick button{padding:8px 12px}
 </style>
 </head>
 <body>
@@ -125,7 +137,7 @@ setInterval(async () => {
   if (!E.token || !E.data || document.hidden) return;
   try {
     const v = await (await fetch('/api/version', {cache:'no-store'})).json(); setSync(true);
-    const saisie = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) || $('.sheet');
+    const saisie = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) || $('.sheet') || dictee;
     if (v.version !== E.data.version && !saisie && !E.occupe) await charger();
   } catch (e) { setSync(false); }
 }, 6000);
@@ -244,7 +256,7 @@ function vueOR(o) {
       <span class="label">Kilométrage au compteur</span><input type="number" inputmode="numeric" value="${esc(p.km)}" oninput="E.pec.km=this.value">
       <span class="label">Carburant</span><div class="fuel">${CARBU.map(c => `<button class="${p.carburant === c ? 'on' : ''}" onclick="E.pec.carburant='${c}';render()">${c}</button>`).join('')}</div>
       <span class="label">Contrôles à l'arrivée</span><div class="checks">${RECEP.map((c, i) => `<label><input type="checkbox" ${p.checks.includes(c) ? 'checked' : ''} onchange="cocherPec(${i},this.checked)">${c}</label>`).join('')}</div>
-      <span class="label">Remarques sur l'état</span><textarea placeholder="Rayure porte AR droite, jante AV gauche frottée…" oninput="E.pec.remarques=this.value">${esc(p.remarques)}</textarea>
+      <span class="label">Remarques sur l'état</span>${champ('pecR', `<textarea id="pecR" placeholder="Rayure porte AR droite, jante AV gauche frottée…" oninput="E.pec.remarques=this.value">${esc(p.remarques)}</textarea>`)}
       ${photosHTML(o, 'etat')}</div>`;
     $('#bottom').innerHTML = `<div class="bar-bottom"><div><button class="btn acc huge" onclick="demarrer('${o.id}')">▶ Démarrer l'intervention</button></div></div>`;
   } else if (o.statut === 'en_cours') {                          // 2. Intervention
@@ -252,19 +264,44 @@ function vueOR(o) {
     h += `<h2>Opérations · ${fait}/${o.lignes.length}</h2><div class="card ops">${o.lignes.map(l => `
       <label class="${l.fait ? 'done' : ''}"><input type="checkbox" ${l.fait ? 'checked' : ''} onchange="cocher('${o.id}','${l.lid}',this.checked)">
         <span class="grow">${l.type === 'PIECE' ? '📦' : l.type === 'MO' ? '🔧' : '🧾'} ${esc(l.designation)}${+l.qte !== 1 ? ` <span class="mute">×${esc(l.qte)}</span>` : ''}</span>
-        ${l.fait && l.faitPar && l.faitPar !== E.moi.nom ? `<span class="mute small">${esc(l.faitPar)}</span>` : ''}</label>`).join('') || '<div class="empty">Aucune ligne sur l\'OR : prévenez le secrétariat.</div>'}</div>
+        ${l.ajout ? `<span class="new">ajouté</span><button class="x" title="Retirer" onclick="event.preventDefault();retirerLigne('${o.id}','${l.lid}')">✕</button>` : ''}
+        ${l.fait && l.faitPar && l.faitPar !== E.moi.nom && !l.ajout ? `<span class="mute small">${esc(l.faitPar)}</span>` : ''}</label>`).join('') || '<div class="empty">Aucune ligne sur l\'OR : prévenez le secrétariat.</div>'}
+        <button class="btn ghost" style="margin-top:10px" onclick="ajouterLigne('${o.id}')">➕ Ajouter une pièce ou une opération</button>
+        <p class="mute small" style="margin:6px 0 0">Ce que vous ajoutez part au bureau avec votre validation : la secrétaire met le prix et confirme la facture.</p></div>
       <h2>Photos de l'intervention</h2><div class="card">${photosHTML(o, '')}</div>
-      <h2>Compte rendu</h2><div class="card"><textarea id="cr" placeholder="Ce qui a été fait, ce qui a été constaté, conseils pour le client…" onchange="sauverCR('${o.id}',this.value)">${esc(o.compteRendu)}</textarea>
+      <h2>Compte rendu</h2><div class="card">${champ('cr', `<textarea id="cr" placeholder="Ce qui a été fait, ce qui a été constaté, conseils pour le client…" onchange="sauverCR('${o.id}',this.value)">${esc(o.compteRendu)}</textarea>`)}
         <p class="mute small" style="margin:6px 0 0">Lu par le secrétariat avant l'encaissement.</p></div>
       <h2>Un autre problème ?</h2><div class="card">${o.signalements.map(s => `<div class="pc"><span>⚠ ${esc(s.texte)}</span><span class="chip ${s.statut === 'a_chiffrer' ? 'c-bad' : 'c-ok'}">${s.statut === 'a_chiffrer' ? 'Envoyé au secrétariat' : s.statut === 'devis' ? 'Devis en cours' : 'Traité'}</span></div>`).join('')}
         <button class="btn bad" style="margin-top:8px" onclick="signaler('${o.id}')">⚠ Signaler un travail supplémentaire</button></div>`;
     $('#bottom').innerHTML = `<div class="bar-bottom"><div><button class="btn ok huge" onclick="terminer('${o.id}')">✅ Terminé — véhicule prêt</button></div></div>`;
   } else {                                                      // 3. Terminé
     h += `<div class="card fini"><div class="big">✅</div><h3>Terminé à ${hDe(o.fin)}${o.terminePar ? ' par ' + esc(o.terminePar) : ''}</h3>
-      <p>Le secrétariat est prévenu, la facture est prête au comptoir et le client reçoit son SMS.</p></div>
+      <p>Le devis mis à jour est au bureau${o.validationAtelier?.ajouts ? ` avec vos ${o.validationAtelier.ajouts} ajout(s)` : ''} : la secrétaire le confirme en facture.<br>${o.smsEnAttente ? 'Le client recevra son SMS dès la confirmation du prix.' : 'Le client a reçu son SMS « véhicule prêt ».'}</p></div>
       ${o.photos.length ? `<div class="card">${photosHTML(o, '')}</div>` : ''}`;
   }
   $('#app').innerHTML = h;
+}
+
+/* ---------- Dictée vocale (Chrome / Edge / Safari) ----------
+   Le navigateur n'autorise le micro que sur une adresse sûre (https ou localhost).
+   Sur l'adresse du Wi-Fi (http://192.168…), on explique comment faire. */
+const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+let dictee = null;
+const champ = (id, html) => `<div class="dicte">${html}<button type="button" class="mic" title="Dicter" onclick="dicter('${id}',this)">🎤</button></div>`;
+function dicter(id, btn) {
+  if (dictee) { dictee.stop(); return; }
+  if (!Reco || !window.isSecureContext) return feuille(`<h3>🎤 Dicter une remarque</h3>
+    <p><b>Le plus simple :</b> touchez le champ, puis le <b>micro du clavier</b> du téléphone (Gboard, Samsung, iPhone). Ça marche partout.</p>
+    <p class="mute small">Pour activer le bouton 🎤 de l'appli sur cette tablette (Chrome Android, une seule fois) : ouvrez <b>chrome://flags</b>, cherchez « Insecure origins treated as secure », ajoutez <b>${esc(location.origin)}</b>, choisissez <i>Enabled</i> puis <i>Relancer</i>.</p>
+    <button class="btn" onclick="fermer()">Compris</button>`);
+  const el = document.getElementById(id); if (!el) return;
+  const base = el.value ? el.value.replace(/\s*$/, ' ') : '';
+  const r = new Reco(); r.lang = 'fr-FR'; r.interimResults = true; r.continuous = true;
+  r.onresult = e => { let t = ''; for (const x of e.results) t += x[0].transcript; el.value = base + t.trim(); el.dispatchEvent(new Event('input')); };
+  r.onerror = e => toast(e.error === 'not-allowed' ? '⚠ Micro refusé : autorisez-le dans le navigateur' : e.error === 'network' ? '⚠ La dictée a besoin d\'Internet' : '⚠ Dictée interrompue');
+  r.onend = () => { dictee = null; btn.classList.remove('on'); el.dispatchEvent(new Event('change')); };
+  dictee = r; btn.classList.add('on'); toast('Parlez… touchez 🎤 pour arrêter');
+  try { r.start(); } catch (e) { dictee = null; btn.classList.remove('on'); }
 }
 
 /* ---------- Gestes ---------- */
@@ -282,10 +319,32 @@ async function cocher(orId, lid, on) {
   const l = E.data.ors.find(x => x.id === orId).lignes.find(x => x.lid === lid); l.fait = on; render();
   try { await action('atelierMaj', {orId, faits:{[lid]:on}}); } catch (e) {}
 }
+function ajouterLigne(orId) {
+  E.aj = {orId, type:'PIECE', qte:1};
+  const corps = () => `<h3>➕ Ce que j'ai fait en plus</h3>
+    <div class="types">${[['PIECE', '📦 Pièce'], ['MO', '🔧 Main d\'œuvre'], ['FORF', '🧾 Autre']].map(([k, t]) => `<button class="${E.aj.type === k ? 'on' : ''}" onclick="E.aj.type='${k}';E.aj.qte=${k === 'MO' ? .5 : 1};majAjout()">${t}</button>`).join('')}</div>
+    <span class="label">${E.aj.type === 'MO' ? 'Opération réalisée' : E.aj.type === 'PIECE' ? 'Pièce posée' : 'Description'}</span>
+    ${champ('ajD', `<input type="text" id="ajD" value="${esc(E.aj.designation || '')}" oninput="E.aj.designation=this.value" placeholder="${E.aj.type === 'MO' ? 'Ex. : remplacement ampoule feu stop' : E.aj.type === 'PIECE' ? 'Ex. : ampoule P21W' : 'Ex. : produit de nettoyage injecteurs'}">`)}
+    ${E.aj.type === 'PIECE' ? `<span class="label">Référence (si connue)</span><input type="text" id="ajR" value="${esc(E.aj.ref || '')}" oninput="E.aj.ref=this.value" placeholder="Réf. sur la boîte">` : ''}
+    <span class="label">${E.aj.type === 'MO' ? 'Temps passé (heures)' : 'Quantité'}</span>
+    <input type="number" inputmode="decimal" step="any" id="ajQ" value="${E.aj.qte}" oninput="E.aj.qte=this.value">
+    ${E.aj.type === 'MO' ? `<div class="quick">${[.25, .5, 1, 1.5, 2].map(h => `<button class="${+E.aj.qte === h ? 'on' : ''}" onclick="E.aj.qte=${h};majAjout()">${String(h).replace('.', ',')} h</button>`).join('')}</div>` : ''}
+    <div class="row" style="margin-top:14px"><button class="btn ghost" onclick="fermer()">Annuler</button><button class="btn acc" onclick="validerAjout()">Ajouter</button></div>`;
+  window.majAjout = () => { const s = $('.sheet>div'); if (s) s.innerHTML = corps(); };
+  feuille(corps());
+}
+async function validerAjout() {
+  const a = E.aj;
+  if (!String(a.designation || '').trim() && !String(a.ref || '').trim()) return toast('Décrivez la pièce ou l\'opération');
+  if (!(+String(a.qte).replace(',', '.') > 0)) return toast('Indiquez une quantité');
+  fermer();
+  try { await action('ajouterLigneAtelier', {orId:a.orId, type:a.type, designation:a.designation, ref:a.ref, qte:a.qte}, 'Ajouté ✔ — le bureau mettra le prix'); } catch (e) {}
+}
+async function retirerLigne(orId, lid) { if (confirm('Retirer cette ligne ajoutée ?')) try { await action('retirerLigneAtelier', {orId, lid}, 'Ligne retirée'); } catch (e) {} }
 async function sauverCR(orId, txt) { try { await action('atelierMaj', {orId, compteRendu:txt}, 'Compte rendu enregistré'); } catch (e) {} }
 function signaler(orId) {
   feuille(`<h3>⚠ Travail supplémentaire</h3><p class="mute small">Le secrétariat le reçoit tout de suite et prépare un devis pour le client.</p>
-    <textarea id="sigT" placeholder="Ex. : plaquettes AR à 2 mm, disque AV rayé, fuite cardan gauche…"></textarea>
+    ${champ('sigT', '<textarea id="sigT" placeholder="Ex. : plaquettes AR à 2 mm, disque AV rayé, fuite cardan gauche…"></textarea>')}
     <label class="checks"><label><input type="checkbox" id="sigU"> Urgent / sécurité</label></label>
     <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="fermer()">Annuler</button><button class="btn acc" onclick="envoyerSignal('${orId}')">Envoyer</button></div>`);
   setTimeout(() => $('#sigT').focus(), 50);
@@ -299,13 +358,14 @@ function terminer(id) {
   feuille(`<h3>Véhicule prêt ?</h3>
     ${reste.length ? `<div class="alert">${reste.length} opération(s) non cochée(s) : ${reste.map(l => esc(l.designation)).join(', ')}</div>` : '<p>✓ Toutes les opérations sont cochées.</p>'}
     ${!o.photos.some(p => p.type !== 'etat') ? '<p class="mute">Pas de photo de l\'intervention (conseillé : pièce usée, travail fini).</p>' : ''}
-    <p>En validant :<br>• le planning du secrétariat passe en <b>« Prêt »</b><br>• la <b>facture</b> est préparée au comptoir<br>• le client reçoit le <b>SMS « véhicule prêt »</b></p>
+    ${o.lignes.some(l => l.ajout) ? `<div class="alert" style="background:var(--blue2);color:#1e40af">${o.lignes.filter(l => l.ajout).length} ajout(s) : ${o.lignes.filter(l => l.ajout).map(l => esc(l.designation)).join(', ')}</div>` : ''}
+    <p>En validant :<br>• le planning du bureau passe en <b>« Prêt »</b><br>• le <b>devis mis à jour</b> part au bureau : la secrétaire le <b>confirme en facture</b><br>• le client reçoit le <b>SMS « véhicule prêt »</b>${o.lignes.some(l => l.ajout) ? ' (après la confirmation du prix)' : ''}</p>
     <div class="row"><button class="btn ghost" onclick="fermer()">Pas encore</button><button class="btn ok" id="okFin" onclick="confirmerFin('${id}')">✅ Oui, terminé</button></div>`);
   E.crFin = cr;
 }
 async function confirmerFin(id) {
   $('#okFin').disabled = true;
-  try { await action('terminerOR', {orId:id, compteRendu:E.crFin}); fermer(); toast('Bravo ✔ Le secrétariat est prévenu'); window.scrollTo(0, 0); }
+  try { await action('terminerOR', {orId:id, compteRendu:E.crFin}); fermer(); toast('Bravo ✔ Le devis à jour est parti au bureau'); window.scrollTo(0, 0); }
   catch (e) { fermer(); }
 }
 // Photos : réduites sur la tablette (≈ 300 Ko) avant l'envoi

@@ -83,7 +83,8 @@ function international(tel) {
 }
 
 const ev = $input.first().json.body || {}, d = ev.data || {}, sms = [];
-if (ev.type === 'or.termine' && d.sms && d.sms.texte)
+// SMS « véhicule prêt » : au Terminé si rien n'est à chiffrer, sinon quand le bureau confirme la facture
+if (['or.termine', 'facture.confirmee'].includes(ev.type) && d.sms && d.sms.texte)
   sms.push({ tel: d.sms.tel, texte: d.sms.texte, tag: 'vehicule-pret' });
 if (ev.type === 'or.signalement' && d.signalement)
   sms.push({ tel: NUMERO_CHEF, tag: 'atelier', texte: \`\${d.signalement.urgent ? '🚨 URGENT ' : ''}\${d.signalement.par} sur \${(d.vehicule || {}).immat || d.numero} : \${d.signalement.texte}. Devis à faire (DMS > Planning).\` });

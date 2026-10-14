@@ -574,7 +574,7 @@ function docHTML() {
   </div>
   <div class="card"><h3>Lignes</h3>
     <table class="lines"><tr><th style="width:120px">Type</th><th style="width:130px">Référence</th><th>Désignation</th><th style="width:80px">Qté / h</th><th style="width:100px">PU HT</th><th style="width:70px">Remise %</th><th class="r" style="width:100px">Total HT</th><th></th></tr>
-    ${d.lignes.map((l, i) => `<tr>
+    ${d.lignes.map((l, i) => `<tr ${l.ajoutAtelier ? `style="background:var(--acc2)" title="Ajouté par ${esc(l.ajoutAtelier.par)} (atelier)"` : ''}>
       <td><select ${dis} onchange="setL(${i},'type',this.value)">${Object.entries(LTYP).map(([k, v]) => `<option value="${k}" ${k === l.type ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
       <td><input ${dis} value="${esc(l.ref)}" onchange="setL(${i},'ref',this.value)" title="${esc(l.refOrigine ? 'Réf. origine : ' + l.refOrigine : '')}"></td>
       <td><input ${dis} value="${esc(l.designation)}" onchange="setL(${i},'designation',this.value)"></td>
@@ -670,6 +670,7 @@ async function facturerOR(id) {
   if (!o.lignes.length) return alert("L'OR ne contient aucune ligne.");
   const exist = db().documents.find(x => x.type === 'FAC' && x.origineId === id);
   if (exist) return go('doc/' + exist.id);
+  if (o.validationAtelier && o.statut === 'termine') return confirmerFactureModal(id);   // devis mis à jour par l'atelier
   const f = newDoc('FAC', {client:o.clientId, veh:o.vehiculeId, act:o.activite});
   Object.assign(f, {lignes:JSON.parse(JSON.stringify(o.lignes)), km:o.km, technicien:o.technicien, notes:'', tva:o.tva, origineId:o.id});
   await Store.upsert('documents', f); toast('Facture préparée — vérifiez puis validez'); go('doc/' + f.id);
@@ -1198,6 +1199,8 @@ async function demoJournee() {
   const fini = ors[j0 + 'meca1' + '07:30'];
   await actionPar('demarrerOR', {orId:fini, priseEnCharge:pec(84250, '1/2')}, 'Mécano 1');
   await actionPar('atelierMaj', {orId:fini, faits:faitsTous(fini), compteRendu:'Vidange et filtre faits. Niveaux OK. Prochaine vidange à 99 000 km.'}, 'Mécano 1');
+  await actionPar('ajouterLigneAtelier', {orId:fini, type:'PIECE', designation:'Ampoule feu stop P21W (grillée)', qte:1}, 'Mécano 1');
+  await actionPar('ajouterLigneAtelier', {orId:fini, type:'MO', designation:'Remplacement ampoule feu stop', qte:.25}, 'Mécano 1');
   await actionPar('terminerOR', {orId:fini}, 'Mécano 1');
   const frein = ors[j0 + 'meca1' + '08:30'];
   await actionPar('demarrerOR', {orId:frein, priseEnCharge:{...pec(61540, '1/4'), remarques:'Rayure aile AV droite'}}, 'Mécano 1');
@@ -1487,11 +1490,12 @@ function aTraiterHTML() {
   const rap = (d.rappels || []).filter(x => x.statut === 'a_rappeler');
   const enLigne = d.rdvs.filter(r => r.statut === 'provisoire' && r.canal === 'en ligne' && (r.date || '') >= t);
   const carte = (titre, cls, rows) => rows.length ? `<div class="card todo ${cls}"><h3>${titre} <span class="tag">${rows.length}</span></h3><table>${rows.join('')}</table></div>` : '';
-  const h = carte('✅ Véhicules prêts — à encaisser', 'todo-ok', prets.map(o => {
-      const v = veh(o.vehiculeId), c = client(o.clientId), f = d.documents.find(x => x.type === 'FAC' && x.origineId === o.id), sms = o.smsFin;
-      return `<tr><td><b>${esc(v?.immat || '—')}</b> ${esc(v?.modele || '')}<br><span class="mute">${esc(cName(c))}${c?.tel ? ' · ' + esc(c.tel) : ''}</span></td>
-        <td class="mute">par ${esc(o.terminePar || o.technicien || '?')}<br>${sms ? (sms.via === 'n8n' ? '📱 SMS envoyé' : `<a style="cursor:pointer;color:var(--blue)" onclick="copierSms('${o.id}')">📱 SMS à envoyer</a>`) : ''}</td>
-        <td class="r">${f ? `<b>${eur(totals(f).ttc)}</b><br><button class="btn green sm" onclick="go('doc/${f.id}')">🧾 Encaisser</button>` : `<button class="btn green sm" onclick="facturerOR('${o.id}')">Facturer</button>`}</td></tr>`; }))
+  const h = carte('✅ Véhicules prêts — devis à confirmer en facture', 'todo-ok', prets.map(o => {
+      const v = veh(o.vehiculeId), c = client(o.clientId), f = d.documents.find(x => x.type === 'FAC' && x.origineId === o.id), sms = o.smsFin, va = o.validationAtelier;
+      return `<tr><td><b>${esc(v?.immat || '—')}</b> ${esc(v?.modele || '')}<br><span class="mute">${esc(cName(c))}${c?.tel ? ' · ' + esc(c.tel) : ''}</span>
+          ${va?.ajouts ? `<br><span class="tag t-blue">🔔 Devis mis à jour : ${va.ajouts} ajout(s)${va.aChiffrer ? `, ${va.aChiffrer} à chiffrer` : ''}</span>` : ''}</td>
+        <td class="mute">par ${esc(o.terminePar || o.technicien || '?')}<br>${sms?.enAttente ? '📱 SMS après confirmation' : sms ? (sms.via === 'n8n' ? '📱 SMS envoyé' : `<a style="cursor:pointer;color:var(--blue)" onclick="copierSms('${o.id}')">📱 SMS à envoyer</a>`) : ''}</td>
+        <td class="r">${f ? `<b>${eur(totals(f).ttc)}</b><br><button class="btn green sm" onclick="go('doc/${f.id}')">🧾 Encaisser</button>` : `<b>${eur(totals(o).ttc)}</b><br><button class="btn green sm" onclick="confirmerFactureModal('${o.id}')">🧾 Vérifier → facture</button>`}</td></tr>`; }))
     + carte("🔧 Travaux signalés par l'atelier — à chiffrer", 'todo-bad', sigs.map(({o, s}) => { const v = veh(o.vehiculeId);
       return `<tr><td><b>${esc(v?.immat || '—')}</b> ${s.urgent ? '<span class="tag t-bad">Urgent</span>' : ''}<br>${esc(s.texte)}<br><span class="mute">${esc(s.par)} · ${hfr(s.le)}</span></td>
         <td class="r"><button class="btn sm" onclick="devisSignalement('${o.id}','${s.id}')">📝 Devis</button><br><button class="btn ghost sm" style="margin-top:4px" onclick="act('traiterSignalement',{orId:'${o.id}',id:'${s.id}',statut:'refuse'},'Signalement classé')">Classer</button></td></tr>`; }))
@@ -1608,8 +1612,8 @@ function ficheRdv(id) {
       <label>Heure<select name="heure" id="mvH"></select></label></div>
     <button class="btn ghost" style="margin-top:8px" onclick="deplacerRdv('${r.id}')">Enregistrer le changement</button>` : ''}
     ${or ? atelierResumeHTML(or) : ''}
-    ${or?.statut === 'termine' ? `<div class="bar" style="margin-top:14px">${f ? `<button class="btn green" onclick="closeModal();go('doc/${f.id}')">🧾 Ouvrir la facture — ${eur(totals(f).ttc)}</button>` : `<button class="btn green" onclick="closeModal();facturerOR('${or.id}')">Facturer</button>`}
-      ${or.smsFin ? (or.smsFin.via === 'n8n' ? '<span class="mute">📱 SMS « véhicule prêt » envoyé</span>' : `<button class="btn ghost" onclick="copierSms('${or.id}')">📱 SMS « véhicule prêt »</button>`) : ''}</div>` : ''}`);
+    ${or?.statut === 'termine' ? `<div class="bar" style="margin-top:14px">${f ? `<button class="btn green" onclick="closeModal();go('doc/${f.id}')">🧾 Ouvrir la facture — ${eur(totals(f).ttc)}</button>` : `<button class="btn green" onclick="confirmerFactureModal('${or.id}')">🧾 Vérifier le devis → facture</button>`}
+      ${or.smsFin?.enAttente ? '<span class="mute">📱 SMS envoyé à la confirmation</span>' : or.smsFin ? (or.smsFin.via === 'n8n' ? '<span class="mute">📱 SMS « véhicule prêt » envoyé</span>' : `<button class="btn ghost" onclick="copierSms('${or.id}')">📱 SMS « véhicule prêt »</button>`) : ''}</div>` : ''}`);
   if (!fini) mvCreneaux(r.id);
 }
 function mvCreneaux(id) {
@@ -1645,6 +1649,43 @@ async function devisSignalement(orId, sid) {
   go(`doc/new/DEV?client=${o.clientId}&veh=${o.vehiculeId}&notes=${encodeURIComponent(`Constat atelier (${s.par}, ${o.numero}) : ${s.texte}`)}`);
 }
 
+/* ---------- Devis mis à jour par l'atelier → facture (bureau) ---------- */
+function confirmerFactureModal(orId) {
+  const o = db().documents.find(x => x.id === orId); if (!o) return;
+  const v = veh(o.vehiculeId), c = client(o.clientId), va = o.validationAtelier || {};
+  const ligne = l => { const nv = !!l.ajoutAtelier, aC = nv && !(+l.pu > 0);
+    return `<tr data-lid="${l.lid}" data-remise="${+l.remise || 0}" ${nv ? 'style="background:var(--acc2)"' : ''}>
+      <td>${nv ? `<span class="tag t-blue">🆕 ${esc(l.ajoutAtelier.par)}</span> ` : ''}${esc(l.designation)}${l.ref && l.type === 'PIECE' ? ` <span class="mute">${esc(l.ref)}</span>` : ''}</td>
+      <td><input name="qte" type="number" step="any" value="${esc(l.qte)}" style="width:70px" oninput="cfTotal()"></td>
+      <td><input name="pu" type="number" step="any" value="${aC ? '' : esc(l.pu)}" placeholder="${aC ? 'prix ?' : ''}" style="width:95px${aC ? ';border-color:var(--bad)' : ''}" oninput="cfTotal()"></td>
+      <td class="r" data-t></td>
+      <td>${nv ? '<label title="Ne pas facturer cette ligne" style="font-weight:400;white-space:nowrap"><input type="checkbox" name="supprimer" onchange="cfTotal()"> ✕</label>' : ''}</td></tr>`; };
+  modal(`🧾 Devis mis à jour — ${esc(v?.immat || o.numero)}`, `
+    <p style="margin-top:0">${esc(cName(c))} · ${esc(v ? `${v.marque || ''} ${v.modele || ''}` : '')} · ${esc(o.numero)}<br>
+      <span class="mute">Validé par ${esc(va.par || o.terminePar || '?')} ${va.le ? '· ' + hfr(va.le) : ''}${va.ajouts ? ` · ${va.ajouts} ligne(s) ajoutée(s) à l'atelier, surlignée(s)` : ''}</span></p>
+    ${o.compteRendu ? `<div class="alert" style="background:#f3f4f6;color:var(--ink);white-space:pre-line">${esc(o.compteRendu)}</div>` : ''}
+    <table id="cfT"><tr><th>Ligne</th><th>Qté</th><th>PU HT</th><th class="r">Total HT</th><th></th></tr>${o.lignes.map(ligne).join('')}</table>
+    <div class="tot" id="cfTot"></div>
+    <p class="mute">La facture sera <b>numérotée (définitive)</b> et les pièces sortiront du stock. ${o.smsFin?.enAttente ? 'Le SMS « véhicule prêt » partira au client avec ce montant.' : ''}</p>`,
+    async m => {
+      const lignes = {}; let manque = 0;
+      m.querySelectorAll('#cfT tr[data-lid]').forEach(tr => { const g = n => tr.querySelector(`[name=${n}]`), sup = g('supprimer')?.checked;
+        lignes[tr.dataset.lid] = {qte:g('qte').value, pu:g('pu').value, supprimer:!!sup}; if (!sup && g('pu').value === '') manque++; });
+      if (manque) { alert(`${manque} ligne(s) sans prix : saisissez le prix ou cochez « retirer ».`); return false; }
+      const r = await Store.action('confirmerFacture', {orId, lignes});
+      toast(`Facture ${r.numero} — ${eur(r.montantTTC)} ✔`); go('doc/' + r.factureId);
+    }, 'Confirmer en facture');
+  cfTotal();
+}
+function cfTotal() {
+  let ht = 0;
+  document.querySelectorAll('#cfT tr[data-lid]').forEach(tr => { const g = n => tr.querySelector(`[name=${n}]`), sup = g('supprimer')?.checked;
+    const t = sup ? 0 : (+g('qte').value || 0) * (+g('pu').value || 0) * (1 - (+tr.dataset.remise || 0) / 100); ht += t;
+    tr.querySelector('[data-t]').textContent = sup ? '—' : eur(t); tr.style.opacity = sup ? .45 : 1; });
+  const tva = +S().tva || 0;
+  $('#cfTot').innerHTML = `<div><span>Total HT</span><span>${eur(ht)}</span></div>${tva ? `<div><span>TVA ${tva} %</span><span>${eur(ht * tva / 100)}</span></div>` : ''}<div class="big"><span>Total TTC</span><span>${eur(ht * (1 + tva / 100))}</span></div>`;
+}
+
 // Ce que l'atelier a saisi sur la tablette (fiche RDV, OR, facture)
 function atelierResumeHTML(o) {
   const pc = o.priseEnCharge, ph = o.photos || [], sig = o.signalements || [], L = o.lignes || [];
@@ -1652,6 +1693,7 @@ function atelierResumeHTML(o) {
   return `<h4 style="margin:16px 0 6px">🔧 Atelier${o.technicien ? ' · ' + esc(o.technicien) : ''}</h4>
     <div class="mute">${o.debut ? 'Démarré ' + hfr(o.debut) : ''}${o.fin ? ' · terminé ' + hfr(o.fin) + ' par ' + esc(o.terminePar || '') : ''} · ${L.filter(l => l.fait).length}/${L.length} opérations cochées</div>
     ${pc ? `<div style="margin-top:6px">Prise en charge : <b>${num(pc.km)} km</b> · carburant ${esc(pc.carburant || '?')}${pc.remarques ? ' · ' + esc(pc.remarques) : ''}${(pc.checks || []).length ? '<br><span class="mute">' + pc.checks.map(x => '✓ ' + esc(x)).join(' · ') + '</span>' : ''}</div>` : ''}
+    ${L.some(l => l.ajoutAtelier) ? `<div style="margin-top:6px"><b>Ajouté par l'atelier :</b> ${L.filter(l => l.ajoutAtelier).map(l => `${esc(l.designation)} ×${num(l.qte)}${+l.pu > 0 ? '' : ' <span class="tag t-bad">à chiffrer</span>'}`).join(' · ')}</div>` : ''}
     ${o.compteRendu ? `<div style="margin-top:6px;white-space:pre-line"><b>Compte rendu :</b> ${esc(o.compteRendu)}</div>` : ''}
     ${sig.map(s => `<div style="margin-top:6px">⚠ <b>${esc(s.texte)}</b> <span class="mute">(${esc(s.par)})</span> <span class="tag ${s.statut === 'a_chiffrer' ? 't-bad' : ''}">${{a_chiffrer:'À chiffrer', devis:'Devis lancé', refuse:'Classé'}[s.statut] || esc(s.statut)}</span></div>`).join('')}
     ${ph.length ? `<div class="photos">${ph.map(p => `<a href="/photos/${esc(p.fichier)}" target="_blank" title="${esc([p.type === 'etat' ? 'État à l\'arrivée' : 'Intervention', p.legende, p.par].filter(Boolean).join(' — '))}"><img src="/photos/${esc(p.fichier)}" loading="lazy" alt=""></a>`).join('')}</div>` : ''}`;
@@ -1665,7 +1707,7 @@ function notifier(av, ap) {
     if (o.type !== 'OR') continue;
     const a = idx.get(o.id); if (!a) continue;
     if (o.statut === 'termine' && a.statut !== 'termine' && o.terminePar)
-      annonce(`✅ ${immat(o)} terminé par ${o.terminePar} — facture prête au comptoir${o.smsFin?.via === 'n8n' ? ', SMS envoyé au client' : ''}`, 'ok', 'planning');
+      annonce(`✅ ${immat(o)} terminé par ${o.terminePar} — devis mis à jour${o.validationAtelier?.ajouts ? ` (${o.validationAtelier.ajouts} ajout(s))` : ''}, à confirmer en facture${o.smsFin?.via === 'n8n' ? ' · SMS envoyé' : ''}`, 'ok', 'planning');
     if (o.statut === 'en_cours' && a.statut !== 'en_cours') annonce(`▶ ${immat(o)} : intervention démarrée par ${o.technicien || '?'}`, '', '');
     (o.signalements || []).slice((a.signalements || []).length).forEach(s => annonce(`🔧 ${s.par} signale sur ${immat(o)} : ${s.texte}`, 'bad', 'planning'));
   }

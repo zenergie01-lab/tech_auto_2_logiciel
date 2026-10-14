@@ -586,32 +586,93 @@
     s.statut = statut || 'traite'; s.traitePar = ctx.par; s.traiteLe = maintenant();
     return s;
   };
-  // Bouton « Terminé » : OR terminé + facture brouillon au comptoir + SMS « véhicule prêt » (via n8n)
+  // Le mécano ajoute ce qu'il a réellement fait (sans voir les prix) : pièce, main d'œuvre, autre
+  const A_CHIFFRER = l => l.ajoutAtelier && !(num(l.pu) > 0);
+  A.ajouterLigneAtelier = (d, {orId, type, designation, ref, qte}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (or.statut === 'termine') fail('Intervention déjà terminée : prévenez le bureau');
+    if (!['PIECE', 'MO', 'FORF'].includes(type)) fail('Type de ligne inconnu');
+    if (!String(designation || '').trim() && !(type === 'PIECE' && ref)) fail('Décrivez la pièce ou l\'opération');
+    const q = num(String(qte).replace(',', '.')) || 1;
+    const a = type === 'PIECE' && ref ? articlePour(d, {ref}) : null;
+    const taux = num(((d.settings || {}).taux || {})[or.activite || 'MECA']);
+    const l = {lid:uid(), type, ref:a ? a.ref : String(ref || '').trim(), refOrigine:a ? a.refOrigine || '' : '',
+      designation:String(designation || '').trim() || (a ? a.designation : String(ref)), qte:q,
+      pu:type === 'MO' ? taux : a ? num(a.pv) : 0, remise:0, articleId:a ? a.id : '',
+      fait:true, faitPar:ctx.par, ajoutAtelier:{par:ctx.par, le:maintenant()}};
+    or.lignes = or.lignes || []; or.lignes.push(l);
+    journal(d, ctx, 'atelier', `${or.numero} : ${ctx.par} ajoute « ${l.designation} » ×${q}`);
+    if (type === 'PIECE') A.verifierOR(d, {orId}, ctx);                 // le stock réserve aussitôt la pièce
+    return l;
+  };
+  A.retirerLigneAtelier = (d, {orId, lid}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (or.statut === 'termine') fail('Intervention déjà terminée : prévenez le bureau');
+    const l = (or.lignes || []).find(x => x.lid === lid);
+    if (!l || !l.ajoutAtelier) fail('Seules les lignes ajoutées à l\'atelier peuvent être retirées ici');
+    or.lignes = or.lignes.filter(x => x.lid !== lid);
+    A.verifierOR(d, {orId}, ctx);                                        // rend la pièce au stock
+    return {ok:true};
+  };
+
+  function smsPret(d, or, montant) {
+    const s = d.settings || {}, c = coll(d, 'clients').find(x => x.id === or.clientId) || {}, v = coll(d, 'vehicules').find(x => x.id === or.vehiculeId) || {};
+    const texte = gabarit(s.smsFin, {prenom:c.prenom || '', nom:c.nom || '', vehicule:`${v.marque || ''} ${v.modele || ''}`.trim() || 'véhicule',
+      immat:P.fmtImmat(v.immat), montant:eurTxt(montant), societe:s.societe || '', tel:s.tel || ''});
+    return {texte, tel:c.tel || '', le:maintenant(), via:s.n8nWebhook ? 'n8n' : 'aucun',
+      client:{nom:`${c.prenom || ''} ${c.nom || ''}`.trim(), tel:c.tel || '', email:c.email || ''}, vehicule:{immat:v.immat || '', marque:v.marque || '', modele:v.modele || ''}};
+  }
+
+  // Bouton « Terminé » : OR terminé + « devis mis à jour » signalé au bureau.
+  // SMS « véhicule prêt » tout de suite si rien n'est à chiffrer, sinon à la confirmation de la facture.
   A.terminerOR = (d, {orId, compteRendu}, ctx) => {
-    const or = trouverOR(d, orId), D = coll(d, 'documents');
+    const or = trouverOR(d, orId);
     if (!(or.lignes || []).length) fail('L\'OR ne contient aucune ligne : prévenez le secrétariat pour compléter avant de terminer');
-    let f = D.find(x => x.type === 'FAC' && x.origineId === or.id);
-    if (or.statut === 'termine' && f) return {deja:true, factureId:f.id, montantTTC:P.totalTTC(f)};
+    if (or.statut === 'termine') return {deja:true};
     if (compteRendu !== undefined) or.compteRendu = String(compteRendu).slice(0, 4000);
     or.statut = 'termine'; or.fin = maintenant(); or.terminePar = ctx.par;
     if (!or.technicien) or.technicien = ctx.par;
-    if (!f) {
-      f = {id:uid(), type:'FAC', numero:'', date:today(), clientId:or.clientId, vehiculeId:or.vehiculeId, activite:or.activite, statut:'brouillon',
-        lignes:(or.lignes || []).map(({fait, faitPar, ...l}) => ({...l})), km:or.km, technicien:or.technicien, notes:'', tva:or.tva, origineId:or.id,
-        creePar:'Fin atelier · ' + ctx.par, cree:maintenant()};
-      D.push(f);
-    }
+    const ajouts = or.lignes.filter(l => l.ajoutAtelier), aChiffrer = ajouts.filter(A_CHIFFRER);
+    or.validationAtelier = {par:ctx.par, le:maintenant(), ajouts:ajouts.length, aChiffrer:aChiffrer.length};
     const r = coll(d, 'rdvs').find(x => x.orId === orId); if (r) { r.statut = 'termine'; r.maj = maintenant(); }
-    const s = d.settings || {}, c = coll(d, 'clients').find(x => x.id === or.clientId) || {}, v = coll(d, 'vehicules').find(x => x.id === or.vehiculeId) || {};
+    const montant = P.totalTTC(or), sms = aChiffrer.length ? null : smsPret(d, or, montant);
+    or.smsFin = sms ? {texte:sms.texte, tel:sms.tel, le:sms.le, via:sms.via} : {enAttente:true};
+    journal(d, ctx, 'atelier', `${or.numero} terminé par ${ctx.par} → devis mis à jour (${ajouts.length} ajout(s), ${aChiffrer.length} à chiffrer)`);
+    emit(ctx, 'or.termine', {orId, numero:or.numero, montantTTC:montant, par:ctx.par, ajouts:ajouts.length, aChiffrer:aChiffrer.length,
+      client:sms && sms.client, vehicule:sms && sms.vehicule, sms:sms ? {tel:sms.tel, texte:sms.texte} : null});
+    return {montantTTC:montant, ajouts:ajouts.length, aChiffrer:aChiffrer.length, smsEnvoye:!!sms && sms.via === 'n8n' && !!sms.tel};
+  };
+
+  // Bureau : la secrétaire vérifie le devis mis à jour, fixe les prix, et confirme en facture (numérotée, stock déduit)
+  // lignes : {lid: {pu, qte, supprimer}}
+  A.confirmerFacture = (d, {orId, lignes}, ctx) => {
+    const or = trouverOR(d, orId), D = coll(d, 'documents');
+    for (const [lid, m] of Object.entries(lignes || {})) {
+      const l = (or.lignes || []).find(x => x.lid === lid); if (!l) continue;
+      if (m.supprimer) { or.lignes = or.lignes.filter(x => x.lid !== lid); continue; }
+      if (m.pu !== undefined && m.pu !== '') l.pu = num(m.pu);
+      if (m.qte !== undefined && m.qte !== '') l.qte = num(m.qte);
+    }
+    if (!(or.lignes || []).length) fail('Aucune ligne à facturer');
+    const reste = or.lignes.filter(A_CHIFFRER);
+    if (reste.length) fail(`Prix manquant : ${reste.map(l => l.designation).join(', ')}`);
+    A.verifierOR(d, {orId}, ctx);
+    let f = D.find(x => x.type === 'FAC' && x.origineId === or.id);
+    if (f && f.statut !== 'brouillon') fail('Facture déjà validée : ' + f.numero);
+    if (!f) { f = {id:uid(), type:'FAC', origineId:or.id, creePar:ctx.par, cree:maintenant()}; D.push(f); }
+    Object.assign(f, {numero:P.next(d, 'FAC'), date:today(), clientId:or.clientId, vehiculeId:or.vehiculeId, activite:or.activite, statut:'emise',
+      lignes:or.lignes.map(({fait, faitPar, ajoutAtelier, ...l}) => ({...l})), km:or.km, technicien:or.technicien, notes:or.compteRendu || '', tva:or.tva, valideLe:maintenant()});
+    A.mouvementDocument(d, {docId:f.id, sign:-1}, ctx);                  // sortie de stock + fin des réservations
+    or.statut = 'facture';
+    if (or.validationAtelier) or.validationAtelier.confirmePar = ctx.par;
     const montant = P.totalTTC(f);
-    const sms = gabarit(s.smsFin, {prenom:c.prenom || '', nom:c.nom || '', vehicule:`${v.marque || ''} ${v.modele || ''}`.trim() || 'véhicule',
-      immat:P.fmtImmat(v.immat), montant:eurTxt(montant), societe:s.societe || '', tel:s.tel || ''});
-    or.smsFin = {texte:sms, tel:c.tel || '', le:maintenant(), via:s.n8nWebhook ? 'n8n' : 'aucun'};
-    journal(d, ctx, 'atelier', `${or.numero} terminé par ${ctx.par} → facture brouillon ${eurTxt(montant)}`);
-    emit(ctx, 'or.termine', {orId, numero:or.numero, factureId:f.id, montantTTC:montant, par:ctx.par,
-      client:{nom:`${c.prenom || ''} ${c.nom || ''}`.trim(), tel:c.tel || '', email:c.email || ''},
-      vehicule:{immat:v.immat || '', marque:v.marque || '', modele:v.modele || ''}, sms:{tel:c.tel || '', texte:sms}});
-    return {factureId:f.id, montantTTC:montant, sms, smsAuto:!!s.n8nWebhook && !!c.tel};
+    journal(d, ctx, 'facture', `${or.numero} → facture ${f.numero} ${eurTxt(montant)} confirmée par ${ctx.par}`);
+    if (or.smsFin && or.smsFin.enAttente) {                               // SMS retenu tant que des ajouts étaient à chiffrer
+      const sms = smsPret(d, or, montant);
+      or.smsFin = {texte:sms.texte, tel:sms.tel, le:sms.le, via:sms.via};
+      emit(ctx, 'facture.confirmee', {orId, numero:or.numero, factureId:f.id, facture:f.numero, montantTTC:montant, client:sms.client, vehicule:sms.vehicule, sms:{tel:sms.tel, texte:sms.texte}});
+    }
+    return {factureId:f.id, numero:f.numero, montantTTC:montant};
   };
 
   // RDV : date / heure / statut (provisoire, confirme, a_decaler, annule, termine)

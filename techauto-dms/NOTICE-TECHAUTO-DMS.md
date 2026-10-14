@@ -220,8 +220,10 @@ Sur le Wi-Fi du garage, ouvrez `http://IP-DU-SERVEUR:8080/mecano` (adresse affic
 1. **Connexion** : toucher son nom, taper son code à 4 chiffres (**0000** la première fois, puis chacun choisit le sien). Le code se change aussi dans Paramètres → Équipe → 🔑.
 2. **Mes véhicules** : les RDV du jour du mécano, plus « À prendre » (véhicules sans mécano). Le chef d'atelier voit tout l'atelier.
 3. **Prise en charge** : kilométrage, carburant, contrôles à l'arrivée, remarques et **photos de l'état** → **▶ Démarrer**. Le planning passe en orange.
-4. **Intervention** : cocher chaque opération, **📷 photos** (pièce usée, travail fini), compte rendu, **⚠ Signaler un travail supplémentaire** (arrive tout de suite au secrétariat), **🔎 Pièce manquante** (prévient le magasin / Trouve-tout).
-5. **✅ Terminé — véhicule prêt** : en un geste, le planning passe au vert, **la facture brouillon est prête au comptoir** et **le SMS « véhicule prêt »** part au client (via n8n ; sinon le secrétariat a le texte à envoyer).
+4. **Intervention** : cocher chaque opération, **➕ ajouter ce qui a été fait en plus** (pièce, main d'œuvre en heures, autre — sans prix), **📷 photos**, compte rendu, **⚠ Signaler un travail supplémentaire**, **🔎 Pièce manquante**. Le bouton **🎤** permet de **dicter** remarques, compte rendu et signalements.
+5. **✅ Terminé — véhicule prêt** : le planning passe au vert et le **devis mis à jour** part au bureau, ajouts surlignés. La secrétaire clique **🧾 Vérifier → facture**, met le prix des ajouts et **confirme en facture** (numérotée, stock déduit). Le **SMS « véhicule prêt »** part au Terminé s'il n'y a rien à chiffrer, sinon à la confirmation, avec le montant exact.
+
+> 🎤 **Dictée** : le navigateur n'ouvre le micro que sur une adresse sûre. Sur `http://192.168…`, utilisez le micro du **clavier** du téléphone (toujours disponible), ou activez une fois sur la tablette `chrome://flags` → « Insecure origins treated as secure » → l'adresse du serveur. La dictée Chrome a besoin d'Internet.
 
 La tablette ne voit pas les prix et ne peut ni facturer ni commander : ces actions restent au comptoir.
 

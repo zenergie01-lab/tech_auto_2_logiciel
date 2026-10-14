@@ -111,7 +111,7 @@ const keyOk = req => {
 // Actions que l'agent a le droit de déclencher (réception et facturation restent au garage)
 const EXT_ACTIONS = ['verifierOR', 'lancerRecherche', 'majBesoin', 'ajouterOffre', 'proposerCommande', 'validerCommande', 'annulerCommande', 'majRdv', 'rdvEntrant', 'demandeRappel'];
 // Actions permises depuis l'appli mécano (tablette atelier)
-const MECANO_ACTIONS = ['prendreOR', 'demarrerOR', 'atelierMaj', 'signalerTravail', 'terminerOR', 'lancerRecherche'];
+const MECANO_ACTIONS = ['prendreOR', 'demarrerOR', 'atelierMaj', 'signalerTravail', 'terminerOR', 'lancerRecherche', 'ajouterLigneAtelier', 'retirerLigneAtelier'];
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -212,9 +212,9 @@ function donneesAtelier() {
     const e = Pieces.etatOR(d, or.id);
     return {
       id: or.id, numero: or.numero, statut: or.statut, technicien: or.technicien || '', km: or.km, notes: or.notes || '', activite: or.activite,
-      lignes: (or.lignes || []).map(l => ({ lid: l.lid, type: l.type, ref: l.ref, designation: l.designation, qte: l.qte, fait: !!l.fait, faitPar: l.faitPar || '' })),
+      lignes: (or.lignes || []).map(l => ({ lid: l.lid, type: l.type, ref: l.ref, designation: l.designation, qte: l.qte, fait: !!l.fait, faitPar: l.faitPar || '', ajout: l.ajoutAtelier ? l.ajoutAtelier.par : '' })),
       priseEnCharge: or.priseEnCharge || null, photos: or.photos || [], compteRendu: or.compteRendu || '', signalements: or.signalements || [],
-      debut: or.debut || '', fin: or.fin || '', terminePar: or.terminePar || '',
+      debut: or.debut || '', fin: or.fin || '', terminePar: or.terminePar || '', validationAtelier: or.validationAtelier || null, smsEnAttente: !!(or.smsFin && or.smsFin.enAttente),
       rdv: r ? { date: r.date, heure: r.heure, duree: r.duree, meca: r.meca, statut: r.statut, prestation: r.prestation, mode: r.mode } : null,
       vehicule: { immat: v.immat, marque: v.marque, modele: v.modele, vin: v.vin, energie: v.energie, km: v.km },
       client: { nom: `${c.prenom ? c.prenom[0] + '. ' : ''}${c.nom || ''}`.trim() },
