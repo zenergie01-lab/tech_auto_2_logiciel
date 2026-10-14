@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Présentation TECH'AUTO</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#14171c;--mute:#5d6470;--line:#e3e1dc;--acc:#ea580c;--acc2:#fff1e6;--dark:#1f2937;--ok:#15803d;--ok2:#e7f6ec;--blue:#1d4ed8;--blue2:#e8eefc}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1a1d23;--ink:#eceae6;--mute:#9aa1ad;--line:#2c3038;--acc2:#3a2112;--dark:#0b0d10;--ok2:#12301d;--blue2:#16213d}}
+:root[data-theme="dark"]{--bg:#111317;--card:#1a1d23;--ink:#eceae6;--mute:#9aa1ad;--line:#2c3038;--acc2:#3a2112;--dark:#0b0d10;--ok2:#12301d;--blue2:#16213d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header.hero{background:var(--dark);color:#fff;padding:64px 0 56px}
+.hero .kicker{color:#fdba74;font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:13px}
+.hero h1{font-size:clamp(30px,5vw,50px);line-height:1.1;margin:12px 0 16px;letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--acc)}
+.hero p{color:#cbd5e1;max-width:680px;font-size:19px;margin:0}
+section{padding:52px 0 8px}
+h2{font-size:28px;letter-spacing:-.01em;margin:0 0 6px}
+.lead{color:var(--mute);margin:0 0 26px;max-width:720px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:820px){.g3,.g2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+.card h3{margin:0 0 6px;font-size:19px}
+.card p{margin:0;color:var(--mute)}
+.num{display:inline-flex;width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;align-items:center;justify-content:center;margin-bottom:10px}
+.who{font-size:13px;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.08em}
+ul.tick{list-style:none;padding:0;margin:12px 0 0}
+ul.tick li{padding:4px 0 4px 26px;position:relative}
+ul.tick li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:800}
+ul.cross li::before{content:"✗";color:#b91c1c}
+.schema{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;overflow-x:auto}
+.schema svg{display:block;width:100%;min-width:680px;height:auto}
+.schema text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;fill:var(--ink)}
+.schema .m{fill:var(--mute)}
+.steps{counter-reset:s;display:grid;gap:12px}
+.step{display:grid;grid-template-columns:150px 1fr;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;align-items:start}
+@media(max-width:640px){.step{grid-template-columns:1fr}}
+.step b{display:block}
+.step .t{font-weight:800;color:var(--acc)}
+.before-after .card h3{display:flex;gap:8px;align-items:center}
+.tag{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:2px 10px}
+.t-old{background:#fdecec;color:#b91c1c}.t-new{background:var(--ok2);color:var(--ok)}
+.demo ol{margin:0;padding-left:22px}.demo li{margin:8px 0}
+.demo code{background:var(--acc2);border-radius:5px;padding:1px 6px;font-size:15px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+tr:last-child td{border-bottom:0}
+.statut{white-space:nowrap;font-weight:700}
+footer{color:var(--mute);font-size:14px;padding:40px 0 60px}
+@media print{body{font-size:13px;background:#fff}header.hero{padding:28px 0}section{padding:22px 0 0;break-inside:avoid}.card,.step{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="kicker">TECH'AUTO · Kourou</div>
+  <h1>Un seul système, <em>du rendez-vous à l'encaissement</em></h1>
+  <p>Le client réserve en ligne, le stock vérifie les pièces, le mécanicien suit son travail sur téléphone, et la facture est prête au comptoir quand il appuie sur «&nbsp;Terminé&nbsp;».</p>
+</div></header>
+
+<main class="wrap">
+
+<section>
+  <h2>Trois outils, une seule base de données</h2>
+  <p class="lead">Chacun voit la même information au même moment : l'accueil, l'atelier, le magasin et le client.</p>
+  <div class="grid g3">
+    <div class="card"><div class="num">1</div><div class="who">Pour les clients</div><h3>Site vitrine et réservation en ligne</h3>
+      <p>Le client choisit sa prestation et un créneau réellement libre, ou demande à être rappelé.</p>
+      <ul class="tick"><li>Prix et durée affichés</li><li>Créneaux tirés du vrai planning</li><li>Demande «&nbsp;Être rappelé&nbsp;» reçue à l'accueil</li></ul></div>
+    <div class="card"><div class="num">2</div><div class="who">Pour l'accueil et la direction</div><h3>Logiciel de gestion (DMS)</h3>
+      <p>Planning, devis, ordres de réparation, factures, stock, commandes et statistiques.</p>
+      <ul class="tick"><li>Planning par mécanicien</li><li>Le stock valide chaque RDV</li><li>Pièces manquantes : recherche «&nbsp;Trouve-tout&nbsp;»</li></ul></div>
+    <div class="card"><div class="num">3</div><div class="who">Pour l'atelier</div><h3>Appli mécanicien</h3>
+      <p>Sur téléphone ou tablette, en Wi-Fi au garage. Connexion par code à 4 chiffres.</p>
+      <ul class="tick"><li>Prise en charge du véhicule et photos</li><li>Opérations cochées une à une</li><li>Bouton «&nbsp;Terminé&nbsp;» qui déclenche la facture et le SMS</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Comment tout est relié</h2>
+  <p class="lead">Le stock est au centre : un rendez-vous n'est confirmé que si les pièces sont réservées.</p>
+  <div class="schema">
+    <svg viewBox="0 0 980 360" role="img" aria-label="Schéma : site et appli RDV vers le DMS, stock au centre, appli mécano, SMS au client">
+      <defs><marker id="f" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#ea580c"/></marker></defs>
+      <g stroke="#ea580c" stroke-width="2.5" fill="none" marker-end="url(#f)">
+        <path d="M222 92H330"/><path d="M650 92H758"/><path d="M758 132H650"/><path d="M490 172V214"/><path d="M640 286H760"/><path d="M110 132V282H330"/>
+      </g>
+      <g font-size="13" class="m"><text x="236" y="82">réservation</text><text x="660" y="82">ses véhicules</text><text x="660" y="152">Terminé + photos</text><text x="656" y="276">SMS «&nbsp;prêt&nbsp;»</text><text x="120" y="210">passe par n8n</text></g>
+      <rect x="20" y="52" width="200" height="80" rx="12" fill="#e8eefc" stroke="#1d4ed8" stroke-width="1.5"/>
+      <text x="120" y="86" text-anchor="middle" font-weight="700" font-size="16" style="fill:#1e3a8a">Site + appli RDV</text><text x="120" y="108" text-anchor="middle" font-size="13" style="fill:#1e3a8a">les clients</text>
+      <rect x="332" y="32" width="316" height="140" rx="14" fill="#1f2937"/>
+      <text x="490" y="64" text-anchor="middle" font-weight="800" font-size="18" style="fill:#fff">DMS — logiciel du garage</text>
+      <text x="490" y="90" text-anchor="middle" font-size="13" style="fill:#cbd5e1">planning · devis · OR · factures</text>
+      <rect x="400" y="104" width="180" height="50" rx="10" fill="#ea580c"/>
+      <text x="490" y="134" text-anchor="middle" font-weight="800" font-size="16" style="fill:#fff">STOCK au centre</text>
+      <rect x="760" y="52" width="200" height="80" rx="12" fill="#e7f6ec" stroke="#15803d" stroke-width="1.5"/>
+      <text x="860" y="86" text-anchor="middle" font-weight="700" font-size="16" style="fill:#14532d">Appli mécanicien</text><text x="860" y="108" text-anchor="middle" font-size="13" style="fill:#14532d">téléphone / tablette</text>
+      <rect x="332" y="216" width="306" height="120" rx="12" fill="none" stroke="#9ca3af" stroke-dasharray="5 4"/>
+      <text x="485" y="246" text-anchor="middle" font-weight="700" font-size="15">Automatisations (n8n)</text>
+      <text x="485" y="272" text-anchor="middle" font-size="13" class="m">Trouve-tout : recherche des pièces manquantes</text>
+      <text x="485" y="294" text-anchor="middle" font-size="13" class="m">SMS client · alertes chef d'atelier</text>
+      <text x="485" y="316" text-anchor="middle" font-size="13" class="m">aucune commande sans validation humaine</text>
+      <rect x="762" y="252" width="198" height="68" rx="12" fill="#fff1e6" stroke="#ea580c" stroke-width="1.5"/>
+      <text x="861" y="292" text-anchor="middle" font-weight="700" font-size="16" style="fill:#7c2d12">📱 Le client</text>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <h2>Le parcours d'un véhicule</h2>
+  <p class="lead">Exemple : un client réserve des plaquettes de frein.</p>
+  <div class="steps">
+    <div class="step"><span class="t">1 · Réservation</span><div><b>Le client réserve en ligne (ou par téléphone)</b>Il voit le prix indicatif et les créneaux libres. Le RDV arrive dans le planning de l'accueil.</div></div>
+    <div class="step"><span class="t">2 · Stock</span><div><b>Les pièces sont réservées automatiquement</b>Si elles sont en stock, le RDV est confirmé. Sinon il reste «&nbsp;à confirmer&nbsp;» et Trouve-tout cherche la pièce chez les fournisseurs, avec validation humaine avant toute commande.</div></div>
+    <div class="step"><span class="t">3 · Arrivée</span><div><b>Le mécanicien prend en charge le véhicule</b>Sur son téléphone : kilométrage, carburant, état des lieux et photos des rayures. L'accueil voit le RDV passer «&nbsp;en cours&nbsp;».</div></div>
+    <div class="step"><span class="t">4 · Intervention</span><div><b>Il coche ses opérations et photographie</b>S'il découvre un autre problème, il le signale : l'accueil le reçoit tout de suite et prépare un devis.</div></div>
+    <div class="step"><span class="t">5 · Fin</span><div><b>Un seul bouton «&nbsp;Terminé&nbsp;»</b>Le planning passe au vert, la facture est préparée au comptoir et le client reçoit le SMS «&nbsp;votre véhicule est prêt&nbsp;».</div></div>
+    <div class="step"><span class="t">6 · Encaissement</span><div><b>L'accueil vérifie, valide et encaisse</b>Les pièces sortent du stock et le chiffre d'affaires est à jour.</div></div>
+  </div>
+</section>
+
+<section class="before-after">
+  <h2>Ce qui change au quotidien</h2>
+  <div class="grid g2" style="margin-top:20px">
+    <div class="card"><h3><span class="tag t-old">Aujourd'hui</span></h3>
+      <ul class="tick cross"><li>RDV notés à la main, risque de doublons</li><li>Pièce manquante découverte le jour J</li><li>Allers-retours atelier ↔ accueil pour savoir où en est un véhicule</li><li>Client qui rappelle pour savoir si sa voiture est prête</li><li>Facture refaite à partir de la fiche atelier</li></ul></div>
+    <div class="card"><h3><span class="tag t-new">Avec le système</span></h3>
+      <ul class="tick"><li>Planning partagé : deux RDV ne se chevauchent jamais</li><li>Pièces vérifiées dès la prise de RDV</li><li>Avancement visible en direct sur tous les postes</li><li>SMS automatique quand le véhicule est prêt</li><li>Facture préparée par le bouton «&nbsp;Terminé&nbsp;»</li></ul></div>
+  </div>
+</section>
+
+<section class="demo">
+  <h2>Démonstration (5 minutes)</h2>
+  <p class="lead">Avec des données fictives, sur un ordinateur et un téléphone connectés au même Wi-Fi.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Préparation</h3><ol>
+      <li>Double-cliquer <code>techauto-dms\demarrer.bat</code></li>
+      <li>Ouvrir <code>http://localhost:8080</code> puis Paramètres → <b>📅 Charger une journée type</b></li>
+      <li>Sur le téléphone : l'adresse «&nbsp;Appli mécano&nbsp;» affichée au démarrage, code <code>0000</code></li>
+    </ol></div>
+    <div class="card"><h3>Déroulé</h3><ol>
+      <li><b>Planning RDV</b> : la journée des 4 mécaniciens, les couleurs, le bandeau «&nbsp;À traiter&nbsp;»</li>
+      <li><b>+ Nouveau RDV</b> : taper une plaque, le client est reconnu, les pièces sont vérifiées</li>
+      <li><b>Sur le téléphone</b> (Mécano 1) : ouvrir le véhicule «&nbsp;en cours&nbsp;», ajouter une photo, appuyer sur <b>Terminé</b></li>
+      <li><b>Au comptoir</b> : l'annonce «&nbsp;véhicule prêt&nbsp;» apparaît, ouvrir la facture préparée</li>
+      <li><b>Accueil</b> : le chiffre d'affaires, et l'onglet Commandes pièces avec Trouve-tout</li>
+    </ol></div>
+  </div>
+</section>
+
+<section>
+  <h2>Où on en est</h2>
+  <p class="lead">Le logiciel fonctionne. La mise en service dépend surtout des données du garage et de trois abonnements ou réglages.</p>
+  <table>
+    <tr><th>Élément</th><th>État</th><th>Ce qu'il faut</th></tr>
+    <tr><td>Planning, devis, OR, factures, stock</td><td class="statut" style="color:var(--ok)">Prêt</td><td>Import des clients, véhicules et pièces existants (fichiers CSV)</td></tr>
+    <tr><td>Appli mécanicien</td><td class="statut" style="color:var(--ok)">Prête</td><td>Un téléphone ou une tablette par mécanicien, Wi-Fi atelier</td></tr>
+    <tr><td>Site et réservation en ligne</td><td class="statut" style="color:var(--ok)">Prêts</td><td>Brancher sur le planning réel (n8n)</td></tr>
+    <tr><td>SMS automatiques</td><td class="statut" style="color:var(--acc)">À activer</td><td>Compte SMS (Brevo, paiement à l'envoi)</td></tr>
+    <tr><td>Liaison sécurisée garage ↔ automatisations</td><td class="statut" style="color:var(--acc)">À installer</td><td>Tailscale sur le PC du garage (VPN privé, aucun port ouvert)</td></tr>
+    <tr><td>Trouve-tout (recherche fournisseurs)</td><td class="statut" style="color:var(--blue)">Phase suivante</td><td>Workflow de recherche ; la base est prête dans le DMS</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Sécurité et données</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Données chez vous</h3><p>La base reste sur le PC du garage, avec une copie automatique chaque jour (60 jours conservés).</p></div>
+    <div class="card"><h3>Rien sans un humain</h3><p>Une facture est validée au comptoir. Aucune commande fournisseur ne part sans la validation d'une personne nommée.</p></div>
+    <div class="card"><h3>Accès contrôlés</h3><p>Chaque mécanicien a son code. Le téléphone ne voit pas les prix et ne peut ni facturer ni commander.</p></div>
+  </div>
+</section>
+
+<footer>Document de présentation · démonstration avec données fictives · <span id="d"></span></footer>
+</main>
+<script>document.getElementById('d').textContent=new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})</script>
+</body>
+</html>

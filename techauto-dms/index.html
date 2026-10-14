@@ -264,7 +264,9 @@ const Store = {
     const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
     if (r.status === 400) throw new Error((await r.json()).error);          // règle métier refusée
     if (!r.ok) { setSync(false); throw new Error('Serveur injoignable'); }
-    const j = await r.json(); if (j.version) this.version = j.version; return j;
+    // On n'avance la version que si personne d'autre n'a écrit entre-temps (sinon le prochain
+    // passage de poll() recharge tout : une saisie de l'appli mécano ne doit jamais être manquée)
+    const j = await r.json(); if (j.version === this.version + 1) this.version = j.version; return j;
   },
   async poll() {
     try {
@@ -1084,7 +1086,9 @@ function vParams() {
   <div class="card"><h3>Sauvegarde</h3><p class="mute">Le serveur fait aussi une copie automatique chaque jour dans <code>data/sauvegardes</code>.</p>
     <div class="bar"><button class="btn ghost" onclick="dl('techauto-sauvegarde-'+today()+'.json',JSON.stringify(Store.db),'application/json')">⬇ Exporter tout</button>
     <button class="btn ghost" onclick="restaurer()">⬆ Restaurer une sauvegarde</button></div></div>
-  <div class="card"><h3>Démonstration</h3><p class="mute">Ajoute quelques clients, véhicules, pièces et un VO fictifs pour tester.</p><button class="btn ghost" onclick="demo()">Charger des données de démo</button></div></div></div>
+  <div class="card"><h3>Démonstration</h3><p class="mute">Ajoute quelques clients, véhicules, pièces et un VO fictifs pour tester.</p><button class="btn ghost" onclick="demo()">Charger des données de démo</button>
+    <button class="btn" style="margin-top:8px" onclick="demoJournee()">📅 Charger une journée type (présentation)</button>
+    <p class="mute">Planning plein sur 3 jours, véhicules en cours et prêt à encaisser, photos, travail signalé, Trouve-tout, factures des 6 derniers mois.</p></div></div></div>
   ${equipeCardHTML()}${planningParamsHTML()}`;
 }
 async function saveParams() {
@@ -1108,16 +1112,119 @@ async function demo() {
   const cl = [['Particulier', 'BRUNET', 'Lucie', '0694 12 34 56'], ['Professionnel', 'TRANSPORTS KOUROU', '', '0594 32 10 00'], ['Particulier', 'DA SILVA', 'Marco', '0694 98 76 54']]
     .map(([type, nom, prenom, tel]) => ({id:uid(), type, nom, prenom, tel, email:'', adresse:'Kourou', notes:'', cree:today()}));
   for (const c of cl) await Store.upsert('clients', c);
-  const vs = [[0, 'GA123AB', 'Renault', 'Clio IV', 84200, 'VF15RBF0A12345678'], [1, 'GB456CD', 'Toyota', 'Hilux', 152000, 'AHTFR22G300123456'], [2, 'GC789EF', 'Peugeot', '208', 41000, 'VR3UPHNKSKT123456']]
+  const vs = [[0, 'GA-123-AB', 'Renault', 'Clio IV', 84200, 'VF15RBF0A12345678'], [1, 'GB-456-CD', 'Toyota', 'Hilux', 152000, 'AHTFR22G300123456'], [2, 'GC-789-EF', 'Peugeot', '208', 41000, 'VR3UPHNKSKT123456']]
     .map(([i, immat, marque, modele, km, vin]) => ({id:uid(), clientId:cl[i].id, immat, marque, modele, km, vin, energie:'Diesel', mec:''}));
   for (const v of vs) await Store.upsert('vehicules', v);
   const arts = [['FH-1023', '7701478543', 'Filtre à huile', 8, 4.2, 12.5, 2], ['PF-4410', '410608481R', 'Plaquettes de frein AV', 3, 22, 55, 2], ['HM-5W30', '', 'Huile moteur 5W30 (litre)', 40, 5.5, 13.9, 15],
     ['FA-778', '165469466R', 'Filtre à air', 1, 7.8, 19.9, 2], ['ES-650', '', 'Balai essuie-glace 650 mm', 6, 6, 16, 3]]
     .map(([ref, refOrigine, designation, stock, pa, pv, stockMin]) => ({id:uid(), ref, refOrigine, designation, stock, pa, pv, stockMin, fournisseur:'Cattronic', famille:'', emplacement:'A1'}));
   for (const a of arts) await Store.upsert('articles', a);
-  await Store.upsert('vnvo', {id:uid(), type:'VO', immat:'GD321GH', vin:'VF1RFB00X12345678', marque:'Dacia', modele:'Duster', annee:2019, km:68000, prixAchat:9500, frais:650, prixVente:12900, statut:'stock', dateEntree:today(), notes:''});
-  await Store.upsert('flotte', {id:uid(), immat:'GE999PR', modele:'Renault Twingo', km:35000});
+  await Store.upsert('vnvo', {id:uid(), type:'VO', immat:'GD-321-GH', vin:'VF1RFB00X12345678', marque:'Dacia', modele:'Duster', annee:2019, km:68000, prixAchat:9500, frais:650, prixVente:12900, statut:'stock', dateEntree:today(), notes:''});
+  await Store.upsert('flotte', {id:uid(), immat:'GE-999-PR', modele:'Renault Twingo', km:35000});
   toast('Données de démo ajoutées'); go('accueil');
+}
+
+/* ---------- Démo « journée type » : planning plein, atelier en mouvement (présentation) ----------
+   Tout passe par les vraies règles (pieces.js) : réservations, chevauchements, facture, signalement. */
+async function actionPar(name, args, par) {                     // action signée au nom d'un membre de l'équipe
+  if (Store.mode === 'server') {
+    const j = await Store.api('/api/action', {name, args, par});
+    const d = await (await fetch('/api/db', {cache:'no-store'})).json();
+    Store.db = migrate(d.data); Store.version = d.version; return j.result;
+  }
+  const copie = structuredClone(Store.db), r = Pieces.run(copie, name, args, {par, source:'poste'});
+  Store.db = copie; Store.saveLocal(); return r;
+}
+function photoDemo(titre, teinte) {                               // fausse photo dessinée (démo uniquement)
+  const c = document.createElement('canvas'); c.width = 800; c.height = 600; const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 800, 600); gr.addColorStop(0, `hsl(${teinte},18%,38%)`); gr.addColorStop(1, `hsl(${teinte},22%,12%)`);
+  g.fillStyle = gr; g.fillRect(0, 0, 800, 600);
+  g.fillStyle = '#9ca3af'; g.beginPath(); g.arc(380, 270, 175, 0, 7); g.fill();
+  g.fillStyle = '#6b7280'; g.beginPath(); g.arc(380, 270, 120, 0, 7); g.fill();
+  g.fillStyle = '#374151'; g.beginPath(); g.arc(380, 270, 55, 0, 7); g.fill();
+  g.fillStyle = '#ea580c'; g.fillRect(560, 150, 46, 240);
+  g.fillStyle = '#000a'; g.fillRect(0, 515, 800, 85); g.fillStyle = '#fff'; g.font = 'bold 32px system-ui,sans-serif'; g.fillText(titre, 24, 568);
+  return c.toDataURL('image/jpeg', .82);
+}
+async function demoJournee() {
+  if (!confirm('Charger une journée type de démonstration ?\n(RDV sur 3 jours, véhicules en cours, factures des mois passés. Données fictives.)')) return;
+  const t = today(), j0 = jourOuvre(t), j1 = jourOuvre(addJ(j0, 1)), j3 = jourOuvre(addJ(j1, 2));
+  if (db().rdvs.some(r => r.date === j0 && r.meca === 'meca1' && r.heure === '07:30' && r.statut !== 'annule')) return alert('La journée de démo est déjà chargée (planning du ' + dfr(j0) + ').');
+  toast('Préparation de la journée de démo…');
+  // Stock aux références du catalogue des prestations (le kit distribution manque : Trouve-tout)
+  const arts = [['HUILE-5W30', '', 'Huile moteur 5W30 (litre)', 80, 5.5, 13.9, 'A1'], ['FH-UNIV', '7701478543', 'Filtre à huile', 20, 4.2, 12.5, 'A2'],
+    ['FA-UNIV', '165469466R', 'Filtre à air', 10, 7.8, 19.9, 'A3'], ['FHAB-UNIV', '272772277R', 'Filtre habitacle', 12, 6.5, 18, 'A4'],
+    ['GAZ-R1234', '', 'Gaz clim R1234yf (recharge)', 6, 28, 0, 'C1'], ['PLAQ-AV', '410608481R', 'Plaquettes de frein AV', 4, 22, 55, 'B2'],
+    ['PNEU-STD', '', 'Pneu 205/55 R16', 16, 48, 89, 'P1'], ['KIT-DIST', '130C17480R', 'Kit distribution + pompe à eau', 0, 210, 390, 'B5']];
+  for (const [ref, refOrigine, designation, stock, pa, pv, emplacement] of arts) {
+    const ex = db().articles.find(a => a.ref === ref);
+    await Store.upsert('articles', {...(ex || {id:uid()}), ref, refOrigine, designation, stock:Math.max(stock, +(ex?.stock || 0)), pa, pv, stockMin:2, fournisseur:'Cattronic', famille:'', emplacement, _base:ex ? ex.stock : ''});
+  }
+  // [jour, mécano, heure, prestations, plaque, client, tel, véhicule, km, canal]
+  const R = [
+    [j0, 'meca1', '07:30', ['vid'], 'GA-123-AB', 'Lucie BRUNET', '0694 12 34 56', 'Renault Clio IV', 84200],
+    [j0, 'meca1', '08:30', ['frn'], 'GF-582-KL', 'Wilfried AUBIN', '0694 21 43 65', 'Peugeot 208', 61500],
+    [j0, 'meca1', '10:00', ['pnu'], 'FZ-310-TR', 'Kelly EDWIGE', '0694 33 18 72', 'Kia Picanto', 39800],
+    [j0, 'meca1', '14:00', ['clm'], 'GH-704-BN', 'Thomas NGUYEN', '0694 40 11 09', 'Dacia Duster', 72300],
+    [j0, 'meca1', '15:00', ['pct'], 'FX-918-MA', 'Anaïs LUCAS', '0694 52 67 80', 'Citroën C3', 98100],
+    [j0, 'meca2', '07:30', ['rev'], 'GB-456-CD', 'TRANSPORTS KOUROU', '0594 32 10 00', 'Toyota Hilux', 152000],
+    [j0, 'meca2', '10:00', ['dia'], 'GJ-221-PS', 'Sandra HO-KONG', '0694 70 25 14', 'Renault Kangoo', 118400],
+    [j0, 'meca2', '14:00', ['vid'], 'FV-260-BH', 'Manon JEAN-BAPTISTE', '0694 85 03 66', 'Peugeot 208', 45200],
+    [j0, 'meca2', '15:00', ['frn'], 'GK-937-RE', 'Fabrice BELONY', '0694 18 92 30', 'Ford Ranger', 134000],
+    [j0, 'meca3', '07:30', ['pct'], 'GC-789-EF', 'Marco DA SILVA', '0694 98 76 54', 'Peugeot 208', 41000],
+    [j0, 'meca3', '08:00', ['clm'], 'GL-145-VA', 'Céline ROSAMOND', '0694 61 37 24', 'Toyota Yaris', 56700],
+    [j0, 'meca3', '09:00', ['dia'], 'GM-603-DT', 'Steeve MATHURIN', '0694 29 58 41', 'Nissan Navara', 141800],
+    [j0, 'meca3', '14:00', ['clm'], 'FW-482-LC', 'Ruth GALMOT', '0694 77 14 36', 'Suzuki Jimny', 33900],
+    [j0, 'meca3', '15:30', ['vid'], 'GN-350-HY', 'Yannick POLONY', '0694 44 80 57', 'Renault Clio V', 27600],
+    [j0, 'meca4', '07:30', ['pnu'], 'GP-778-ZE', 'Patrice LABONNE', '0694 15 66 92', 'Mitsubishi L200', 187300],
+    [j0, 'meca4', '09:00', ['frn'], 'GR-019-FO', 'Aurélie SINAÏ', '0694 93 27 08', 'Toyota Hilux', 96500],
+    [j0, 'meca4', '14:00', ['rev'], 'GS-864-WU', 'Jean BÉRARD', '0694 58 31 73', 'Ford Ranger', 112900],
+    [j1, 'meca1', '08:00', ['rev'], 'GT-427-CI', 'Christophe LONY', '0694 26 74 19', 'Dacia Duster', 88800],
+    [j1, 'meca2', '07:30', ['clm'], 'GU-591-XB', 'Nadège THÉODOSE', '0694 67 49 52', 'Renault Clio IV', 64100],
+    [j1, 'meca2', '09:00', ['vid'], 'GV-306-JK', 'Laura FÉLIX', '0694 81 20 63', 'Kia Picanto', 21900, 'en ligne'],
+    [j1, 'meca3', '10:00', ['dia'], 'GW-735-OP', 'Jordan PINDARD', '0694 37 95 28', 'Toyota Yaris', 102300],
+    [j1, 'meca4', '14:00', ['frn'], 'GX-148-QS', 'Marie LÉANDRE', '0694 54 62 87', 'Citroën C3', 77400],
+    [j3, 'meca2', '07:30', ['dis'], 'GY-962-AT', 'Wilfried AUBIN', '0694 21 43 65', 'Renault Mégane', 151200]
+  ];
+  const ors = {};
+  for (const [date, meca, heure, prestaIds, plaque, cli, tel, vehicule, km, canal] of R) {
+    const r = await actionPar('rdvEntrant', {ref:canal === 'en ligne' ? 'TA-DEMO-' + plaque : '', date, heure, meca, prestaIds, plaque, client:cli, tel, vehicule, km,
+      canal:canal || 'telephone', symptome:{frn:'Bruit en freinant', dia:'Voyant moteur allumé', clm:'La clim souffle tiède'}[prestaIds[0]] || ''}, 'Accueil');
+    ors[date + meca + heure] = r.orId;
+  }
+  // L'atelier en mouvement : un véhicule prêt à encaisser, trois en cours
+  const pec = (km, carburant) => ({km, carburant, checks:['Tour du véhicule fait (chocs, rayures)', 'Clés étiquetées avec la plaque'], remarques:''});
+  const faitsTous = id => Object.fromEntries(db().documents.find(x => x.id === id).lignes.map(l => [l.lid, true]));
+  const fini = ors[j0 + 'meca1' + '07:30'];
+  await actionPar('demarrerOR', {orId:fini, priseEnCharge:pec(84250, '1/2')}, 'Mécano 1');
+  await actionPar('atelierMaj', {orId:fini, faits:faitsTous(fini), compteRendu:'Vidange et filtre faits. Niveaux OK. Prochaine vidange à 99 000 km.'}, 'Mécano 1');
+  await actionPar('terminerOR', {orId:fini}, 'Mécano 1');
+  const frein = ors[j0 + 'meca1' + '08:30'];
+  await actionPar('demarrerOR', {orId:frein, priseEnCharge:{...pec(61540, '1/4'), remarques:'Rayure aile AV droite'}}, 'Mécano 1');
+  await actionPar('atelierMaj', {orId:frein, faits:{[db().documents.find(x => x.id === frein).lignes[0].lid]:true}}, 'Mécano 1');
+  const hilux = ors[j0 + 'meca2' + '07:30'];
+  await actionPar('demarrerOR', {orId:hilux, priseEnCharge:pec(152040, '3/4')}, 'Mécano 2');
+  await actionPar('signalerTravail', {orId:hilux, texte:'Plaquettes AR à 2 mm et disque AR rayé : à remplacer', urgent:true}, 'Mécano 2');
+  await actionPar('demarrerOR', {orId:ors[j0 + 'meca3' + '09:00'], priseEnCharge:pec(141860, 'Réserve')}, 'Mécano 3');
+  await actionPar('lancerRecherche', {orId:ors[j3 + 'meca2' + '07:30']}, 'Magasinier');
+  await actionPar('demandeRappel', {nom:'Paul RINALDO', tel:'0694 55 66 77', vehicule:'Toyota Land Cruiser', presta:'Diesel / injection', msg:'Fumée noire à l\'accélération', recu_le:'demo-' + t}, 'Site web');
+  // Photos de l'intervention (via l'appli mécano, code 0000 du Mécano 1)
+  if (Store.mode === 'server') try {
+    const lg = await (await fetch('/api/mecano/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:'meca1', pin:'0000'})})).json();
+    if (lg.token) for (const [orId, titre, type, h] of [[frein, 'Plaquettes AV : 2 mm, à changer', 'intervention', 20], [frein, 'Rayure aile AV droite (arrivée)', 'etat', 210], [fini, 'Filtre neuf posé', 'intervention', 120]])
+      await fetch('/api/mecano/photo', {method:'POST', headers:{'Content-Type':'application/json', 'X-Mecano':lg.token}, body:JSON.stringify({orId, type, data:photoDemo(titre, h)})});
+  } catch (e) {}
+  // Chiffre d'affaires des 6 derniers mois (factures soldées) pour le tableau de bord
+  const cl = db().clients;
+  for (let m = 6; m >= 1; m--) for (let k = 0; k < 5; k++) {
+    const dt = new Date(); dt.setDate(1); dt.setMonth(dt.getMonth() - m); dt.setDate(3 + k * 5);
+    const p = (S().prestations || [])[(m + k) % 8], c = cl[(m * 5 + k) % cl.length], v = db().vehicules.find(x => x.clientId === c.id);
+    const f = {...newDoc('FAC', {client:c.id, veh:v?.id || '', act:'MECA'}), date:dt.toISOString().slice(0, 10), statut:'emise', numero:await Store.next('FAC'),
+      lignes:[{lid:uid(), type:'FORF', ref:p.id, designation:p.label, qte:1, pu:p.prix, remise:0}, {lid:uid(), type:'MO', ref:'', designation:'Main d\'œuvre complémentaire', qte:1 + k % 2, pu:60, remise:0}], valideLe:dt.toISOString()};
+    await Store.upsert('documents', f);
+    await Store.upsert('reglements', {id:uid(), docId:f.id, clientId:c.id, date:f.date, montant:totals(f).ttc, mode:MODES[k % 4], ref:'', poste:'Démo'});
+  }
+  planJour = j0; toast('Journée de démo prête ✔'); go('planning'); render();
 }
 
 /* =====================================================================
