@@ -27,6 +27,9 @@ Appli RDV (Vercel) ──► n8n (VPS) ◄── Tailscale ──► server.js (
 | `GET /api/ext/commandes?statut=proposee,validee` | commandes |
 | `GET /api/ext/rdvs?depuis=2026-10-01` | RDV avec leur état pièces |
 | `GET /api/ext/fournisseurs` | liste des fournisseurs + **délais réels constatés** |
+| `GET /api/ext/planning?du=2026-10-14&au=…` | pour l'appli RDV : `mecanos[]`, `horaires`, `prestations`, `occupation[]` `{date, heure, duree, meca}`. **Aucune donnée client.** |
+| `GET /api/ext/creneaux?date=…&duree=60&meca=` | créneaux libres d'un jour : `[{heure:'08:00', libres:[id mécano…]}]` |
+| `GET /api/ext/prestations` | catalogue (durée, prix, pièces) |
 
 ## 3. Agir — `POST /api/ext/action`  `{name, args, par?}`
 
@@ -41,7 +44,9 @@ Appli RDV (Vercel) ──► n8n (VPS) ◄── Tailscale ──► server.js (
 | `annulerCommande` | `{commandeId, motif}` | annule et remet les pièces « à commander » |
 | `majRdv` | `{orId, date?, heure?, statut?:'provisoire'\|'confirme'\|'a_decaler'\|'annule'}` | met à jour le RDV |
 
-`POST /api/ext/rdv` reçoit **tel quel** l'envoi de l'appli RDV `{action:'demande', rdv:{ref, date, heure, client, tel, email, plaque, vehicule, km, prestation, symptome, mode, pieces:"HUILE-5W30 x5; FH-UNIV"}}`. Le DMS retrouve ou crée le client et le véhicule, crée l'OR avec les pièces, réserve ce qui est en stock, puis répond avec l'état des pièces et la date possible. Si la même `ref` est renvoyée, aucun doublon n'est créé.
+`POST /api/ext/rdv` reçoit **tel quel** l'envoi de l'appli RDV `{action:'demande', rdv:{ref, date, heure, client, tel, email, plaque, vehicule, km, prestation, prestaIds, meca, duree, symptome, mode, pieces:"HUILE-5W30 x5; FH-UNIV"}}`. Avec `prestaIds` (ids du catalogue), l'OR reçoit le forfait de chaque prestation et ses pièces (incluses à 0 €). Le RDV est placé chez `meca` s'il est libre, sinon chez le premier mécano libre, sinon « à placer ».
+
+Le même `POST /api/ext/rdv` reçoit aussi le formulaire **« Être rappelé »** du site vitrine : `{action:'rappel', rappel:{nom, tel, vehicule, immat, presta, date, msg, recu_le}}` → liste « Demandes de rappel » du planning (sans doublon sur `recu_le`). Le DMS retrouve ou crée le client et le véhicule, crée l'OR avec les pièces, réserve ce qui est en stock, puis répond avec l'état des pièces et la date possible. Si la même `ref` est renvoyée, aucun doublon n'est créé.
 
 Réservées au garage, ces actions ne passent pas par l'API : **réception** de marchandise, **facturation** et mouvements de stock.
 
@@ -66,10 +71,20 @@ Format : `{id, type, date, source:'poste'|'api', par, data}`. Une boîte d'envoi
 | `commande.recue` | réception au garage | informer la secrétaire |
 | `or.pieces_ok` | toutes les pièces de l'OR sont réservées | **confirmer le RDV** au client |
 | `rdv.maj` | RDV modifié dans le DMS | répercuter dans l'appli RDV, SMS au client |
+| `or.demarre` | le mécano démarre l'intervention (appli mécano) | facultatif : SMS « votre véhicule est pris en charge » |
+| `or.termine` | le mécano appuie sur **Terminé** | **envoyer le SMS** : `data.sms.tel` et `data.sms.texte` (texte réglable dans Paramètres), `data.montantTTC`, `data.factureId` (brouillon au comptoir) |
+| `or.signalement` | le mécano signale un travail supplémentaire | prévenir le chef d'atelier ; `data.signalement.texte`, `urgent` |
+| `rappel.demande` | formulaire « Être rappelé » du site | prévenir l'accueil (WhatsApp) |
+
+`source` vaut `'mecano'` pour les actions faites depuis la tablette (`par` = nom du mécano).
 
 ## 6. Brancher l'appli RDV
 
-Dans `demo-rdv-techauto.html`, `SHEET_URL` est vide. Mettez-y l'URL d'un webhook n8n de production (`…/webhook/rdv-techauto`). Le workflow fait ensuite trois choses :
+Dans `demo-rdv-techauto.html`, deux constantes sont vides :
+- `SHEET_URL` : webhook n8n (POST) qui reçoit les demandes. Le **site vitrine** (`index.html`, constante `ENDPOINT`) peut utiliser le même : il envoie `action:'rappel'`.
+- `PLANNING_URL` : webhook n8n (GET) qui relaie `GET /api/ext/planning`. Une fois renseignée, l'appli propose les **vrais créneaux libres** des mécanos et masque l'espace Secrétariat (le planning du secrétariat est dans le DMS).
+
+Le workflow des demandes fait ensuite trois choses :
 1. Il appelle `POST /api/ext/rdv` avec le corps reçu.
 2. Il répond `{ok:true}` à la page. L'appli attend `j.ok`, et l'option CORS du webhook doit autoriser `https://techauto-one.vercel.app`.
 3. Si `complet` est faux, il enchaîne sur `lancerRecherche` pour les pièces manquantes.

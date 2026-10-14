@@ -20,8 +20,15 @@ puis Paramètres → « Nom du poste » (Atelier 1, Magasin…). Ajouter en favo
 Win+R → `shell:startup` → y placer un raccourci vers `demarrer.bat`.
 Donner une IP fixe au PC serveur dans la box (bail DHCP réservé).
 
+## 3 bis. Appli mécano (tablettes / téléphones)
+Sur chaque tablette (Wi-Fi du garage) : ouvrir `http://192.168.1.XX:8080/mecano` (adresse affichée au démarrage),
+puis « Ajouter à l'écran d'accueil ». Chacun touche son nom, code **0000** la première fois, puis choisit son code.
+Équipe, horaires, prestations et SMS : DMS → Paramètres.
+
 ## Données & sauvegardes
 - Base : `data/db.json` — copie auto quotidienne dans `data/sauvegardes/` (60 jours)
+- Photos de l'atelier : `data/photos/` (à inclure dans la copie hebdomadaire)
+- Codes PIN (chiffrés) et clé API : `data/config.json`
 - Conseillé : copier `data/` chaque semaine sur une clé USB ou un NAS.
 
 ## Premiers réglages (Paramètres)

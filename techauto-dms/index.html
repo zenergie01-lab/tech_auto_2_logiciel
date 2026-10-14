@@ -83,6 +83,45 @@ label input,label select,label textarea{margin-top:3px;color:var(--ink);font-wei
 .alert{padding:10px 14px;border-radius:8px;background:#fef3c7;color:#92400e;margin-bottom:14px}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--side);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.3s;z-index:99}
 #toast.on{opacity:1}
+/* Planning RDV : une colonne par mécanicien */
+.plan{background:#fff;border:1px solid var(--line);border-radius:10px;overflow-x:auto;margin-bottom:12px}
+.plan-row{display:grid;grid-template-columns:56px repeat(var(--n),minmax(160px,1fr));min-width:calc(56px + var(--n) * 160px)}
+.plan-head{background:#fff;border-bottom:1px solid var(--line)}
+.plan-head>div{padding:8px 10px;border-left:1px solid var(--line)}
+.plan-head>div:first-child{border-left:0}
+.plan-head small{display:block;color:var(--mute);font-size:11px}
+.jauge{height:4px;background:var(--line);border-radius:2px;margin-top:5px}.jauge i{display:block;height:100%;background:var(--acc);border-radius:2px}
+.plan-body{position:relative}
+.plan-times{position:relative}.plan-times span{position:absolute;right:6px;font-size:11px;color:var(--mute);margin-top:2px}
+.plan-col{position:relative;border-left:1px solid var(--line)}
+.slot{position:absolute;left:0;right:0;border-top:1px dashed #eef0f3;cursor:pointer}
+.slot:hover{background:var(--acc2)}
+.slot:hover::after{content:'+ RDV';font-size:11px;color:var(--acc);padding:4px 8px;display:block}
+.pause{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 6px,#e9eaee 6px,#e9eaee 12px)}
+.rb{position:absolute;left:4px;right:4px;border-radius:7px;padding:4px 7px;font-size:12px;line-height:1.3;overflow:hidden;cursor:pointer;border-left:4px solid;box-shadow:0 1px 2px #0002;z-index:1}
+.rb:hover{box-shadow:0 2px 8px #0003;z-index:2}
+.rb .im{font-weight:800;letter-spacing:.3px}
+.rb-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}.rb-tags span{background:#fffa;border-radius:4px;padding:0 4px;font-size:11px}
+.rb-tags .bad{color:var(--bad);font-weight:600}.rb-tags .ok{color:var(--ok)}
+.b-prov{background:#fef9c3;border-left-color:var(--warn)}
+.b-conf{background:#dbeafe;border-left-color:var(--blue)}
+.b-cours{background:#ffedd5;border-left-color:var(--acc)}
+.b-ok{background:#dcfce7;border-left-color:var(--ok)}
+.b-fac{background:#f3f4f6;border-left-color:#9ca3af;color:var(--mute)}
+.b-bad{background:#fee2e2;border-left-color:var(--bad)}
+.b-off{background:#f3f4f6;border-left-color:#d1d5db;color:var(--mute);text-decoration:line-through}
+.plan-now{position:absolute;left:56px;right:0;height:2px;background:var(--bad);z-index:3;pointer-events:none}
+.todo{border-left:4px solid var(--blue)}.todo-ok{border-left-color:var(--ok)}.todo-bad{border-left-color:var(--bad)}.todo-warn{border-left-color:var(--warn)}
+.presta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.pcheck{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer;font-weight:400}
+.pcheck small{display:block;color:var(--mute)}
+.pcheck:has(input:checked){border-color:var(--acc);background:var(--acc2)}
+.pline{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.photos{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.photos img{width:96px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+#annonces{position:fixed;bottom:64px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:98;max-width:390px}
+.annonce{background:var(--side);color:#fff;padding:10px 12px;border-radius:9px;display:flex;gap:10px;align-items:flex-start;box-shadow:0 4px 14px #0003;border-left:5px solid var(--blue)}
+.annonce.ok{border-left-color:var(--ok)}.annonce.bad{border-left-color:var(--bad)}.annonce.warn{border-left-color:var(--warn)}
+.annonce button{background:none;border:0;color:#fff9;cursor:pointer;margin-left:auto;font-size:14px}
 #print{display:none}
 @media print{
   body>*:not(#print){display:none!important}
@@ -143,7 +182,29 @@ function defaultDB() {
       societe:"TECH'AUTO", adresse:'Kourou, Guyane française', tel:'', email:'', siret:'',
       tva:0, mentionTva:'TVA non applicable — art. 294-1 du CGI',
       taux:{MECA:60, CARRO:65, VITRAGE:55, VNVO:60},
-      techniciens:['Technicien 1','Technicien 2','Technicien 3'],
+      techniciens:[],                                   // déduit de « personnel » (compatibilité)
+      // Équipe : rôle, spécialité, colonne au planning. Les codes PIN de l'appli mécano restent sur le serveur.
+      personnel:[
+        {id:'meca1', nom:'Mécano 1', role:'mecano', spec:'Entretien · freinage · pneus', planning:true, actif:true},
+        {id:'meca2', nom:'Mécano 2', role:'mecano', spec:'Moteur · diesel · distribution', planning:true, actif:true},
+        {id:'meca3', nom:'Mécano 3', role:'mecano', spec:'Clim · électricité · diagnostic', planning:true, actif:true},
+        {id:'meca4', nom:'Mécano 4', role:'mecano', spec:'4x4 · trains roulants', planning:true, actif:true},
+        {id:'chef', nom:"Chef d'atelier", role:'chef', spec:'Réception · contrôle · diagnostic', planning:false, actif:true},
+        {id:'mag', nom:'Magasinier', role:'magasinier', spec:'Stock · commandes · Trouve-tout', planning:false, actif:true}
+      ],
+      horaires:[[450, 720], [840, 1020]],               // en minutes : 7h30-12h00 et 14h00-17h00, lundi au vendredi
+      // Catalogue commun : planning, appli RDV en ligne, factures. pieces = "RÉF xQté; RÉF2" (réf. du stock)
+      prestations:[
+        {id:'vid', label:'Vidange + filtre', desc:'Huile moteur et filtre à huile', dur:60, prix:89, pieces:'HUILE-5W30 x5; FH-UNIV'},
+        {id:'rev', label:'Révision constructeur', desc:'Points du carnet, filtres, niveaux', dur:120, prix:189, pieces:'HUILE-5W30 x5; FH-UNIV; FA-UNIV; FHAB-UNIV'},
+        {id:'clm', label:'Recharge climatisation', desc:'Étanchéité, recharge, filtre habitacle', dur:60, prix:79, pieces:'GAZ-R1234; FHAB-UNIV'},
+        {id:'frn', label:'Plaquettes de frein AV', desc:'Remplacement, contrôle des disques', dur:90, prix:149, pieces:'PLAQ-AV'},
+        {id:'pnu', label:'Pneus (x2)', desc:'Montage, valves, équilibrage', dur:60, prix:40, pieces:'PNEU-STD x2', piecesEnSus:true},
+        {id:'dia', label:'Diagnostic électronique', desc:'Voyant moteur, codes défaut', dur:60, prix:59, pieces:''},
+        {id:'pct', label:'Pré-contrôle technique', desc:'On vérifie avant le passage au CT', dur:30, prix:39, pieces:''},
+        {id:'dis', label:'Courroie de distribution', desc:'Kit complet + pompe à eau', dur:240, prix:650, pieces:'KIT-DIST'}
+      ],
+      smsFin:"{societe} : bonjour {prenom}, votre {vehicule} ({immat}) est prêt. Montant : {montant}. Paiement au comptoir, lun-ven 7h30-12h / 14h-17h. Merci de votre confiance !",
       conditions:'Paiement à réception de facture. Les pièces remplacées sont tenues à la disposition du client.',
       validiteDevis:30,
       connecteurs:[
@@ -166,13 +227,15 @@ function defaultDB() {
     },
     compteurs:{}, clients:[], vehicules:[], documents:[], articles:[], mouvements:[],
     vnvo:[], flotte:[], prets:[], reglements:[],
-    besoins:[], offres:[], commandes:[], rdvs:[], journal:[]
+    besoins:[], offres:[], commandes:[], rdvs:[], journal:[], rappels:[]
   };
 }
 function migrate(d) {
   const base = defaultDB();
   for (const k in base) if (d[k] === undefined) d[k] = base[k];
   for (const k in base.settings) if (d.settings[k] === undefined) d.settings[k] = base.settings[k];
+  // La liste « Technicien » des OR suit l'équipe (mécanos et chef d'atelier)
+  d.settings.techniciens = d.settings.personnel.filter(p => p.actif !== false && ['mecano', 'chef'].includes(p.role)).map(p => p.nom);
   return d;
 }
 
@@ -208,7 +271,9 @@ const Store = {
       const v = await (await fetch('/api/version', {cache:'no-store'})).json();
       if (v.version !== this.version) {
         const j = await (await fetch('/api/db', {cache:'no-store'})).json();
+        const avant = this.db;
         this.db = migrate(j.data); this.version = j.version;
+        notifier(avant, this.db);                         // fin d'intervention, signalement, demande en ligne…
         softRefresh();
       }
       setSync(true);
@@ -217,6 +282,7 @@ const Store = {
   async upsert(coll, item) {
     const arr = this.db[coll], i = arr.findIndex(x => x.id === item.id), sent = item;
     if (coll === 'articles') item = Pieces.fusionArticle(arr[i], item);             // réservé / attendu : gérés par les actions
+    if (coll === 'documents') item = Pieces.fusionOR(arr[i], item);                 // saisies de l'appli mécano gardées
     if (i >= 0) arr[i] = item; else arr.push(item);
     if (this.mode === 'server') await this.api('/api/op', {op:'upsert', coll, item:sent}); else this.saveLocal();
     return item;
@@ -240,7 +306,9 @@ const Store = {
     if (this.mode === 'server') {
       const j = await this.api('/api/action', {name, args, par:poste()});
       const d = await (await fetch('/api/db', {cache:'no-store'})).json();
+      const avant = this.db;
       this.db = migrate(d.data); this.version = d.version;
+      notifier(avant, this.db);
       return j.result;
     }
     const copie = structuredClone(this.db);
@@ -302,7 +370,7 @@ const actTag = a => `<span class="tag a-${a}">${ACT[a] || a}</span>`;
    NAVIGATION
    ===================================================================== */
 const MENU = [
-  ['', 'Quotidien'], ['accueil', '🏠', 'Accueil'], ['atelier', '🔧', 'Atelier (temps réel)'],
+  ['', 'Quotidien'], ['accueil', '🏠', 'Accueil'], ['planning', '📅', 'Planning RDV'], ['atelier', '🔧', 'Atelier (temps réel)'],
   ['docs/DEV', '📝', 'Devis'], ['docs/OR', '📋', 'Ordres de réparation'], ['docs/FAC', '🧾', 'Factures'], ['docs/AVO', '↩️', 'Avoirs'],
   ['', 'Fichiers'], ['clients', '👤', 'Clients'], ['vehicules', '🚗', 'Véhicules'], ['stock', '📦', 'Stock pièces'], ['commandes', '🛒', 'Commandes pièces'],
   ['vnvo', '🏷️', 'VN / VO'], ['prets', '🔑', 'Véhicules de prêt'],
@@ -320,7 +388,7 @@ function render() {
   const params = Object.fromEntries(new URLSearchParams(q || ''));
   const [r, a, b] = path.split('/');
   const V = {
-    accueil:[vAccueil, 'Accueil'], atelier:[vAtelier, 'Atelier — suivi en temps réel'],
+    accueil:[vAccueil, 'Accueil'], planning:[vPlanning, 'Planning des rendez-vous'], atelier:[vAtelier, 'Atelier — suivi en temps réel'],
     docs:[() => vDocs(a), DOC[a] ? (a === 'OR' ? 'Ordres de réparation' : DOC[a] + 's') : 'Documents'],
     doc:[() => vDoc(a, b, params), 'Document'],
     clients:[vClients, 'Clients'], client:[() => vClient(a), 'Fiche client'],
@@ -433,7 +501,7 @@ function vAtelier() {
       <div class="kc"><div style="display:flex;justify-content:space-between"><span class="im">${esc(v?.immat || '—')}</span>${actTag(o.activite)}</div>
         <div>${esc(v ? v.marque + ' ' + v.modele : '')}</div>
         <div class="mute">${esc(cName(client(o.clientId)))} · ${esc(o.numero)}</div>
-        <div class="mute">🔧 ${esc(o.technicien || 'Non affecté')} · ${num(totals(o).heures)} h · entré le ${dfr(o.date)}</div>
+        <div class="mute">🔧 ${esc(o.technicien || 'Non affecté')} · ${num(totals(o).heures)} h · entré le ${dfr(o.date)}${(o.photos || []).length ? ` · 📷 ${o.photos.length}` : ''}${(o.signalements || []).some(s => s.statut === 'a_chiffrer') ? ' · <b style="color:var(--bad)">⚠ travaux signalés</b>' : ''}</div>
         ${badgePieces(o.id)}
         <div class="act">${ci > 0 ? `<button class="btn ghost sm" onclick="setOR('${o.id}','${cols[ci - 1][0]}')">◀</button>` : ''}
           <button class="btn ghost sm" onclick="go('doc/${o.id}')">Ouvrir</button>
@@ -467,8 +535,8 @@ function newDoc(type, p = {}) {
     lignes:[], km:'', technicien:'', notes:'', tva:S().tva, origineId:'', creePar:poste(), cree:new Date().toISOString()};
 }
 function vDoc(id, type, params) {
-  if (id === 'new') cur = newDoc(type, params);
-  else { const d = db().documents.find(x => x.id === id); if (!d) return '<div class="empty">Document introuvable</div>'; cur = JSON.parse(JSON.stringify(d)); }
+  if (id === 'new') { cur = newDoc(type, params); if (params.notes) cur.notes = params.notes; }
+  else { const d = db().documents.find(x => x.id === id); if (!d) return '<div class="empty">Document introuvable</div>'; cur = JSON.parse(JSON.stringify(d)); cur._statutLu = d.statut; }
   return docHTML();
 }
 function docHTML() {
@@ -522,6 +590,7 @@ function docHTML() {
     <div class="tot" id="totals">${totHTML(t, d)}</div>
   </div>
   ${d.type === 'OR' ? piecesCardHTML(d) : ''}
+  ${(() => { const o = d.type === 'OR' ? db().documents.find(x => x.id === d.id) : d.type === 'FAC' && origine && origine.type === 'OR' ? origine : null, h = o && atelierResumeHTML(o); return h ? `<div class="card">${h}</div>` : ''; })()}
   <div class="card bar" style="position:sticky;bottom:0;margin:0">
     ${!lk ? `<button class="btn" onclick="saveDoc()">💾 Enregistrer</button>` : ''}
     <button class="btn ghost" onclick="printDoc(cur)">🖨 Imprimer</button>
@@ -999,7 +1068,6 @@ function vParams() {
     ${F('tva', 'Taux de TVA (%)', s.tva, 'number')}${F('validiteDevis', 'Validité des devis (jours)', s.validiteDevis, 'number')}
     ${F('mentionTva', 'Mention si TVA à 0 %', s.mentionTva, 'text', [], 'full')}${F('conditions', 'Conditions (bas de facture)', s.conditions, 'textarea', [], 'full')}
     ${Object.keys(ACT).map(k => F('taux_' + k, `Taux horaire ${ACT[k]} (HT)`, s.taux[k], 'number')).join('')}
-    ${F('techniciens', 'Techniciens (séparés par des virgules)', s.techniciens.join(', '), 'text', [], 'full')}
     <label class="full">Connecteurs pièces — une ligne par catalogue : <code>Nom | URL</code><br><span style="font-weight:400">Variables : {ref} {vin} {immat} {marque} {modele}</span>
       <textarea name="connecteurs" style="min-height:90px">${esc(s.connecteurs.map(c => c.nom + ' | ' + c.url).join('\n'))}</textarea></label>
     <div class="full"><button class="btn" onclick="saveParams()">Enregistrer les paramètres</button></div></div></div>
@@ -1016,14 +1084,14 @@ function vParams() {
   <div class="card"><h3>Sauvegarde</h3><p class="mute">Le serveur fait aussi une copie automatique chaque jour dans <code>data/sauvegardes</code>.</p>
     <div class="bar"><button class="btn ghost" onclick="dl('techauto-sauvegarde-'+today()+'.json',JSON.stringify(Store.db),'application/json')">⬇ Exporter tout</button>
     <button class="btn ghost" onclick="restaurer()">⬆ Restaurer une sauvegarde</button></div></div>
-  <div class="card"><h3>Démonstration</h3><p class="mute">Ajoute quelques clients, véhicules, pièces et un VO fictifs pour tester.</p><button class="btn ghost" onclick="demo()">Charger des données de démo</button></div></div></div>`;
+  <div class="card"><h3>Démonstration</h3><p class="mute">Ajoute quelques clients, véhicules, pièces et un VO fictifs pour tester.</p><button class="btn ghost" onclick="demo()">Charger des données de démo</button></div></div></div>
+  ${equipeCardHTML()}${planningParamsHTML()}`;
 }
 async function saveParams() {
   const o = vals($('#pSoc')), s = {...S()};
   ['societe', 'siret', 'adresse', 'tel', 'email', 'mentionTva', 'conditions'].forEach(k => s[k] = o[k]);
   s.tva = +o.tva || 0; s.validiteDevis = +o.validiteDevis || 30;
   s.taux = Object.fromEntries(Object.keys(ACT).map(k => [k, +o['taux_' + k] || 0]));
-  s.techniciens = o.techniciens.split(',').map(x => x.trim()).filter(Boolean);
   const g = vals($('#pAgent'));
   s.margeRdv = g.margeRdv === '' ? 1 : +g.margeRdv; s.n8nWebhook = g.n8nWebhook;
   s.fournisseurs = g.fournisseurs.split('\n').map(l => { const [nom, type, tel, email, url, notes] = l.split('|').map(x => (x || '').trim()); return {nom, type:type || 'local', tel, email, url, notes}; }).filter(f => f.nom);
@@ -1059,7 +1127,7 @@ async function demo() {
    La RÉFÉRENCE CONSTRUCTEUR (OE) fait foi : pas de commande sans elle.
    ===================================================================== */
 const bTag = b => { const s = Pieces.STATUTS[b.statut] || [b.statut, '']; return `<span class="tag ${s[1]}">${s[0]}</span>`; };
-const RDVST = {provisoire:['RDV provisoire', 't-warn'], confirme:['RDV confirmé', 't-ok'], a_decaler:['RDV à décaler', 't-bad'], annule:['RDV annulé', ''], termine:['RDV terminé', '']};
+const RDVST = {provisoire:['RDV provisoire', 't-warn'], confirme:['RDV confirmé', 't-ok'], a_decaler:['RDV à décaler', 't-bad'], annule:['RDV annulé', ''], absent:['Client absent', ''], termine:['RDV terminé', '']};
 const rdvTag = r => r ? `<span class="tag ${(RDVST[r.statut] || [])[1] || ''}">${(RDVST[r.statut] || [r.statut])[0]} ${dfr(r.date)} ${esc(r.heure || '')}</span>` : '';
 const besoin = id => db().besoins.find(x => x.id === id);
 const fournisseurs = () => S().fournisseurs || [];
@@ -1235,6 +1303,332 @@ function cartePiecesAccueil() {
     ${prop ? `<tr class="click" onclick="go('commandes')"><td>Commandes à valider</td><td class="r"><span class="tag t-warn">${prop}</span></td></tr>` : ''}
     ${late.map(c => `<tr class="click" onclick="go('commandes')"><td>Retard ${esc(c.fournisseur)} (${esc(c.numero)})</td><td class="r"><span class="tag t-bad">prévu ${dfr(c.dateLivraisonPrevue)}</span></td></tr>`).join('')}</table>`
     : '<div class="empty">Aucune pièce bloquante</div>'}</div>`;
+}
+
+/* =====================================================================
+   PLANNING RDV — secrétariat & chef d'atelier
+   Le planning, c'est un parking : une colonne par mécanicien, un bloc par RDV.
+   Le stock décide : un RDV n'est confirmé d'office que si ses pièces sont réservées.
+   ===================================================================== */
+const ROLES = {mecano:'Mécanicien', chef:"Chef d'atelier", magasinier:'Magasinier', accueil:'Accueil / secrétariat'};
+const PH = 34;                                                    // hauteur d'une demi-heure (px)
+const hm = h => String(h || '').replace(':', 'h');
+const hfr = s => s ? new Date(s).toLocaleString('fr-FR', {weekday:'short', hour:'2-digit', minute:'2-digit'}) : '';
+const dureeTxt = m => m < 60 ? m + ' min' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + String(m % 60).padStart(2, '0') : '');
+const addJ = (iso, n) => Pieces.addDays(iso, n);
+const ouvre = iso => { const j = new Date(iso + 'T12:00:00Z').getUTCDay(); return j > 0 && j < 6; };
+const jourOuvre = (iso, sens = 1) => { while (!ouvre(iso)) iso = addJ(iso, sens); return iso; };
+const rdvOR = r => db().documents.find(x => x.id === r.orId);
+let planJour = '';
+
+function etatBloc(r, or) {
+  if (or?.statut === 'facture') return ['Facturé', 'b-fac'];
+  if (or?.statut === 'termine') return ['✅ Prêt — à encaisser', 'b-ok'];
+  if (or?.statut === 'en_cours') return ['🔧 En cours', 'b-cours'];
+  return {provisoire:['À confirmer', 'b-prov'], confirme:['Confirmé', 'b-conf'], a_decaler:['À décaler', 'b-bad'],
+    absent:['Absent', 'b-off'], annule:['Annulé', 'b-off'], termine:['Terminé', 'b-ok']}[r.statut] || [r.statut, ''];
+}
+const tagPieces = e => e.besoins.length ? (e.complet ? '<span class="tag t-ok">✓ pièces</span>' : '<span class="tag t-bad">⚠ pièces</span>') : '';
+
+function vPlanning() {
+  const d = db(), t = today();
+  if (!planJour) planJour = jourOuvre(t);
+  const j = planJour, mecas = Pieces.mecanos(d), H = Pieces.horaires(d);
+  const deb = Math.min(...H.map(h => h[0])), fin = Math.max(...H.map(h => h[1])), y = m => (m - deb) / 30 * PH;
+  const R = d.rdvs.filter(r => r.date === j && r.statut !== 'annule');
+  const places = R.filter(r => r.heure && mecas.some(m => m.id === r.meca)), aPlacer = R.filter(r => !places.includes(r));
+  const heures = []; for (let m = deb; m < fin; m += 30) heures.push(m);
+  const now = new Date(), nowM = now.getHours() * 60 + now.getMinutes();
+  const cellules = mid => heures.map(m => H.some(([a, b]) => m >= a && m < b)
+    ? `<div class="slot" style="top:${y(m)}px;height:${PH}px" onclick="nouveauRdv({date:'${j}',heure:'${Pieces.hhmm(m)}',meca:'${mid}'})"></div>`
+    : `<div class="pause" style="top:${y(m)}px;height:${PH}px"></div>`).join('');
+  const bloc = r => {
+    const or = rdvOR(r), v = or && veh(or.vehiculeId), [lab, cls] = etatBloc(r, or), e = Pieces.etatOR(d, r.orId);
+    const nbPh = (or?.photos || []).length, sig = (or?.signalements || []).filter(x => x.statut === 'a_chiffrer').length;
+    return `<div class="rb ${cls}" style="top:${y(Pieces.hmin(r.heure)) + 1}px;height:${(+r.duree || 60) / 30 * PH - 3}px" onclick="ficheRdv('${r.id}')" title="${esc(r.prestation || '')}">
+      <div><b>${hm(r.heure)}</b> <span class="im">${esc(v?.immat || '—')}</span> ${esc(v ? `${v.marque || ''} ${v.modele || ''}` : '')}</div>
+      <div class="mute">${esc(cName(or && client(or.clientId)))} · ${esc(r.prestation || '')}</div>
+      <div class="rb-tags"><span>${lab}</span>${e.besoins.length ? (e.complet ? '<span class="ok">✓ pièces</span>' : '<span class="bad">⚠ pièces</span>') : ''}${nbPh ? `<span>📷 ${nbPh}</span>` : ''}${sig ? `<span class="bad">🔧 ${sig} à chiffrer</span>` : ''}${r.canal === 'en ligne' ? '<span title="Réservé en ligne">🌐</span>' : ''}${r.mode === 'attente' ? '<span title="Le client attend sur place">⏱ attend</span>' : ''}</div></div>`;
+  };
+  const cap = H.reduce((s, [a, b]) => s + b - a, 0), charge = mid => R.filter(r => r.meca === mid && Pieces.occupe(r)).reduce((s, r) => s + (+r.duree || 60), 0);
+  return `${aTraiterHTML()}
+  <div class="bar">
+    <button class="btn ghost" onclick="planJour=jourOuvre(addJ(planJour,-1),-1);render()">◀</button>
+    <input type="date" value="${j}" onchange="planJour=this.value||today();render()" style="max-width:160px">
+    <button class="btn ghost" onclick="planJour=jourOuvre(addJ(planJour,1));render()">▶</button>
+    <button class="btn ghost" onclick="planJour=jourOuvre(today());render()">Aujourd'hui</button>
+    <b style="margin-left:6px">${new Date(j + 'T12:00:00').toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})}</b>
+    ${!ouvre(j) ? '<span class="tag t-warn">Fermé (week-end)</span>' : ''}
+    <span class="grow"></span><button class="btn" onclick="nouveauRdv({date:'${j}'})">+ Nouveau RDV</button></div>
+  ${aPlacer.length ? `<div class="card todo todo-warn"><h3>À placer sur le planning (${aPlacer.length})</h3><table>${aPlacer.map(r => { const or = rdvOR(r), v = or && veh(or.vehiculeId);
+    return `<tr class="click" onclick="ficheRdv('${r.id}')"><td>${esc(hm(r.heure) || 'heure ?')}</td><td><b>${esc(v?.immat || '—')}</b></td><td>${esc(cName(or && client(or.clientId)))}</td><td>${esc(r.prestation || '')}</td><td>${rdvTag(r)}</td></tr>`; }).join('')}</table></div>` : ''}
+  ${mecas.length ? `<div class="plan" style="--n:${mecas.length}">
+    <div class="plan-row plan-head"><div></div>${mecas.map(m => `<div><b>${esc(m.nom)}</b><small>${esc(m.spec || '')}</small><div class="jauge" title="Charge du jour"><i style="width:${Math.min(100, charge(m.id) / cap * 100)}%"></i></div></div>`).join('')}</div>
+    <div class="plan-row plan-body" style="height:${y(fin)}px">
+      <div class="plan-times">${heures.filter(m => m % 60 === 0 || m === deb).map(m => `<span style="top:${y(m)}px">${hm(Pieces.hhmm(m))}</span>`).join('')}</div>
+      ${mecas.map(m => `<div class="plan-col">${cellules(m.id)}${places.filter(r => r.meca === m.id).map(bloc).join('')}</div>`).join('')}
+      ${j === t && nowM > deb && nowM < fin ? `<div class="plan-now" style="top:${y(nowM)}px"></div>` : ''}
+    </div></div>` : '<div class="card empty">Aucun mécanicien au planning : cochez « Au planning » dans Paramètres → Équipe.</div>'}
+  <p class="mute">Case vide = nouveau RDV à cette heure. Bloc = confirmer, déplacer, encaisser. 🟡 à confirmer · 🔵 confirmé · 🟠 en cours · 🟢 prêt à encaisser.</p>`;
+}
+
+// Bandeau « À traiter » : ce que l'atelier et le site ont envoyé au secrétariat
+function aTraiterHTML() {
+  const d = db(), t = today();
+  const prets = d.documents.filter(o => o.type === 'OR' && o.statut === 'termine');
+  const sigs = d.documents.filter(o => o.type === 'OR' && o.statut !== 'facture').flatMap(o => (o.signalements || []).filter(s => s.statut === 'a_chiffrer').map(s => ({o, s})));
+  const rap = (d.rappels || []).filter(x => x.statut === 'a_rappeler');
+  const enLigne = d.rdvs.filter(r => r.statut === 'provisoire' && r.canal === 'en ligne' && (r.date || '') >= t);
+  const carte = (titre, cls, rows) => rows.length ? `<div class="card todo ${cls}"><h3>${titre} <span class="tag">${rows.length}</span></h3><table>${rows.join('')}</table></div>` : '';
+  const h = carte('✅ Véhicules prêts — à encaisser', 'todo-ok', prets.map(o => {
+      const v = veh(o.vehiculeId), c = client(o.clientId), f = d.documents.find(x => x.type === 'FAC' && x.origineId === o.id), sms = o.smsFin;
+      return `<tr><td><b>${esc(v?.immat || '—')}</b> ${esc(v?.modele || '')}<br><span class="mute">${esc(cName(c))}${c?.tel ? ' · ' + esc(c.tel) : ''}</span></td>
+        <td class="mute">par ${esc(o.terminePar || o.technicien || '?')}<br>${sms ? (sms.via === 'n8n' ? '📱 SMS envoyé' : `<a style="cursor:pointer;color:var(--blue)" onclick="copierSms('${o.id}')">📱 SMS à envoyer</a>`) : ''}</td>
+        <td class="r">${f ? `<b>${eur(totals(f).ttc)}</b><br><button class="btn green sm" onclick="go('doc/${f.id}')">🧾 Encaisser</button>` : `<button class="btn green sm" onclick="facturerOR('${o.id}')">Facturer</button>`}</td></tr>`; }))
+    + carte("🔧 Travaux signalés par l'atelier — à chiffrer", 'todo-bad', sigs.map(({o, s}) => { const v = veh(o.vehiculeId);
+      return `<tr><td><b>${esc(v?.immat || '—')}</b> ${s.urgent ? '<span class="tag t-bad">Urgent</span>' : ''}<br>${esc(s.texte)}<br><span class="mute">${esc(s.par)} · ${hfr(s.le)}</span></td>
+        <td class="r"><button class="btn sm" onclick="devisSignalement('${o.id}','${s.id}')">📝 Devis</button><br><button class="btn ghost sm" style="margin-top:4px" onclick="act('traiterSignalement',{orId:'${o.id}',id:'${s.id}',statut:'refuse'},'Signalement classé')">Classer</button></td></tr>`; }))
+    + carte('📞 Demandes de rappel (site web)', 'todo-warn', rap.map(x => `<tr><td><b>${esc(x.nom)}</b> · <a href="tel:${esc(x.tel)}">${esc(x.tel)}</a><br><span class="mute">${esc([x.vehicule, x.immat, x.prestation, x.dateSouhaitee && 'souhaité le ' + dfr(x.dateSouhaitee)].filter(Boolean).join(' · '))}</span>${x.message ? `<br><i>« ${esc(x.message)} »</i>` : ''}</td>
+        <td class="r"><button class="btn sm" onclick="rdvDepuisRappel('${x.id}')">📅 Placer</button><br><button class="btn ghost sm" style="margin-top:4px" onclick="act('traiterRappel',{id:'${x.id}',statut:'rappele'},'Marqué rappelé')">Rappelé ✓</button></td></tr>`))
+    + carte('🌐 RDV en ligne à confirmer', 'todo-warn', enLigne.map(r => { const or = rdvOR(r), v = or && veh(or.vehiculeId);
+      return `<tr class="click" onclick="planJour='${r.date}';render();ficheRdv('${r.id}')"><td><b>${dfr(r.date)} ${hm(r.heure)}</b> · ${esc(v?.immat || '')}<br><span class="mute">${esc(cName(or && client(or.clientId)))} · ${esc(r.prestation || '')}</span></td><td class="r">${tagPieces(Pieces.etatOR(d, r.orId))}</td></tr>`; }));
+  return h ? `<div class="grid g2" style="margin-bottom:4px">${h}</div>` : '';
+}
+
+/* ---------- Nouveau RDV (téléphone, comptoir, rappel) ---------- */
+let rf = null;
+function nouveauRdv(pre = {}) {
+  const cat = S().prestations || [];
+  rf = {date:jourOuvre(pre.date && pre.date >= today() ? pre.date : today()), heure:pre.heure || '', meca:pre.meca || '', presta:[], rappelId:pre.rappelId || ''};
+  const m = modal('📅 Nouveau rendez-vous', `
+    <div class="fg" id="rfF">
+      ${F('plaque', 'Immatriculation *', pre.plaque || '')}<div id="rfConnu" class="mute" style="align-self:end"></div>
+      ${F('client', 'Nom et prénom du client *', pre.client || '')}${F('tel', 'Portable (pour le SMS) *', pre.tel || '', 'tel')}
+      ${F('vehicule', 'Marque et modèle', pre.vehicule || '')}${F('km', 'Kilométrage', '', 'number')}
+    </div>
+    <h4 style="margin:14px 0 6px">Prestations</h4>
+    <div class="presta-grid">${cat.map(p => `<label class="pcheck"><input type="checkbox" value="${esc(p.id)}" onchange="rfPresta()"><span><b>${esc(p.label)}</b><small>${dureeTxt(+p.dur || 60)} · ${eur(p.prix)}${p.piecesEnSus ? ' + pièces' : ''}</small></span></label>`).join('')}</div>
+    <div class="fg" style="margin-top:10px">
+      ${F('symptome', 'Symptôme / demande du client (ses mots)', pre.symptome || '', 'textarea', [], 'full')}
+      <label>Date<input type="date" name="date" value="${rf.date}" onchange="rf.date=this.value;rfCreneaux()"></label>
+      <label>Durée (min)<input type="number" name="duree" step="15" value="60" oninput="rfCreneaux()"></label>
+      <label>Mécanicien<select name="meca" onchange="rf.meca=this.value;rfCreneaux()"><option value="">Premier disponible</option>${Pieces.mecanos(db()).map(x => `<option value="${x.id}" ${x.id === rf.meca ? 'selected' : ''}>${esc(x.nom)} · ${esc(x.spec || '')}</option>`).join('')}</select></label>
+      <label>Heure<select name="heure" id="rfH"></select></label>
+      ${F('mode', 'Le client…', 'depot', 'select', [['depot', 'dépose le véhicule'], ['attente', 'attend sur place']])}
+    </div>
+    <div id="rfPieces" style="margin-top:10px"></div>`,
+    async m => {
+      const o = vals(m);
+      if (Pieces.norm(o.plaque).length < 4) { alert('Immatriculation obligatoire'); return false; }
+      if (!o.client || String(o.tel).replace(/\D/g, '').length < 9) { alert('Nom et portable du client obligatoires'); return false; }
+      if (!rf.presta.length && !o.symptome) { alert('Choisissez une prestation ou notez la demande du client'); return false; }
+      if (!o.heure) { alert('Aucune heure choisie : changez de jour ou de mécanicien'); return false; }
+      const r = await Store.action('rdvEntrant', {ref:'', date:o.date, heure:o.heure, duree:o.duree, meca:rf.meca, prestaIds:rf.presta, plaque:o.plaque,
+        client:o.client, tel:o.tel, vehicule:o.vehicule, km:o.km, symptome:o.symptome, mode:o.mode, canal:'telephone'});
+      if (rf.rappelId) await Store.action('traiterRappel', {id:rf.rappelId, statut:'planifie'});
+      planJour = o.date; render();
+      toast(r.rdv.statut === 'confirme' ? 'RDV confirmé ✔ — pièces réservées' : `RDV provisoire : ${r.manquants.length} pièce(s) à trouver`);
+      if (r.manquants.length) setTimeout(() => ficheRdv(r.rdv.id), 400);
+    }, 'Enregistrer le RDV');
+  const pl = m.querySelector('[name=plaque]');
+  pl.oninput = () => rfPlaque(pl.value);
+  if (pre.plaque) rfPlaque(pre.plaque);
+  rfCreneaux();
+}
+function rfPlaque(v) {
+  const n = Pieces.norm(v), x = n.length >= 5 && db().vehicules.find(y => Pieces.norm(y.immat) === n), m = $('#modal'), c = x && client(x.clientId);
+  $('#rfConnu').innerHTML = x ? `👤 Déjà venu : <b>${esc(cName(c))}</b> · ${esc(`${x.marque || ''} ${x.modele || ''}`)}` : n.length >= 5 ? 'Nouveau véhicule' : '';
+  if (!x) return;
+  const set = (k, val) => { const i = m.querySelector(`[name=${k}]`); if (i && !i.value && val) i.value = val; };
+  set('client', c ? `${c.prenom || ''} ${c.nom || ''}`.trim() : ''); set('tel', c?.tel); set('vehicule', `${x.marque || ''} ${x.modele || ''}`.trim()); set('km', x.km);
+}
+function rfPresta() {
+  const m = $('#modal'), cat = S().prestations || [];
+  rf.presta = [...m.querySelectorAll('.pcheck input:checked')].map(i => i.value);
+  const du = rf.presta.reduce((s, id) => s + (+(cat.find(p => p.id === id) || {}).dur || 0), 0);
+  if (du) m.querySelector('[name=duree]').value = du;
+  rfCreneaux();
+}
+function rfCreneaux() {
+  const m = $('#modal'), du = +m.querySelector('[name=duree]').value || 60, sel = $('#rfH'), garde = sel.value || rf.heure;
+  const cr = Pieces.creneaux(db(), {date:rf.date, duree:du, meca:rf.meca});
+  sel.innerHTML = cr.length ? cr.map(c => `<option value="${c.heure}" ${c.heure === garde ? 'selected' : ''}>${hm(c.heure)}${rf.meca ? '' : ` — ${c.libres.length} mécano${c.libres.length > 1 ? 's' : ''} libre${c.libres.length > 1 ? 's' : ''}`}</option>`).join('')
+    : `<option value="">${ouvre(rf.date) ? 'Aucun créneau libre ce jour' : 'Atelier fermé ce jour'}</option>`;
+  // Le stock décide : aperçu des pièces de la prestation
+  const cat = S().prestations || [];
+  const pcs = rf.presta.flatMap(id => String((cat.find(p => p.id === id) || {}).pieces || '').split(';').map(x => x.trim()).filter(Boolean));
+  let manque = 0;
+  const tags = pcs.map(x => {
+    const mm = x.match(/^(.*?)(?:\s+x\s*([\d.,]+))?$/i), ref = mm[1].trim(), q = mm[2] ? +mm[2].replace(',', '.') : 1, a = Pieces.articlePour(db(), {ref});
+    if (a && Pieces.dispo(a) >= q) return `<span class="tag t-ok">✓ ${esc(a.designation || ref)} ×${num(q)}</span>`;
+    manque++; return `<span class="tag t-bad">⚠ ${esc(a?.designation || ref)} ×${num(q)} — ${a ? 'dispo ' + num(Pieces.dispo(a)) : 'absente du stock'}</span>`;
+  });
+  $('#rfPieces').innerHTML = pcs.length ? `<b>Pièces :</b> ${tags.join(' ')}${manque ? '<div class="alert" style="margin:8px 0 0">Il manque des pièces : le RDV sera enregistré <b>provisoire</b>. Lancez Trouve-tout depuis la fiche, puis confirmez au client quand tout est réservé.</div>' : ''}` : '';
+}
+function rdvDepuisRappel(id) {
+  const x = (db().rappels || []).find(y => y.id === id); if (!x) return;
+  nouveauRdv({client:x.nom, tel:x.tel, plaque:x.immat, vehicule:x.vehicule, date:x.dateSouhaitee, symptome:[x.prestation, x.message].filter(Boolean).join(' — '), rappelId:id});
+}
+
+/* ---------- Fiche d'un RDV : confirmer, déplacer, encaisser ---------- */
+function ficheRdv(id) {
+  const d = db(), r = d.rdvs.find(x => x.id === id); if (!r) return;
+  const or = rdvOR(r), v = or && veh(or.vehiculeId), c = or && client(or.clientId), e = Pieces.etatOR(d, r.orId);
+  const f = or && d.documents.find(x => x.type === 'FAC' && x.origineId === or.id), [lab] = etatBloc(r, or);
+  const aTrouver = e.besoins.filter(b => Pieces.A_TROUVER.includes(b.statut) && b.statut !== 'recherche' && !b.commandeId);
+  const fini = or && ['termine', 'facture'].includes(or.statut), lance = or && or.statut === 'en_cours';
+  modal(`${esc(v?.immat || 'Rendez-vous')} — ${esc(lab)}`, `
+    <div class="grid g2">
+      <div><small class="mute">Client</small><br><b>${esc(cName(c))}</b>${c?.tel ? `<br><a href="tel:${esc(c.tel)}">📞 ${esc(c.tel)}</a>` : ''}</div>
+      <div><small class="mute">Véhicule</small><br><b>${esc(v ? vName(v) : '—')}</b>${or ? `<br><a href="#doc/${or.id}" onclick="closeModal()">${esc(or.numero)} → ouvrir l'OR</a>` : ''}</div>
+      <div><small class="mute">Prestation</small><br>${esc(r.prestation || '—')} · ${dureeTxt(+r.duree || 60)}${r.mode === 'attente' ? ' · <b>attend sur place</b>' : ''}</div>
+      <div><small class="mute">Quand · qui</small><br>${dfr(r.date)} ${hm(r.heure)} · ${esc(Pieces.nomPers(d, r.meca) || 'non attribué')}<br><span class="mute">${r.canal === 'en ligne' ? '🌐 Réservé en ligne' : r.canal === 'telephone' ? '📞 Pris au téléphone' : esc(r.canal || '')}</span></div>
+    </div>
+    ${or?.notes ? `<div class="alert" style="background:#f3f4f6;color:var(--ink);margin:12px 0 0;white-space:pre-line">${esc(or.notes)}</div>` : ''}
+    <h4 style="margin:14px 0 6px">Pièces ${e.besoins.length ? (e.complet ? '<span class="tag t-ok">Toutes réservées</span>' : '<span class="tag t-bad">Manquantes</span>') : '<span class="mute">aucune</span>'}</h4>
+    ${e.besoins.map(b => `<div class="pline"><span>${esc(b.designation)} ×${num(b.qte)}</span>${bTag(b)}</div>`).join('')}
+    ${e.besoins.length && !e.complet ? `<p class="mute">${esc(e.texte)}${e.date ? ` → RDV possible dès le <b>${dfr(e.date)}</b>` : ''}</p>` : ''}
+    ${aTrouver.length ? `<button class="btn blue sm" onclick="closeModal();act('lancerRecherche',{orId:'${r.orId}'},'Demande envoyée à Trouve-tout')">🔎 Lancer Trouve-tout (${aTrouver.length} pièce${aTrouver.length > 1 ? 's' : ''})</button>` : ''}
+    ${!fini && !lance ? `<h4 style="margin:16px 0 6px">Statut ${rdvTag(r)}</h4><div class="bar">
+      ${r.statut !== 'confirme' ? `<button class="btn green" onclick="confirmerRdv('${r.id}')">✔ Confirmer${e.besoins.length && !e.complet ? ' (pièces manquantes)' : ''}</button>` : ''}
+      <button class="btn ghost" onclick="statutRdv('${r.id}','a_decaler')">À décaler</button>
+      <button class="btn ghost" onclick="statutRdv('${r.id}','absent')">Absent</button>
+      <button class="btn ghost" onclick="statutRdv('${r.id}','annule')">Annuler</button></div>` : ''}
+    ${!fini ? `<h4 style="margin:16px 0 6px">${lance ? 'Changer de mécanicien ou prolonger' : 'Déplacer'}</h4>
+    <div class="fg" id="mvF"><label>Date<input type="date" name="date" value="${esc(r.date || today())}" onchange="mvCreneaux('${r.id}')"></label>
+      <label>Durée (min)<input type="number" name="duree" step="15" value="${+r.duree || 60}" oninput="mvCreneaux('${r.id}')"></label>
+      <label>Mécanicien<select name="meca" onchange="mvCreneaux('${r.id}')">${Pieces.mecanos(d).map(x => `<option value="${x.id}" ${x.id === r.meca ? 'selected' : ''}>${esc(x.nom)}</option>`).join('')}</select></label>
+      <label>Heure<select name="heure" id="mvH"></select></label></div>
+    <button class="btn ghost" style="margin-top:8px" onclick="deplacerRdv('${r.id}')">Enregistrer le changement</button>` : ''}
+    ${or ? atelierResumeHTML(or) : ''}
+    ${or?.statut === 'termine' ? `<div class="bar" style="margin-top:14px">${f ? `<button class="btn green" onclick="closeModal();go('doc/${f.id}')">🧾 Ouvrir la facture — ${eur(totals(f).ttc)}</button>` : `<button class="btn green" onclick="closeModal();facturerOR('${or.id}')">Facturer</button>`}
+      ${or.smsFin ? (or.smsFin.via === 'n8n' ? '<span class="mute">📱 SMS « véhicule prêt » envoyé</span>' : `<button class="btn ghost" onclick="copierSms('${or.id}')">📱 SMS « véhicule prêt »</button>`) : ''}</div>` : ''}`);
+  if (!fini) mvCreneaux(r.id);
+}
+function mvCreneaux(id) {
+  const r = db().rdvs.find(x => x.id === id), o = vals($('#mvF'));
+  const cr = Pieces.creneaux(db(), {date:o.date, duree:o.duree, meca:o.meca, exclure:id});
+  $('#mvH').innerHTML = cr.length ? cr.map(c => `<option value="${c.heure}" ${c.heure === r.heure ? 'selected' : ''}>${hm(c.heure)}</option>`).join('') : '<option value="">Aucun créneau libre</option>';
+}
+async function deplacerRdv(id) {
+  const r = db().rdvs.find(x => x.id === id), o = vals($('#mvF'));
+  if (!o.heure) return alert('Aucun créneau libre : changez de jour, de durée ou de mécanicien');
+  try { await Store.action('majRdv', {orId:r.orId, date:o.date, heure:o.heure, meca:o.meca, duree:o.duree}); closeModal(); planJour = o.date; render(); toast('Planning mis à jour ✔'); }
+  catch (e) { alert(e.message); }
+}
+async function confirmerRdv(id) {
+  const r = db().rdvs.find(x => x.id === id), e = Pieces.etatOR(db(), r.orId);
+  if (e.besoins.length && !e.complet && !confirm(`Les pièces ne sont pas toutes réservées (${e.texte}).\nConfirmer quand même le RDV au client ?`)) return;
+  try { await Store.action('majRdv', {orId:r.orId, statut:'confirme'}); closeModal(); render(); toast('RDV confirmé ✔'); } catch (x) { alert(x.message); }
+}
+async function statutRdv(id, statut) {
+  const r = db().rdvs.find(x => x.id === id);
+  if (statut === 'annule' && !confirm("Annuler ce RDV ? Le créneau est libéré.\n(Les pièces restent réservées sur l'OR : supprimez l'OR si le client ne revient pas.)")) return;
+  try { await Store.action('majRdv', {orId:r.orId, statut}); closeModal(); render(); toast('RDV : ' + (RDVST[statut] || [statut])[0]); } catch (x) { alert(x.message); }
+}
+function copierSms(orId) {
+  const o = db().documents.find(x => x.id === orId), s = o?.smsFin; if (!s) return;
+  modal('📱 SMS « véhicule prêt »', `<p>À envoyer au <b>${esc(s.tel || 'numéro inconnu')}</b>${s.tel ? ` — <a href="tel:${esc(s.tel)}">appeler</a>` : ''}</p>
+    <textarea readonly style="min-height:90px" onclick="this.select()">${esc(s.texte)}</textarea>
+    <p class="mute">Envoi automatique : renseignez le webhook n8n dans Paramètres → Pièces & agent.</p>`);
+}
+async function devisSignalement(orId, sid) {
+  const o = db().documents.find(x => x.id === orId), s = (o.signalements || []).find(x => x.id === sid);
+  await Store.action('traiterSignalement', {orId, id:sid, statut:'devis'});
+  go(`doc/new/DEV?client=${o.clientId}&veh=${o.vehiculeId}&notes=${encodeURIComponent(`Constat atelier (${s.par}, ${o.numero}) : ${s.texte}`)}`);
+}
+
+// Ce que l'atelier a saisi sur la tablette (fiche RDV, OR, facture)
+function atelierResumeHTML(o) {
+  const pc = o.priseEnCharge, ph = o.photos || [], sig = o.signalements || [], L = o.lignes || [];
+  if (!pc && !ph.length && !o.compteRendu && !sig.length && !o.debut) return '';
+  return `<h4 style="margin:16px 0 6px">🔧 Atelier${o.technicien ? ' · ' + esc(o.technicien) : ''}</h4>
+    <div class="mute">${o.debut ? 'Démarré ' + hfr(o.debut) : ''}${o.fin ? ' · terminé ' + hfr(o.fin) + ' par ' + esc(o.terminePar || '') : ''} · ${L.filter(l => l.fait).length}/${L.length} opérations cochées</div>
+    ${pc ? `<div style="margin-top:6px">Prise en charge : <b>${num(pc.km)} km</b> · carburant ${esc(pc.carburant || '?')}${pc.remarques ? ' · ' + esc(pc.remarques) : ''}${(pc.checks || []).length ? '<br><span class="mute">' + pc.checks.map(x => '✓ ' + esc(x)).join(' · ') + '</span>' : ''}</div>` : ''}
+    ${o.compteRendu ? `<div style="margin-top:6px;white-space:pre-line"><b>Compte rendu :</b> ${esc(o.compteRendu)}</div>` : ''}
+    ${sig.map(s => `<div style="margin-top:6px">⚠ <b>${esc(s.texte)}</b> <span class="mute">(${esc(s.par)})</span> <span class="tag ${s.statut === 'a_chiffrer' ? 't-bad' : ''}">${{a_chiffrer:'À chiffrer', devis:'Devis lancé', refuse:'Classé'}[s.statut] || esc(s.statut)}</span></div>`).join('')}
+    ${ph.length ? `<div class="photos">${ph.map(p => `<a href="/photos/${esc(p.fichier)}" target="_blank" title="${esc([p.type === 'etat' ? 'État à l\'arrivée' : 'Intervention', p.legende, p.par].filter(Boolean).join(' — '))}"><img src="/photos/${esc(p.fichier)}" loading="lazy" alt=""></a>`).join('')}</div>` : ''}`;
+}
+
+/* ---------- Annonces en direct (fin d'intervention, signalement, demandes) ---------- */
+function notifier(av, ap) {
+  if (!av || !ap) return;
+  const idx = new Map(av.documents.map(x => [x.id, x])), immat = o => (ap.vehicules.find(v => v.id === o.vehiculeId) || {}).immat || o.numero;
+  for (const o of ap.documents) {
+    if (o.type !== 'OR') continue;
+    const a = idx.get(o.id); if (!a) continue;
+    if (o.statut === 'termine' && a.statut !== 'termine' && o.terminePar)
+      annonce(`✅ ${immat(o)} terminé par ${o.terminePar} — facture prête au comptoir${o.smsFin?.via === 'n8n' ? ', SMS envoyé au client' : ''}`, 'ok', 'planning');
+    if (o.statut === 'en_cours' && a.statut !== 'en_cours') annonce(`▶ ${immat(o)} : intervention démarrée par ${o.technicien || '?'}`, '', '');
+    (o.signalements || []).slice((a.signalements || []).length).forEach(s => annonce(`🔧 ${s.par} signale sur ${immat(o)} : ${s.texte}`, 'bad', 'planning'));
+  }
+  const rA = new Set((av.rappels || []).map(x => x.id));
+  (ap.rappels || []).filter(x => !rA.has(x.id)).forEach(x => annonce(`📞 Demande de rappel du site : ${x.nom} ${x.tel}`, 'warn', 'planning'));
+  const dA = new Set(av.rdvs.map(x => x.id));
+  ap.rdvs.filter(x => !dA.has(x.id) && x.canal === 'en ligne').forEach(x => annonce(`🌐 Nouveau RDV en ligne le ${dfr(x.date)} à ${hm(x.heure)}`, 'warn', 'planning'));
+}
+function annonce(msg, cls, lien) {
+  let z = $('#annonces'); if (!z) { z = document.createElement('div'); z.id = 'annonces'; document.body.appendChild(z); }
+  const e = document.createElement('div'); e.className = 'annonce ' + (cls || '');
+  e.innerHTML = `<span>${esc(msg)}</span><button title="Fermer">✕</button>`;
+  e.querySelector('button').onclick = ev => { ev.stopPropagation(); e.remove(); };
+  if (lien) { e.style.cursor = 'pointer'; e.onclick = () => { e.remove(); go(lien); }; }
+  z.prepend(e); setTimeout(() => e.remove(), 30000);
+  try { const a = new (window.AudioContext || window.webkitAudioContext)(), osc = a.createOscillator(); osc.frequency.value = cls === 'ok' ? 880 : 660; osc.connect(a.destination); osc.start(); setTimeout(() => { osc.stop(); a.close(); }, 140); } catch (x) {}
+}
+
+/* ---------- Paramètres : équipe, horaires, prestations, SMS ---------- */
+function equipeCardHTML() {
+  const s = S(), hote = location.host.startsWith('localhost') || location.host.startsWith('127.') ? 'ADRESSE-DU-PC-SERVEUR:8080' : location.host;
+  return `<div class="card"><h3>👥 Équipe & appli mécano</h3>
+    <table id="eqT"><tr><th>Nom</th><th>Rôle</th><th>Spécialité</th><th class="c">Au planning</th><th class="c">Actif</th><th></th></tr>
+    ${s.personnel.map(p => `<tr data-id="${esc(p.id)}"><td><input name="nom" value="${esc(p.nom)}"></td>
+      <td><select name="role">${Object.entries(ROLES).map(([k, v]) => `<option value="${k}" ${k === p.role ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+      <td><input name="spec" value="${esc(p.spec || '')}"></td><td class="c"><input type="checkbox" name="planning" ${p.planning ? 'checked' : ''}></td>
+      <td class="c"><input type="checkbox" name="actif" ${p.actif !== false ? 'checked' : ''}></td>
+      <td><button class="btn ghost sm" onclick="definirPin('${esc(p.id)}')">🔑 Code PIN</button></td></tr>`).join('')}</table>
+    <div class="bar" style="margin-top:10px"><button class="btn ghost" onclick="saveEquipe(true)">+ Ajouter une personne</button><span class="grow"></span><button class="btn" onclick="saveEquipe()">Enregistrer l'équipe</button></div>
+    <p class="mute">« Au planning » = une colonne dans le planning des RDV. Pour retirer quelqu'un, décochez « Actif » (l'historique est gardé).<br>
+    Appli mécano : sur la tablette ou le téléphone (Wi-Fi du garage), ouvrez <b>http://${esc(hote)}/mecano</b>. Code PIN par défaut <b>0000</b> tant qu'aucun code n'est défini.</p></div>`;
+}
+async function saveEquipe(ajout) {
+  const personnel = [...document.querySelectorAll('#eqT tr[data-id]')].map(tr => { const g = n => tr.querySelector(`[name=${n}]`);
+    return {id:tr.dataset.id, nom:g('nom').value.trim(), role:g('role').value, spec:g('spec').value.trim(), planning:g('planning').checked, actif:g('actif').checked}; }).filter(p => p.nom);
+  if (ajout) personnel.push({id:uid(), nom:'Nouvelle personne', role:'mecano', spec:'', planning:true, actif:true});
+  if (new Set(personnel.map(p => p.nom.toLowerCase())).size !== personnel.length) return alert('Deux personnes portent le même nom : ajoutez une initiale.');
+  await Store.saveSettings({...S(), personnel}); migrate(Store.db); toast('Équipe enregistrée ✔'); render();
+}
+function definirPin(id) {
+  if (Store.mode !== 'server') return alert('Les codes PIN sont gardés par le serveur : lancez demarrer.bat puis réessayez.');
+  const p = S().personnel.find(x => x.id === id);
+  modal('🔑 Code PIN — ' + esc(p?.nom || ''), `<p class="mute">4 chiffres, pour se connecter à l'appli mécano. Laisser vide = retour au code 0000. Les tablettes de cette personne seront déconnectées.</p>
+    <input name="pin" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">`,
+    async m => { const pin = m.querySelector('[name=pin]').value.trim();
+      if (pin && !/^\d{4}$/.test(pin)) { alert('Le code doit faire 4 chiffres'); return false; }
+      await Store.api('/api/pin', {id, pin}); toast(pin ? 'Code PIN enregistré ✔' : 'Code remis à 0000'); }, 'Enregistrer le code');
+}
+function planningParamsHTML() {
+  const s = S(), h = s.horaires, hh = m => Pieces.hhmm(m);
+  const ligne = p => `<tr data-id="${esc(p.id)}" data-desc="${esc(p.desc || '')}"><td><input name="label" value="${esc(p.label || '')}"></td><td><input name="dur" type="number" step="15" value="${esc(p.dur ?? 60)}"></td>
+    <td><input name="prix" type="number" step="any" value="${esc(p.prix ?? '')}"></td><td><input name="pieces" value="${esc(p.pieces || '')}" placeholder="HUILE-5W30 x5; FH-UNIV"></td>
+    <td class="c"><input type="checkbox" name="piecesEnSus" ${p.piecesEnSus ? 'checked' : ''}></td><td><button class="btn ghost sm" onclick="this.closest('tr').remove()">✕</button></td></tr>`;
+  window._lignePresta = ligne;
+  return `<div class="card"><h3>📅 Planning, prestations & SMS</h3><div class="fg" id="pPlan">
+    <label>Matin — ouverture<input type="time" name="h0" value="${hh(h[0][0])}"></label><label>Matin — fermeture<input type="time" name="h1" value="${hh(h[0][1])}"></label>
+    <label>Après-midi — ouverture<input type="time" name="h2" value="${h[1] ? hh(h[1][0]) : ''}"></label><label>Après-midi — fermeture<input type="time" name="h3" value="${h[1] ? hh(h[1][1]) : ''}"></label>
+    ${F('smsFin', 'SMS « véhicule prêt » (bouton Terminé de l\'appli mécano) — variables : {prenom} {nom} {vehicule} {immat} {montant} {societe} {tel}', s.smsFin, 'textarea', [], 'full')}</div>
+    <h4 style="margin:14px 0 6px">Prestations — utilisées par le planning, l'appli RDV en ligne et la facture</h4>
+    <table id="prT"><tr><th>Libellé</th><th style="width:90px">Durée (min)</th><th style="width:100px">Prix HT</th><th>Pièces du stock <span class="mute">(RÉF xQté; RÉF2)</span></th><th class="c" title="Pièces facturées en plus du forfait (pneus…)">Pièces en sus</th><th></th></tr>
+    ${(s.prestations || []).map(ligne).join('')}</table>
+    <div class="bar" style="margin-top:10px"><button class="btn ghost" onclick="$('#prT').insertAdjacentHTML('beforeend',_lignePresta({id:uid(),dur:60}))">+ Prestation</button><span class="grow"></span><button class="btn" onclick="savePlanningParams()">Enregistrer</button></div>
+    <p class="mute">Pièces « incluses » : elles sortent du stock et sont réservées pour le RDV, mais à 0 € sur la facture (comprises dans le forfait). Cochez « en sus » pour les facturer en plus (pneus).</p></div>`;
+}
+async function savePlanningParams() {
+  const o = vals($('#pPlan')), H = [[Pieces.hmin(o.h0), Pieces.hmin(o.h1)], [Pieces.hmin(o.h2), Pieces.hmin(o.h3)]].filter(([a, b]) => a != null && b != null && b > a);
+  if (!H.length) return alert('Horaires invalides');
+  const prestations = [...document.querySelectorAll('#prT tr[data-id]')].map(tr => { const g = n => tr.querySelector(`[name=${n}]`);
+    return {id:tr.dataset.id, label:g('label').value.trim(), desc:tr.dataset.desc || '', dur:+g('dur').value || 60, prix:+g('prix').value || 0, pieces:g('pieces').value.trim(), piecesEnSus:g('piecesEnSus').checked}; }).filter(p => p.label);
+  await Store.saveSettings({...S(), horaires:H, smsFin:o.smsFin, prestations}); toast('Planning et prestations enregistrés ✔'); render();
 }
 
 /* =====================================================================

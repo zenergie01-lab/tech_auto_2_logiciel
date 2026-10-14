@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2937">
+<title>TECH'AUTO Atelier</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--mute:#6b7280;--line:#e5e7eb;--side:#1f2937;--acc:#ea580c;--acc2:#fff7ed;--ok:#16a34a;--ok2:#dcfce7;--warn:#d97706;--warn2:#fef3c7;--bad:#dc2626;--bad2:#fee2e2;--blue:#2563eb;--blue2:#dbeafe}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:5;background:var(--side);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+header .logo{font-weight:800;font-size:18px;letter-spacing:.5px}.logo span{color:var(--acc)}
+header .who{margin-left:auto;font-size:14px;color:#d1d5db;text-align:right}
+header button{background:#374151;color:#fff;border:0;border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+#sync{width:9px;height:9px;border-radius:50%;background:var(--ok);display:inline-block}
+#sync.off{background:var(--bad)}
+main{max-width:760px;margin:0 auto;padding:14px 14px 120px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--mute);margin:22px 4px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.veh{display:flex;gap:12px;align-items:center;cursor:pointer}
+.veh:active{background:var(--acc2)}
+.plate{display:inline-flex;align-items:stretch;border:2px solid #111;border-radius:6px;overflow:hidden;font-weight:800;letter-spacing:1px;background:#fff;font-size:18px}
+.plate .eu{background:#1d4ed8;color:#fff;font-size:11px;padding:0 4px;display:flex;align-items:flex-end}
+.plate .num{padding:2px 8px}
+.plate.big{font-size:26px}
+.grow{flex:1;min-width:0}
+.mute{color:var(--mute)}.small{font-size:14px}
+.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:600;background:var(--line);white-space:nowrap}
+.c-ok{background:var(--ok2);color:#166534}.c-warn{background:var(--warn2);color:#92400e}.c-bad{background:var(--bad2);color:#991b1b}.c-blue{background:var(--blue2);color:#1e40af}.c-acc{background:var(--acc2);color:#9a3412}
+.heure{font-weight:800;font-size:20px;min-width:62px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:12px;padding:15px;font:inherit;font-weight:700;font-size:17px;cursor:pointer;background:var(--side);color:#fff}
+.btn:disabled{opacity:.5}
+.btn.acc{background:var(--acc)}.btn.ok{background:var(--ok)}.btn.blue{background:var(--blue)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line)}.btn.bad{background:#fff;color:var(--bad);border:2px solid var(--bad2)}
+.btn.huge{font-size:21px;padding:20px}
+.row{display:flex;gap:8px;align-items:center}
+.ops label{display:flex;gap:12px;align-items:center;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.ops label:last-child{border-bottom:0}
+.ops input{width:28px;height:28px;accent-color:var(--ok);flex-shrink:0}
+.ops .done span{text-decoration:line-through;color:var(--mute)}
+.pc{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.pc:last-child{border-bottom:0}
+input[type=number],input[type=text],textarea{width:100%;font:inherit;font-size:17px;padding:12px;border:2px solid var(--line);border-radius:10px;background:#fff}
+textarea{min-height:90px}
+input:focus,textarea:focus{outline:none;border-color:var(--acc)}
+.fuel{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.fuel button{padding:12px 4px;border-radius:10px;border:2px solid var(--line);background:#fff;font:inherit;font-weight:600;font-size:14px}
+.fuel button.on{border-color:var(--acc);background:var(--acc2);color:#9a3412}
+.checks label{display:flex;gap:10px;align-items:center;padding:9px 0}
+.checks input{width:24px;height:24px;accent-color:var(--acc)}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.photos a{position:relative;display:block}
+.photos img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+.photos em{position:absolute;left:4px;bottom:4px;background:#000a;color:#fff;font-size:11px;font-style:normal;border-radius:4px;padding:0 4px}
+.label{display:block;font-weight:700;margin:12px 0 6px}
+.bar-bottom{position:fixed;left:0;right:0;bottom:0;background:#fffe;backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 14px;padding-bottom:max(12px,env(safe-area-inset-bottom));z-index:4}
+.bar-bottom>div{max-width:760px;margin:0 auto}
+/* Connexion */
+.team{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.team button{background:#fff;border:2px solid var(--line);border-radius:14px;padding:18px 10px;font:inherit;text-align:center}
+.team button b{display:block;font-size:18px}.team button small{color:var(--mute)}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0}
+.pin-dots i{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink)}
+.pin-dots i.on{background:var(--ink)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:0 auto}
+.pad button{font:inherit;font-size:26px;font-weight:600;padding:16px 0;border-radius:14px;border:2px solid var(--line);background:#fff}
+.pad button:active{background:var(--acc2)}
+.err{color:var(--bad);text-align:center;min-height:24px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--side);color:#fff;padding:12px 18px;border-radius:12px;z-index:20;max-width:90vw;text-align:center;box-shadow:0 6px 20px #0004}
+.sheet{position:fixed;inset:0;background:#0007;z-index:10;display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:#fff;border-radius:18px 18px 0 0;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));width:100%;max-width:760px;max-height:92vh;overflow:auto}
+.sheet h3{margin:0 0 10px;font-size:20px}
+.fini{text-align:center;padding:26px 14px}
+.fini .big{font-size:64px;line-height:1}
+.alert{background:var(--warn2);color:#92400e;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+.empty{color:var(--mute);text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<header><div class="logo">TECH'<span>AUTO</span> <small style="font-weight:500;color:#9ca3af">Atelier</small></div><div class="who" id="who"></div></header>
+<main id="app"></main>
+<div id="bottom"></div>
+<script>
+/* ======================================================================
+   TECH'AUTO — Appli mécano (tablette / téléphone sur le Wi-Fi du garage)
+   Même serveur que le DMS : tout ce qui est fait ici apparaît aussitôt
+   sur le planning du secrétariat et dans l'OR.
+   ====================================================================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm = h => { const m = String(h || '').match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] + 'h' + m[2] : ''; };
+const hDe = iso => iso ? new Date(iso).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '';
+const plate = (p, big) => `<span class="plate${big ? ' big' : ''}"><span class="eu">F</span><span class="num">${esc(p || '—')}</span></span>`;
+const CARBU = ['Réserve', '1/4', '1/2', '3/4', 'Plein'];
+const RECEP = ['Tour du véhicule fait (chocs, rayures)', 'Voyants du tableau de bord notés', 'Objets de valeur retirés ou signalés', 'Clés étiquetées avec la plaque'];
+const ST = {attente:['À démarrer', 'c-warn'], en_cours:['En cours', 'c-acc'], termine:['Terminé', 'c-ok']};
+const A_TROUVER = ['a_commander', 'a_confirmer'];
+
+const E = {token:localStorage.getItem('techauto_mecano') || '', moi:null, data:null, vue:'login', orId:null, pin:'', pinPour:null, nouveauPin:false, pec:{}, err:'', occupe:false};
+
+/* ---------- Serveur ---------- */
+async function api(path, body) {
+  let r;
+  try { r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json', 'X-Mecano':E.token}, body:JSON.stringify(body || {})}); }
+  catch (e) { setSync(false); throw new Error('Serveur injoignable : vérifiez le Wi-Fi du garage'); }
+  setSync(true);
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== '/api/mecano/login') { deconnexion(); throw new Error(j.error || 'Reconnectez-vous'); }
+  if (!r.ok) throw new Error(j.error || 'Erreur ' + r.status);
+  return j;
+}
+const setSync = ok => { const s = $('#sync'); if (s) s.className = ok ? '' : 'off'; };
+async function charger() {
+  const j = await api('/api/mecano/data');
+  E.moi = j.moi; E.data = j; render();
+}
+async function action(name, args, msg) {
+  if (E.occupe) return; E.occupe = true;
+  try { const j = await api('/api/mecano/action', {name, args}); if (msg) toast(msg); await charger(); return j.result; }
+  catch (e) { toast('⚠ ' + e.message); throw e; }
+  finally { E.occupe = false; }
+}
+// Mise à jour quand le secrétariat ou un collègue modifie quelque chose
+setInterval(async () => {
+  if (!E.token || !E.data || document.hidden) return;
+  try {
+    const v = await (await fetch('/api/version', {cache:'no-store'})).json(); setSync(true);
+    const saisie = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) || $('.sheet');
+    if (v.version !== E.data.version && !saisie && !E.occupe) await charger();
+  } catch (e) { setSync(false); }
+}, 6000);
+
+/* ---------- Connexion ---------- */
+async function ecranLogin() {
+  let equipe = [];
+  try { equipe = await (await fetch('/api/mecano/equipe', {cache:'no-store'})).json(); } catch (e) {}
+  E.equipe = equipe.filter(p => p.role !== 'accueil');
+  E.vue = 'login'; render();
+}
+function choisir(id) { E.pinPour = id; E.pin = ''; E.err = ''; render(); }
+async function touche(k) {
+  if (k === 'del') E.pin = E.pin.slice(0, -1);
+  else if (E.pin.length < 4) E.pin += k;
+  E.err = ''; render();
+  if (E.pin.length < 4) return;
+  if (E.nouveauPin) {
+    try { await api('/api/mecano/pin', {pin:E.pin}); E.nouveauPin = false; E.pin = ''; E.moi.pinDefaut = false; toast('Votre code est enregistré ✔'); render(); }
+    catch (e) { E.err = e.message; E.pin = ''; render(); }
+    return;
+  }
+  try {
+    const j = await api('/api/mecano/login', {id:E.pinPour, pin:E.pin});
+    E.token = j.token; localStorage.setItem('techauto_mecano', j.token);
+    E.moi = j.personne; E.vue = 'liste'; E.pin = '';
+    await charger();
+  } catch (e) { E.err = e.message; E.pin = ''; render(); }
+}
+function deconnexion() {
+  localStorage.removeItem('techauto_mecano'); Object.assign(E, {token:'', moi:null, data:null, pinPour:null, nouveauPin:false});
+  ecranLogin();
+}
+function padHTML(titre) {
+  return `<div class="card" style="text-align:center"><h3 style="margin:4px 0">${titre}</h3>
+    <div class="pin-dots">${[0, 1, 2, 3].map(i => `<i class="${i < E.pin.length ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="err">${esc(E.err)}</div>
+    <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button onclick="touche('${n}')">${n}</button>`).join('')}
+      <span></span><button onclick="touche('0')">0</button><button onclick="touche('del')">⌫</button></div></div>`;
+}
+
+/* ---------- Écrans ---------- */
+function render() {
+  $('#who').innerHTML = E.moi ? `<span id="sync"></span> <b>${esc(E.moi.nom)}</b> <button onclick="deconnexion()">Changer</button>` : '';
+  $('#bottom').innerHTML = '';
+  if (!E.token || !E.moi) return $('#app').innerHTML = vueLogin();
+  if (E.nouveauPin) return $('#app').innerHTML = padHTML('Choisissez votre code (4 chiffres)') + `<button class="btn ghost" onclick="E.nouveauPin=false;E.pin='';render()">Plus tard</button>`;
+  const or = E.orId && E.data.ors.find(o => o.id === E.orId);
+  if (E.vue === 'or' && or) return vueOR(or);
+  E.vue = 'liste'; $('#app').innerHTML = vueListe();
+}
+function vueLogin() {
+  if (E.pinPour) { const p = (E.equipe || []).find(x => x.id === E.pinPour);
+    return `<button class="btn ghost" style="margin-bottom:12px" onclick="E.pinPour=null;render()">← Retour</button>${padHTML('Code de ' + esc(p?.nom || ''))}
+      ${p?.pinDefaut ? '<p class="mute small" style="text-align:center">Premier passage : code <b>0000</b></p>' : ''}`; }
+  return `<h2>Qui êtes-vous ?</h2>${(E.equipe || []).length ? `<div class="team">${E.equipe.map(p => `<button onclick="choisir('${esc(p.id)}')"><b>${esc(p.nom)}</b><small>${esc(p.spec || '')}</small></button>`).join('')}</div>`
+    : '<div class="card empty">Serveur injoignable ou équipe vide. Vérifiez le Wi-Fi, puis l\'équipe dans le DMS (Paramètres → Équipe).<br><br><button class="btn" onclick="ecranLogin()">Réessayer</button></div>'}`;
+}
+function carte(o) {
+  const [st, cls] = ST[o.statut] || [o.statut, ''], manque = o.pieces.length && !o.piecesOk;
+  return `<div class="card veh" onclick="ouvrir('${o.id}')">
+    <div class="heure">${hm(o.rdv?.heure) || '—'}</div>
+    <div class="grow">${plate(o.vehicule.immat)} <b>${esc(`${o.vehicule.marque || ''} ${o.vehicule.modele || ''}`)}</b>
+      <div class="small">${esc(o.rdv?.prestation || o.notes.split('\n')[0] || o.numero)}</div>
+      <div class="row" style="flex-wrap:wrap;margin-top:6px"><span class="chip ${cls}">${st}</span>
+        ${o.pieces.length ? `<span class="chip ${manque ? 'c-bad' : 'c-ok'}">${manque ? '⚠ pièces manquantes' : '✓ pièces prêtes'}</span>` : ''}
+        ${o.rdv?.mode === 'attente' ? '<span class="chip c-blue">⏱ client sur place</span>' : ''}
+        ${o.technicien && o.technicien !== E.moi.nom ? `<span class="chip">${esc(o.technicien)}</span>` : ''}</div></div>
+    <div style="font-size:26px;color:var(--mute)">›</div></div>`;
+}
+function vueListe() {
+  const L = E.data.ors, moi = E.moi, mien = o => o.technicien === moi.nom || (o.rdv && o.rdv.meca === moi.id && !o.technicien);
+  const tri = (a, b) => (a.statut === 'en_cours' ? 0 : 1) - (b.statut === 'en_cours' ? 0 : 1) || String(a.rdv?.heure || '99').localeCompare(String(b.rdv?.heure || '99'));
+  const miens = L.filter(o => mien(o) && o.statut !== 'termine').sort(tri);
+  const libres = L.filter(o => !o.technicien && (!o.rdv || !o.rdv.meca) && o.statut !== 'termine').sort(tri);
+  const autres = moi.role === 'chef' ? L.filter(o => !mien(o) && !libres.includes(o) && o.statut !== 'termine').sort(tri) : [];
+  const finis = L.filter(o => o.statut === 'termine' && (moi.role === 'chef' || mien(o)));
+  return `${moi.pinDefaut ? `<div class="alert">Vous utilisez le code 0000. <a href="#" onclick="E.nouveauPin=true;E.pin='';render();return false"><b>Choisir mon code</b></a></div>` : ''}
+    <h2>Mes véhicules — ${new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})}</h2>
+    ${miens.map(carte).join('') || '<div class="card empty">Rien de prévu pour vous pour l\'instant. Regardez « À prendre » ou demandez au chef d\'atelier.</div>'}
+    ${libres.length ? `<h2>À prendre (non attribués)</h2>${libres.map(carte).join('')}` : ''}
+    ${autres.length ? `<h2>Reste de l'atelier</h2>${autres.map(carte).join('')}` : ''}
+    ${finis.length ? `<h2>Terminés aujourd'hui</h2>${finis.map(carte).join('')}` : ''}`;
+}
+function ouvrir(id) { E.orId = id; E.vue = 'or'; E.pec = {}; window.scrollTo(0, 0); render(); }
+function retour() { E.orId = null; E.vue = 'liste'; render(); window.scrollTo(0, 0); }
+
+function piecesHTML(o) {
+  if (!o.pieces.length) return '';
+  const aTrouver = o.pieces.filter(p => A_TROUVER.includes(p.statut));
+  return `<div class="card"><b>📦 Pièces</b>${o.pieces.map(p => `<div class="pc"><span>${esc(p.designation)} <span class="mute">×${p.qte}</span></span>
+      <span class="chip ${p.statut === 'reserve' || p.statut === 'sorti' ? 'c-ok' : p.statut === 'commande' ? 'c-blue' : 'c-bad'}">${p.statut === 'reserve' ? (p.emplacement ? 'Rayon ' + esc(p.emplacement) : 'Prête au magasin') : p.statut === 'commande' && p.livraison ? 'Arrive le ' + p.livraison.split('-').reverse().slice(0, 2).join('/') : esc(p.statutTxt)}</span></div>`).join('')}
+    ${aTrouver.length ? `<button class="btn blue" style="margin-top:10px" onclick="action('lancerRecherche',{orId:'${o.id}'},'Le magasin est prévenu : Trouve-tout cherche la pièce')">🔎 Pièce manquante : prévenir le magasin</button>` : ''}</div>`;
+}
+function photosHTML(o, type) {
+  const L = o.photos.filter(p => !type || p.type === type);
+  return `${L.length ? `<div class="photos">${L.map(p => `<a href="/photos/${esc(p.fichier)}" target="_blank"><img src="/photos/${esc(p.fichier)}" loading="lazy" alt="">${p.type === 'etat' ? '<em>état</em>' : ''}</a>`).join('')}</div>` : ''}
+    <label class="btn ghost" style="margin-top:10px">📷 ${type === 'etat' ? 'Photo de l\'état (chocs, rayures)' : 'Ajouter une photo'}
+      <input type="file" accept="image/*" capture="environment" multiple hidden onchange="envoyerPhotos('${o.id}','${type || 'intervention'}',this)"></label>`;
+}
+function vueOR(o) {
+  const v = o.vehicule, [st, cls] = ST[o.statut] || [o.statut, ''];
+  let h = `<button class="btn ghost" style="margin-bottom:12px" onclick="retour()">← Mes véhicules</button>
+    <div class="card"><div class="row" style="justify-content:space-between;flex-wrap:wrap">${plate(v.immat, 1)}<span class="chip ${cls}">${st}</span></div>
+      <div style="font-size:20px;font-weight:700;margin-top:8px">${esc(`${v.marque || ''} ${v.modele || ''}`)}</div>
+      <div class="mute small">${esc(o.numero)} · ${esc(o.client.nom)}${v.vin ? ' · VIN ' + esc(v.vin) : ''}${v.energie ? ' · ' + esc(v.energie) : ''}</div>
+      ${o.rdv ? `<div class="small" style="margin-top:6px">🕒 ${hm(o.rdv.heure)} · ${esc(o.rdv.prestation || '')}${o.rdv.mode === 'attente' ? ' · <b>le client attend sur place</b>' : ''}</div>` : ''}
+      ${o.notes ? `<div class="alert" style="background:#f3f4f6;color:var(--ink);white-space:pre-line">${esc(o.notes)}</div>` : ''}</div>`;
+  h += piecesHTML(o);
+
+  if (o.statut === 'attente') {                                  // 1. Prise en charge
+    const p = E.pec;
+    if (p.km === undefined) Object.assign(p, {km:v.km || '', carburant:'', checks:[], remarques:''});
+    h += `<h2>1 · Prise en charge</h2><div class="card">
+      ${o.technicien && o.technicien !== E.moi.nom ? `<div class="alert">Attribué à ${esc(o.technicien)}.</div>` : ''}
+      <span class="label">Kilométrage au compteur</span><input type="number" inputmode="numeric" value="${esc(p.km)}" oninput="E.pec.km=this.value">
+      <span class="label">Carburant</span><div class="fuel">${CARBU.map(c => `<button class="${p.carburant === c ? 'on' : ''}" onclick="E.pec.carburant='${c}';render()">${c}</button>`).join('')}</div>
+      <span class="label">Contrôles à l'arrivée</span><div class="checks">${RECEP.map((c, i) => `<label><input type="checkbox" ${p.checks.includes(c) ? 'checked' : ''} onchange="cocherPec(${i},this.checked)">${c}</label>`).join('')}</div>
+      <span class="label">Remarques sur l'état</span><textarea placeholder="Rayure porte AR droite, jante AV gauche frottée…" oninput="E.pec.remarques=this.value">${esc(p.remarques)}</textarea>
+      ${photosHTML(o, 'etat')}</div>`;
+    $('#bottom').innerHTML = `<div class="bar-bottom"><div><button class="btn acc huge" onclick="demarrer('${o.id}')">▶ Démarrer l'intervention</button></div></div>`;
+  } else if (o.statut === 'en_cours') {                          // 2. Intervention
+    const fait = o.lignes.filter(l => l.fait).length;
+    h += `<h2>Opérations · ${fait}/${o.lignes.length}</h2><div class="card ops">${o.lignes.map(l => `
+      <label class="${l.fait ? 'done' : ''}"><input type="checkbox" ${l.fait ? 'checked' : ''} onchange="cocher('${o.id}','${l.lid}',this.checked)">
+        <span class="grow">${l.type === 'PIECE' ? '📦' : l.type === 'MO' ? '🔧' : '🧾'} ${esc(l.designation)}${+l.qte !== 1 ? ` <span class="mute">×${esc(l.qte)}</span>` : ''}</span>
+        ${l.fait && l.faitPar && l.faitPar !== E.moi.nom ? `<span class="mute small">${esc(l.faitPar)}</span>` : ''}</label>`).join('') || '<div class="empty">Aucune ligne sur l\'OR : prévenez le secrétariat.</div>'}</div>
+      <h2>Photos de l'intervention</h2><div class="card">${photosHTML(o, '')}</div>
+      <h2>Compte rendu</h2><div class="card"><textarea id="cr" placeholder="Ce qui a été fait, ce qui a été constaté, conseils pour le client…" onchange="sauverCR('${o.id}',this.value)">${esc(o.compteRendu)}</textarea>
+        <p class="mute small" style="margin:6px 0 0">Lu par le secrétariat avant l'encaissement.</p></div>
+      <h2>Un autre problème ?</h2><div class="card">${o.signalements.map(s => `<div class="pc"><span>⚠ ${esc(s.texte)}</span><span class="chip ${s.statut === 'a_chiffrer' ? 'c-bad' : 'c-ok'}">${s.statut === 'a_chiffrer' ? 'Envoyé au secrétariat' : s.statut === 'devis' ? 'Devis en cours' : 'Traité'}</span></div>`).join('')}
+        <button class="btn bad" style="margin-top:8px" onclick="signaler('${o.id}')">⚠ Signaler un travail supplémentaire</button></div>`;
+    $('#bottom').innerHTML = `<div class="bar-bottom"><div><button class="btn ok huge" onclick="terminer('${o.id}')">✅ Terminé — véhicule prêt</button></div></div>`;
+  } else {                                                      // 3. Terminé
+    h += `<div class="card fini"><div class="big">✅</div><h3>Terminé à ${hDe(o.fin)}${o.terminePar ? ' par ' + esc(o.terminePar) : ''}</h3>
+      <p>Le secrétariat est prévenu, la facture est prête au comptoir et le client reçoit son SMS.</p></div>
+      ${o.photos.length ? `<div class="card">${photosHTML(o, '')}</div>` : ''}`;
+  }
+  $('#app').innerHTML = h;
+}
+
+/* ---------- Gestes ---------- */
+function cocherPec(i, on) { const c = RECEP[i], L = E.pec.checks; if (on && !L.includes(c)) L.push(c); if (!on) L.splice(L.indexOf(c), 1); }
+async function demarrer(id) {
+  const o = E.data.ors.find(x => x.id === id), p = E.pec;
+  if (!p.km) return toast('Notez le kilométrage');
+  if (!p.carburant) return toast('Indiquez le niveau de carburant');
+  if (o.pieces.length && !o.piecesOk && !confirm('Des pièces ne sont pas encore là. Démarrer quand même ?')) return;
+  if (!o.technicien) await action('prendreOR', {orId:id});
+  await action('demarrerOR', {orId:id, priseEnCharge:{km:p.km, carburant:p.carburant, checks:p.checks, remarques:p.remarques}}, 'Intervention démarrée ▶');
+  window.scrollTo(0, 0);
+}
+async function cocher(orId, lid, on) {
+  const l = E.data.ors.find(x => x.id === orId).lignes.find(x => x.lid === lid); l.fait = on; render();
+  try { await action('atelierMaj', {orId, faits:{[lid]:on}}); } catch (e) {}
+}
+async function sauverCR(orId, txt) { try { await action('atelierMaj', {orId, compteRendu:txt}, 'Compte rendu enregistré'); } catch (e) {} }
+function signaler(orId) {
+  feuille(`<h3>⚠ Travail supplémentaire</h3><p class="mute small">Le secrétariat le reçoit tout de suite et prépare un devis pour le client.</p>
+    <textarea id="sigT" placeholder="Ex. : plaquettes AR à 2 mm, disque AV rayé, fuite cardan gauche…"></textarea>
+    <label class="checks"><label><input type="checkbox" id="sigU"> Urgent / sécurité</label></label>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" onclick="fermer()">Annuler</button><button class="btn acc" onclick="envoyerSignal('${orId}')">Envoyer</button></div>`);
+  setTimeout(() => $('#sigT').focus(), 50);
+}
+async function envoyerSignal(orId) {
+  const t = $('#sigT').value.trim(); if (!t) return toast('Décrivez le travail constaté');
+  fermer(); try { await action('signalerTravail', {orId, texte:t, urgent:$('#sigU')?.checked}, 'Envoyé au secrétariat ✔'); } catch (e) {}
+}
+function terminer(id) {
+  const o = E.data.ors.find(x => x.id === id), reste = o.lignes.filter(l => !l.fait), cr = $('#cr')?.value ?? o.compteRendu;
+  feuille(`<h3>Véhicule prêt ?</h3>
+    ${reste.length ? `<div class="alert">${reste.length} opération(s) non cochée(s) : ${reste.map(l => esc(l.designation)).join(', ')}</div>` : '<p>✓ Toutes les opérations sont cochées.</p>'}
+    ${!o.photos.some(p => p.type !== 'etat') ? '<p class="mute">Pas de photo de l\'intervention (conseillé : pièce usée, travail fini).</p>' : ''}
+    <p>En validant :<br>• le planning du secrétariat passe en <b>« Prêt »</b><br>• la <b>facture</b> est préparée au comptoir<br>• le client reçoit le <b>SMS « véhicule prêt »</b></p>
+    <div class="row"><button class="btn ghost" onclick="fermer()">Pas encore</button><button class="btn ok" id="okFin" onclick="confirmerFin('${id}')">✅ Oui, terminé</button></div>`);
+  E.crFin = cr;
+}
+async function confirmerFin(id) {
+  $('#okFin').disabled = true;
+  try { await action('terminerOR', {orId:id, compteRendu:E.crFin}); fermer(); toast('Bravo ✔ Le secrétariat est prévenu'); window.scrollTo(0, 0); }
+  catch (e) { fermer(); }
+}
+// Photos : réduites sur la tablette (≈ 300 Ko) avant l'envoi
+function compresser(file) {
+  return new Promise((ok, ko) => {
+    const img = new Image();
+    img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src); ok(c.toDataURL('image/jpeg', .8)); };
+    img.onerror = () => ko(new Error('Image illisible')); img.src = URL.createObjectURL(file);
+  });
+}
+async function envoyerPhotos(orId, type, input) {
+  const files = [...input.files]; if (!files.length) return;
+  toast(`Envoi de ${files.length} photo${files.length > 1 ? 's' : ''}…`);
+  try { for (const f of files) await api('/api/mecano/photo', {orId, type, data:await compresser(f)}); toast('Photo enregistrée ✔'); await charger(); }
+  catch (e) { toast('⚠ ' + e.message); }
+}
+
+/* ---------- Petites fenêtres ---------- */
+function feuille(html) { fermer(); const s = document.createElement('div'); s.className = 'sheet'; s.innerHTML = `<div>${html}</div>`; s.onclick = e => { if (e.target === s) fermer(); }; document.body.appendChild(s); }
+function fermer() { document.querySelectorAll('.sheet').forEach(x => x.remove()); }
+let tT; function toast(m) { let t = $('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.textContent = m; t.hidden = false; clearTimeout(tT); tT = setTimeout(() => t.hidden = true, 2800); }
+
+/* ---------- Démarrage ---------- */
+(async () => {
+  if (E.token) { try { await charger(); E.vue = 'liste'; return; } catch (e) {} }
+  ecranLogin();
+})();
+</script>
+</body>
+</html>

@@ -69,6 +69,21 @@
     return n;
   };
 
+  // Un poste réenregistre un OR : on garde ce que l'atelier (appli mécano) a saisi entre-temps
+  // (photos, prise en charge, compte rendu, opérations cochées, signalements, statut d'avancement).
+  const CHAMPS_ATELIER = ['priseEnCharge', 'photos', 'compteRendu', 'signalements', 'debut', 'fin', 'terminePar'];
+  P.fusionOR = function (old, item) {
+    const n = {...item};
+    if (old && old.type === 'OR') {
+      for (const k of CHAMPS_ATELIER) if (old[k] !== undefined) n[k] = old[k];
+      const faits = Object.fromEntries((old.lignes || []).filter(l => l.lid && l.fait).map(l => [l.lid, l]));
+      n.lignes = (n.lignes || []).map(l => faits[l.lid] ? {...l, fait:true, faitPar:faits[l.lid].faitPar} : l);
+      if (n._statutLu !== undefined && n.statut === n._statutLu) n.statut = old.statut;   // statut non touché au poste
+    }
+    delete n._statutLu;
+    return n;
+  };
+
   // Meilleur article du stock pour un besoin. La RÉFÉRENCE CONSTRUCTEUR (OE) fait foi :
   //  1. si le besoin a une réf. OE → uniquement les articles de même réf. OE exacte
   //     (un article dont la réf. OE est différente n'est jamais pris, même si la réf. fournisseur colle) ;
@@ -382,8 +397,60 @@
     return {ok:true};
   };
 
+  /* ================= PLANNING ATELIER (secrétariat, appli RDV, appli mécano) =================
+     Le planning, c'est un parking : chaque mécanicien est une place, chaque RDV une voiture
+     garée pour une durée. On ne gare jamais deux voitures sur la même place. */
+  const pad2 = n => String(n).padStart(2, '0');
+  P.hmin = h => { const m = String(h || '').match(/^\s*(\d{1,2})\s*[h:H]\s*(\d{0,2})/); return m ? +m[1] * 60 + (+m[2] || 0) : null; };
+  P.hhmm = m => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
+  P.horaires = d => ((d.settings || {}).horaires || [[450, 720], [840, 1020]]);      // 7h30-12h, 14h-17h
+  P.personnel = d => ((d.settings || {}).personnel || []).filter(p => p.actif !== false);
+  P.mecanos = d => P.personnel(d).filter(p => p.planning);                            // colonnes du planning
+  P.nomPers = (d, id) => (P.personnel(d).find(p => p.id === id) || {}).nom || '';
+  const occupe = r => r.date && r.heure && r.meca && !['annule', 'absent'].includes(r.statut);
+  P.occupe = occupe;
+  P.conflit = (d, {date, heure, duree, meca, exclure}) => {
+    const s2 = P.hmin(heure), d2 = num(duree) || 60;
+    return coll(d, 'rdvs').find(r => r.id !== exclure && r.meca === meca && r.date === date && occupe(r) &&
+      s2 < P.hmin(r.heure) + (num(r.duree) || 60) && P.hmin(r.heure) < s2 + d2) || null;
+  };
+  P.dansHoraires = (d, heure, duree) => { const s = P.hmin(heure); return s != null && P.horaires(d).some(([a, b]) => s >= a && s + (num(duree) || 60) <= b); };
+  const jourOuvre = iso => { const j = new Date(iso + 'T12:00:00Z').getUTCDay(); return j !== 0 && j !== 6; };
+  // Créneaux libres d'un jour : [{heure:'08:00', libres:[id mécano…]}]
+  P.creneaux = (d, {date, duree, meca, pas, exclure}) => {
+    const out = [], du = num(duree) || 60;
+    if (!date || !jourOuvre(date)) return out;
+    const ms = P.mecanos(d).filter(m => !meca || m.id === meca);
+    for (const [a, b] of P.horaires(d)) for (let s = a; s + du <= b; s += num(pas) || 30) {
+      const heure = P.hhmm(s), libres = ms.filter(m => !P.conflit(d, {date, heure, duree:du, meca:m.id, exclure})).map(m => m.id);
+      if (libres.length) out.push({heure, libres});
+    }
+    return out;
+  };
+  // Prestations du catalogue citées par l'appli RDV (« Vidange + filtre + Recharge climatisation »)
+  P.prestationsDe = (d, ids, texte) => {
+    const cat = (d.settings || {}).prestations || [];
+    if (ids && ids.length) return ids.map(id => cat.find(p => p.id === id)).filter(Boolean);
+    const t = norm(texte);
+    return t ? cat.filter(p => t.includes(norm(p.label))) : [];
+  };
+  P.totalTTC = doc => {
+    const ht = (doc.lignes || []).reduce((s, l) => s + num(l.qte) * num(l.pu) * (1 - num(l.remise) / 100), 0);
+    return Math.round(ht * (1 + num(doc.tva) / 100) * 100) / 100;
+  };
+  const gabarit = (txt, v) => String(txt || '').replace(/\{(\w+)\}/g, (m, k) => v[k] ?? '');
+  const eurTxt = n => num(n).toFixed(2).replace('.', ',') + ' €';
+  P.fmtImmat = i => { const n = norm(i); return /^[A-Z]{2}\d{3}[A-Z]{2}$/.test(n) ? `${n.slice(0, 2)}-${n.slice(2, 5)}-${n.slice(5)}` : String(i || ''); };
+  function verifCreneau(d, r, forcer) {
+    if (!occupe(r)) return;
+    const c = P.conflit(d, {...r, exclure:r.id});
+    if (c) fail(`${P.nomPers(d, r.meca) || 'Ce mécanicien'} est déjà pris à cette heure (${numeroOR(d, c.orId)} à ${c.heure.replace(':', 'h')})`);
+    if (!forcer && !P.dansHoraires(d, r.heure, r.duree)) fail('Ce créneau sort des horaires de l\'atelier (ou déborde sur la pause)');
+  }
+
   // Demande de RDV venant de l'application en ligne (même format que son envoi « demande »)
   // {ref, date, heure, client, tel, email, plaque, vehicule, km, prestation, symptome, mode, pieces:"REF x5; REF2"}
+  // Depuis le planning du DMS : en plus {prestaIds:[…], meca, duree, canal:'telephone'}
   A.rdvEntrant = (d, r, ctx) => {
     if (!r || !r.date || !(r.plaque || r.immat)) fail('RDV incomplet : date et plaque obligatoires');
     const R = coll(d, 'rdvs'), ref = r.ref || r.idExterne || '';
@@ -402,38 +469,166 @@
     }
     if (!v) {
       const mv = String(r.vehicule || '').trim().split(/\s+/);
-      v = {id:uid(), clientId:c.id, immat, vin:r.vin || '', marque:r.marque || mv[0] || '', modele:r.modele || mv.slice(1).join(' '), energie:'', mec:'', km:num(r.km) || ''};
+      v = {id:uid(), clientId:c.id, immat:P.fmtImmat(immat), vin:r.vin || '', marque:r.marque || mv[0] || '', modele:r.modele || mv.slice(1).join(' '), energie:'', mec:'', km:num(r.km) || ''};
       V.push(v);
     }
     if (num(r.km) > num(v.km)) v.km = num(r.km);
-    const lignes = String(r.pieces || '').split(';').map(x => x.trim()).filter(Boolean).map(x => {
+    const prestas = P.prestationsDe(d, r.prestaIds, r.prestation);
+    // "REF x5; REF2" → lignes Pièce. Pièce d'une prestation au forfait : prix inclus (0 €), sauf « pièces en sus » (pneus…)
+    const lignesPieces = (txt, inclus) => String(txt || '').split(';').map(x => x.trim()).filter(Boolean).map(x => {
       const m = x.match(/^(.*?)(?:\s+x\s*([\d.,]+))?$/i), pref = m[1].trim(), qte = m[2] ? +m[2].replace(',', '.') : 1;
       const a = articlePour(d, {ref:pref});
-      return {lid:uid(), type:'PIECE', ref:a ? a.ref : pref, refOrigine:a ? a.refOrigine || '' : '', designation:a ? a.designation : pref, qte, pu:a ? num(a.pv) : 0, remise:0, articleId:a ? a.id : ''};
+      return {lid:uid(), type:'PIECE', ref:a ? a.ref : pref, refOrigine:a ? a.refOrigine || '' : '', designation:(a ? a.designation : pref) + (inclus ? ' (incluse au forfait)' : ''),
+        qte, pu:inclus ? 0 : a ? num(a.pv) : 0, remise:0, articleId:a ? a.id : ''};
     });
+    const lignes = prestas.length
+      ? prestas.flatMap(p => [{lid:uid(), type:'FORF', ref:p.id, refOrigine:'', designation:p.label, qte:1, pu:num(p.prix), remise:0}, ...lignesPieces(p.pieces, !p.piecesEnSus)])
+      : lignesPieces(r.pieces, false);
     const s = d.settings || {};
     const or = {id:uid(), type:'OR', numero:P.next(d, 'OR'), date:today(), clientId:c.id, vehiculeId:v.id, activite:r.activite || 'MECA', statut:'attente',
-      lignes, km:num(r.km) || '', technicien:'', notes:[`RDV en ligne ${ref} : ${r.prestation || ''}`.trim(), r.symptome ? 'Symptôme : ' + r.symptome : '', r.mode ? 'Mode : ' + r.mode : ''].filter(Boolean).join('\n'),
-      tva:s.tva || 0, origineId:'', creePar:'RDV en ligne', cree:new Date().toISOString()};
+      lignes, km:num(r.km) || '', technicien:'', notes:[`${r.canal && r.canal !== 'en ligne' ? 'RDV ' + (r.canal === 'telephone' ? 'pris au téléphone' : r.canal) : 'RDV en ligne ' + ref} : ${r.prestation || prestas.map(p => p.label).join(' + ')}`.trim(), r.symptome ? 'Symptôme : ' + r.symptome : '', r.mode ? 'Mode : ' + (r.mode === 'attente' ? 'attend sur place' : r.mode === 'depot' ? 'dépose le véhicule' : r.mode) : ''].filter(Boolean).join('\n'),
+      tva:s.tva || 0, origineId:'', creePar:r.canal && r.canal !== 'en ligne' ? ctx.par || 'Poste' : 'RDV en ligne', cree:new Date().toISOString()};
     coll(d, 'documents').push(or);
-    R.push({id:uid(), orId:or.id, date:r.date, heure:r.heure || '', statut:'provisoire', idExterne:ref, prestation:r.prestation || '', canal:r.canal || 'en ligne', cree:new Date().toISOString()});
-    journal(d, ctx, 'rdv', `RDV ${ref} du ${r.date} ${r.heure || ''} → ${or.numero} (${immat})${nouveauClient ? ', nouveau client' : ''}`);
+    // Place sur le planning : le mécano demandé s'il est libre, sinon le premier libre (sinon « à placer »)
+    const heure = P.hmin(r.heure) != null ? P.hhmm(P.hmin(r.heure)) : '';
+    const duree = num(r.duree) || prestas.reduce((s, p) => s + num(p.dur), 0) || 60;
+    const libre = id => id && heure && !P.conflit(d, {date:r.date, heure, duree, meca:id});
+    const meca = libre(r.meca) ? r.meca : (heure && !r.meca ? (P.mecanos(d).find(m => libre(m.id)) || {}).id || '' : '');
+    if (r.meca && !meca) fail(`${P.nomPers(d, r.meca) || 'Ce mécanicien'} n'est plus libre à cette heure : choisissez un autre créneau`);
+    const canal = r.canal || 'en ligne';
+    const rdv = {id:uid(), orId:or.id, date:r.date, heure, duree, meca, statut:'provisoire', idExterne:ref,
+      prestation:r.prestation || prestas.map(p => p.label).join(' + '), mode:r.mode || '', canal, cree:new Date().toISOString()};
+    R.push(rdv);
+    journal(d, ctx, 'rdv', `RDV ${ref} du ${r.date} ${heure} → ${or.numero} (${immat})${meca ? ' · ' + P.nomPers(d, meca) : ' · à placer'}${nouveauClient ? ', nouveau client' : ''}`);
     const e = A.verifierOR(d, {orId:or.id}, ctx);
-    return {...e, clientId:c.id, vehiculeId:v.id, nouveauClient};
+    // Pris au téléphone avec toutes les pièces réservées → confirmé tout de suite. En ligne → le secrétariat confirme.
+    if (canal !== 'en ligne' && e.complet && meca) rdv.statut = 'confirme';
+    return {...e, rdv, clientId:c.id, vehiculeId:v.id, nouveauClient};
+  };
+
+  // Site vitrine : « Être rappelé » (pas encore un RDV : le secrétariat rappelle puis le place au planning)
+  A.demandeRappel = (d, r, ctx) => {
+    if (!r || String(r.tel || '').replace(/\D/g, '').length < 9) fail('Téléphone obligatoire');
+    const L = coll(d, 'rappels'), cle = String(r.recu_le || r.ref || '');
+    const deja = cle && L.find(x => x.cle === cle); if (deja) return deja;
+    const x = {id:uid(), cle, nom:String(r.nom || r.client || '').trim(), tel:r.tel, vehicule:r.vehicule || '', immat:r.immat || r.plaque || '',
+      prestation:r.presta || r.prestation || '', dateSouhaitee:r.date || '', message:r.msg || r.message || '', statut:'a_rappeler', recu:new Date().toISOString()};
+    L.push(x); if (L.length > 500) L.splice(0, L.length - 500);
+    journal(d, ctx, 'rappel', `Demande de rappel : ${x.nom} ${x.tel}`);
+    emit(ctx, 'rappel.demande', x);
+    return x;
+  };
+  A.traiterRappel = (d, {id, statut}, ctx) => {
+    const x = coll(d, 'rappels').find(y => y.id === id); if (!x) fail('Demande introuvable');
+    x.statut = statut || 'rappele'; x.traitePar = ctx.par; x.traiteLe = new Date().toISOString();
+    return x;
+  };
+
+  /* ================= ATELIER : appli mécano ================= */
+  const trouverOR = (d, orId) => {
+    const o = coll(d, 'documents').find(x => x.id === orId && x.type === 'OR');
+    if (!o) fail('OR introuvable'); if (o.statut === 'facture') fail('Cet OR est déjà facturé');
+    return o;
+  };
+  const maintenant = () => new Date().toISOString();
+  // Le mécano prend un véhicule non attribué
+  A.prendreOR = (d, {orId}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (or.technicien && or.technicien !== ctx.par) fail(`Déjà pris par ${or.technicien}`);
+    or.technicien = ctx.par;
+    const r = coll(d, 'rdvs').find(x => x.orId === orId);
+    if (r && ctx.parId && P.mecanos(d).some(m => m.id === ctx.parId) && r.meca !== ctx.parId) {
+      const avant = r.meca; r.meca = ctx.parId;
+      if (P.conflit(d, {...r, exclure:r.id})) r.meca = avant;           // planning plein : on garde l'ancienne colonne
+    }
+    journal(d, ctx, 'atelier', `${or.numero} pris en charge par ${ctx.par}`);
+    return {ok:true};
+  };
+  // Prise en charge (état des lieux) + début de l'intervention
+  A.demarrerOR = (d, {orId, priseEnCharge}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (or.statut === 'termine') fail('Intervention déjà terminée');
+    if (priseEnCharge) {
+      or.priseEnCharge = {...priseEnCharge, par:ctx.par, le:maintenant()};
+      const km = num(priseEnCharge.km);
+      if (km > num(or.km)) { or.km = km; const v = coll(d, 'vehicules').find(x => x.id === or.vehiculeId); if (v && km > num(v.km)) v.km = km; }
+    }
+    or.statut = 'en_cours'; or.debut = or.debut || maintenant();
+    if (!or.technicien) or.technicien = ctx.par;
+    journal(d, ctx, 'atelier', `${or.numero} : intervention démarrée par ${ctx.par}`);
+    emit(ctx, 'or.demarre', {orId, numero:or.numero, par:ctx.par});
+    return {ok:true};
+  };
+  // Opérations cochées, compte rendu, photos
+  A.atelierMaj = (d, {orId, faits, compteRendu, photo, retirerPhoto, priseEnCharge}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (faits) for (const l of or.lignes || []) if (l.lid in faits) { l.fait = !!faits[l.lid]; l.faitPar = l.fait ? ctx.par : ''; }
+    if (compteRendu !== undefined) or.compteRendu = String(compteRendu).slice(0, 4000);
+    if (priseEnCharge) or.priseEnCharge = {...(or.priseEnCharge || {}), ...priseEnCharge, par:ctx.par, le:maintenant()};
+    if (photo) { or.photos = or.photos || []; or.photos.push({id:photo.id, fichier:photo.fichier, legende:photo.legende || '', type:photo.type || 'intervention', par:ctx.par, le:maintenant()}); }
+    if (retirerPhoto) or.photos = (or.photos || []).filter(p => p.id !== retirerPhoto);
+    return {ok:true};
+  };
+  // Travail supplémentaire constaté par le mécano → le secrétariat fait un devis
+  A.signalerTravail = (d, {orId, texte, urgent, photoId}, ctx) => {
+    const or = trouverOR(d, orId);
+    if (!String(texte || '').trim()) fail('Décrivez le travail constaté');
+    const s = {id:uid(), texte:String(texte).trim().slice(0, 1000), urgent:!!urgent, photoId:photoId || '', par:ctx.par, le:maintenant(), statut:'a_chiffrer'};
+    or.signalements = or.signalements || []; or.signalements.push(s);
+    const c = coll(d, 'clients').find(x => x.id === or.clientId) || {}, v = coll(d, 'vehicules').find(x => x.id === or.vehiculeId) || {};
+    journal(d, ctx, 'atelier', `${or.numero} : ${ctx.par} signale « ${s.texte} »`);
+    emit(ctx, 'or.signalement', {orId, numero:or.numero, signalement:s, client:{nom:`${c.prenom || ''} ${c.nom || ''}`.trim(), tel:c.tel || ''}, vehicule:{immat:v.immat, marque:v.marque, modele:v.modele}});
+    return s;
+  };
+  A.traiterSignalement = (d, {orId, id, statut}, ctx) => {
+    const or = coll(d, 'documents').find(x => x.id === orId); const s = or && (or.signalements || []).find(x => x.id === id);
+    if (!s) fail('Signalement introuvable');
+    s.statut = statut || 'traite'; s.traitePar = ctx.par; s.traiteLe = maintenant();
+    return s;
+  };
+  // Bouton « Terminé » : OR terminé + facture brouillon au comptoir + SMS « véhicule prêt » (via n8n)
+  A.terminerOR = (d, {orId, compteRendu}, ctx) => {
+    const or = trouverOR(d, orId), D = coll(d, 'documents');
+    if (!(or.lignes || []).length) fail('L\'OR ne contient aucune ligne : prévenez le secrétariat pour compléter avant de terminer');
+    let f = D.find(x => x.type === 'FAC' && x.origineId === or.id);
+    if (or.statut === 'termine' && f) return {deja:true, factureId:f.id, montantTTC:P.totalTTC(f)};
+    if (compteRendu !== undefined) or.compteRendu = String(compteRendu).slice(0, 4000);
+    or.statut = 'termine'; or.fin = maintenant(); or.terminePar = ctx.par;
+    if (!or.technicien) or.technicien = ctx.par;
+    if (!f) {
+      f = {id:uid(), type:'FAC', numero:'', date:today(), clientId:or.clientId, vehiculeId:or.vehiculeId, activite:or.activite, statut:'brouillon',
+        lignes:(or.lignes || []).map(({fait, faitPar, ...l}) => ({...l})), km:or.km, technicien:or.technicien, notes:'', tva:or.tva, origineId:or.id,
+        creePar:'Fin atelier · ' + ctx.par, cree:maintenant()};
+      D.push(f);
+    }
+    const r = coll(d, 'rdvs').find(x => x.orId === orId); if (r) { r.statut = 'termine'; r.maj = maintenant(); }
+    const s = d.settings || {}, c = coll(d, 'clients').find(x => x.id === or.clientId) || {}, v = coll(d, 'vehicules').find(x => x.id === or.vehiculeId) || {};
+    const montant = P.totalTTC(f);
+    const sms = gabarit(s.smsFin, {prenom:c.prenom || '', nom:c.nom || '', vehicule:`${v.marque || ''} ${v.modele || ''}`.trim() || 'véhicule',
+      immat:P.fmtImmat(v.immat), montant:eurTxt(montant), societe:s.societe || '', tel:s.tel || ''});
+    or.smsFin = {texte:sms, tel:c.tel || '', le:maintenant(), via:s.n8nWebhook ? 'n8n' : 'aucun'};
+    journal(d, ctx, 'atelier', `${or.numero} terminé par ${ctx.par} → facture brouillon ${eurTxt(montant)}`);
+    emit(ctx, 'or.termine', {orId, numero:or.numero, factureId:f.id, montantTTC:montant, par:ctx.par,
+      client:{nom:`${c.prenom || ''} ${c.nom || ''}`.trim(), tel:c.tel || '', email:c.email || ''},
+      vehicule:{immat:v.immat || '', marque:v.marque || '', modele:v.modele || ''}, sms:{tel:c.tel || '', texte:sms}});
+    return {factureId:f.id, montantTTC:montant, sms, smsAuto:!!s.n8nWebhook && !!c.tel};
   };
 
   // RDV : date / heure / statut (provisoire, confirme, a_decaler, annule, termine)
-  A.majRdv = (d, {orId, date, heure, statut, note}, ctx) => {
+  A.majRdv = (d, {orId, date, heure, statut, note, meca, duree, forcer}, ctx) => {
     const R = coll(d, 'rdvs');
     let r = R.find(x => x.orId === orId);
     if (!r) { if (!coll(d, 'documents').some(x => x.id === orId)) fail('OR introuvable'); r = {id:uid(), orId, statut:'provisoire', canal:'atelier', cree:new Date().toISOString()}; R.push(r); }
-    if (statut && !['provisoire', 'confirme', 'a_decaler', 'annule', 'termine'].includes(statut)) fail('Statut de RDV inconnu');
+    if (statut && !['provisoire', 'confirme', 'a_decaler', 'annule', 'absent', 'termine'].includes(statut)) fail('Statut de RDV inconnu');
     if (date !== undefined) r.date = date;
-    if (heure !== undefined) r.heure = heure;
+    if (heure !== undefined) r.heure = P.hmin(heure) != null ? P.hhmm(P.hmin(heure)) : heure;
+    if (meca !== undefined) r.meca = meca;
+    if (duree !== undefined && duree !== '') r.duree = num(duree) || 60;
     if (statut) r.statut = statut;
     if (note !== undefined) r.note = note;
+    if ([date, heure, meca, duree].some(x => x !== undefined) || ['provisoire', 'confirme'].includes(statut)) verifCreneau(d, r, forcer);
     r.maj = new Date().toISOString();
-    journal(d, ctx, 'rdv', `${numeroOR(d, orId)} : RDV ${r.date || '?'} ${r.heure || ''} ${r.statut}`);
+    journal(d, ctx, 'rdv', `${numeroOR(d, orId)} : RDV ${r.date || '?'} ${r.heure || ''} ${r.statut}${r.meca ? ' · ' + P.nomPers(d, r.meca) : ''}`);
     emit(ctx, 'rdv.maj', {rdv:r, etat:P.etatOR(d, orId)});
     return r;
   };

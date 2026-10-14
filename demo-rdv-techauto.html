@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TECH'AUTO RDV et stock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: barre d'atelier compacte en haut, deux espaces (client / secrétariat) ; côté secrétariat le planning par mécanicien est la pièce maîtresse. */
+:root{
+  --bg:#eceff0; --surface:#ffffff; --sunk:#f4f6f6; --ink:#152028; --muted:#5a6a73; --line:#d3dadd;
+  --accent:#0b6b70; --accent-ink:#ffffff; --accent-soft:#d6ebeb; --signal:#efb200; --signal-ink:#1d1600;
+  --plate-bg:#ffffff; --plate-ink:#111111; --plate-band:#1f4fa3;
+  --a-c:#9a5c00; --a-b:#fbecd0;   /* à confirmer */
+  --c-c:#1f5fa8; --c-b:#dde9f7;   /* confirmé */
+  --r-c:#6a43a8; --r-b:#ebe3f7;   /* arrivé */
+  --e-c:#0b6b70; --e-b:#d3ecea;   /* en cours */
+  --t-c:#2d7a31; --t-b:#dcefdc;   /* terminé */
+  --f-c:#55636b; --f-b:#e4e8ea;   /* facturé */
+  --x-c:#b3261e; --x-b:#f8dcda;   /* absent */
+  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'Barlow','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --radius:10px; --row:30px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1418; --surface:#162026; --sunk:#111a1f; --ink:#e3eaed; --muted:#93a3ab; --line:#283439;
+  --accent:#46b8bc; --accent-ink:#062224; --accent-soft:#173a3c; --signal:#f2c230; --signal-ink:#1d1600;
+  --a-c:#f0b45a; --a-b:#3a2a10; --c-c:#8db8ec; --c-b:#16283d; --r-c:#c0a3ee; --r-b:#2a2040;
+  --e-c:#5fc9c4; --e-b:#123331; --t-c:#8fd18f; --t-b:#16301a; --f-c:#a9b6bd; --f-b:#222c31; --x-c:#f08b84; --x-b:#3c1715;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1418; --surface:#162026; --sunk:#111a1f; --ink:#e3eaed; --muted:#93a3ab; --line:#283439;
+  --accent:#46b8bc; --accent-ink:#062224; --accent-soft:#173a3c; --signal:#f2c230; --signal-ink:#1d1600;
+  --a-c:#f0b45a; --a-b:#3a2a10; --c-c:#8db8ec; --c-b:#16283d; --r-c:#c0a3ee; --r-b:#2a2040;
+  --e-c:#5fc9c4; --e-b:#123331; --t-c:#8fd18f; --t-b:#16301a; --f-c:#a9b6bd; --f-b:#222c31; --x-c:#f08b84; --x-b:#3c1715;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;line-height:1.1;margin:0;text-wrap:balance}
+h2{font-size:1.6rem} h3{font-size:1.2rem}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+
+/* Barre du haut */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--ink);color:var(--bg);padding-block:10px;padding-inline:16px}
+.top-in{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand b{font-family:var(--f-display);font-size:1.7rem;letter-spacing:.03em}
+.brand b i{font-style:normal;color:var(--signal)}
+.brand span{font-size:.82rem;opacity:.75}
+.switch{display:flex;background:color-mix(in srgb,var(--bg) 14%,transparent);border-radius:999px;padding:3px}
+.switch button{border:0;background:none;color:inherit;padding:7px 16px;border-radius:999px;font-weight:600;font-size:.9rem}
+.switch button[aria-pressed="true"]{background:var(--signal);color:var(--signal-ink)}
+.demo-tag{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;border:1px dashed color-mix(in srgb,var(--bg) 45%,transparent);padding:3px 8px;border-radius:4px;opacity:.85}
+
+main{max-width:1280px;margin:0 auto;padding-block:20px 48px;padding-inline:16px}
+
+/* Plaque */
+.plate{display:inline-flex;align-items:stretch;border:1.5px solid var(--plate-ink);border-radius:4px;background:var(--plate-bg);color:var(--plate-ink);font-family:var(--f-mono);font-weight:700;font-size:.82rem;line-height:1;overflow:hidden;white-space:nowrap;vertical-align:middle}
+.plate .eu,.plate .reg{background:var(--plate-band);color:#fff;font-size:.6rem;display:flex;align-items:center;padding:0 3px}
+.plate .num{padding:4px 6px;letter-spacing:.04em}
+.plate.sm{font-size:.7rem}.plate.sm .num{padding:2px 4px}
+
+/* Boutons */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.signal{background:var(--signal);color:var(--signal-ink);border-color:var(--signal)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--x-c)}
+.btn.sm{padding:5px 10px;font-size:.85rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* Statuts */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st-attente{color:var(--a-c);background:var(--a-b)} .st-confirme{color:var(--c-c);background:var(--c-b)}
+.st-arrive{color:var(--r-c);background:var(--r-b)} .st-encours{color:var(--e-c);background:var(--e-b)}
+.st-termine{color:var(--t-c);background:var(--t-b)} .st-facture{color:var(--f-c);background:var(--f-b)}
+.st-absent,.st-annule{color:var(--x-c);background:var(--x-b)}
+
+/* Espace client */
+.client{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px;align-items:start}
+.info{display:grid;gap:18px;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.info h1{font-size:2.3rem}
+.info ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.info li{display:flex;gap:10px}
+.info li::before{content:"";flex:none;width:8px;height:8px;margin-top:.5em;background:var(--signal);transform:rotate(45deg)}
+.hours{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.92rem}
+.tip{background:var(--sunk);border-radius:8px;padding:12px 14px;font-size:.9rem}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.wiz{padding:22px;display:grid;gap:18px;min-width:0}
+.steps{display:flex;gap:6px;flex-wrap:wrap;counter-reset:s}
+.steps span{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);padding:4px 10px 4px 4px;border-radius:999px;background:var(--sunk)}
+.steps span::before{counter-increment:s;content:counter(s);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink);font-weight:700;font-size:.75rem}
+.steps span.on{color:var(--ink);font-weight:600}
+.steps span.on::before{background:var(--signal);color:var(--signal-ink)}
+.steps span.ok::before{background:var(--accent);color:var(--accent-ink);content:"✓"}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tile{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:12px 14px;display:grid;gap:4px;align-content:start}
+.tile:hover{border-color:var(--accent)}
+.tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.tile strong{font-size:1rem}
+.tile .meta{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;color:var(--muted);margin-top:4px}
+.tile .tag{font-size:.72rem;font-weight:600;color:var(--a-c)}
+.sumbar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--sunk);border-radius:8px;padding:10px 14px;font-size:.92rem}
+
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.field{display:grid;gap:5px;min-width:0}
+.field label{font-weight:600;font-size:.88rem}
+.field input,.field textarea,.field select,.sel{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:9px 11px;width:100%}
+.field textarea{min-height:70px;resize:vertical}
+#w-plaque,.plate-input{font-family:var(--f-mono);font-weight:700;letter-spacing:.06em}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:.84rem}
+.chip:hover{border-color:var(--accent)}
+/* Recherche client, date précise, express, calendrier */
+.find{display:grid;gap:8px;background:var(--sunk);border-radius:var(--radius);padding:12px 14px}
+.find input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;width:100%}
+.found{display:grid;gap:6px}
+.found button{display:flex;gap:10px;align-items:center;flex-wrap:wrap;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px}
+.found button:hover{border-color:var(--accent)}
+.found .meta{margin-left:auto;font-size:.8rem;color:var(--muted)}
+.known{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--t-b);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:.9rem}
+.kbox{display:grid;gap:8px;border:1.5px dashed var(--accent);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.kbox .row input{width:110px;border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:8px 10px;font-family:var(--f-mono);letter-spacing:.2em;text-align:center}
+.sect-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:4px}
+.dtools{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:end}
+.dtools .field .row{flex-wrap:nowrap}
+.dtools input{font-family:var(--f-mono);letter-spacing:.06em}
+.dtools .btn{justify-content:center;width:100%}
+.dmsg{border-radius:8px;padding:10px 12px;font-size:.9rem;background:var(--sunk)}
+.dmsg.ok{background:var(--t-b)}.dmsg.warn{background:var(--a-b)}.dmsg.err{background:var(--x-b)}
+.cal{display:grid;gap:8px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cal-head h3{text-transform:capitalize}
+.cal-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.cal-grid .dow{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;font-weight:600}
+.cd{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 4px;min-height:58px;display:grid;gap:2px;align-content:start;justify-items:center;font-size:.72rem}
+.cd b{font-family:var(--f-display);font-size:1.15rem;line-height:1}
+.cd.lv-hi{background:var(--t-b)}.cd.lv-mid{background:var(--a-b)}
+.cd:disabled{opacity:.4;cursor:not-allowed;background:var(--sunk)}
+.cd.out{visibility:hidden}
+.cd[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.cd.pwarn{border-style:dashed;border-color:var(--x-c)}
+.cal-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.cal-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px;border:1px solid var(--line)}
+.wait{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--signal);border-radius:8px;padding:10px 12px;font-size:.9rem;cursor:pointer}
+.wait input{margin-top:3px;accent-color:var(--accent)}
+.desist{display:grid;gap:8px;border-left:4px solid var(--signal);background:var(--sunk);border-radius:0 8px 8px 0;padding:10px 12px}
+@media (max-width:640px){.dtools{grid-template-columns:1fr}}
+.sugg{border:1.5px dashed var(--signal);border-radius:8px;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:.92rem}
+
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.day{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;text-align:center;min-width:76px;display:grid;gap:2px}
+.day b{font-family:var(--f-display);font-size:1.25rem}
+.day small{font-size:.72rem;color:var(--muted)}
+.day[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.day:disabled{opacity:.45;cursor:not-allowed}
+.load{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.load i{display:block;height:100%;background:var(--accent)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.slot{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;display:grid;gap:1px;text-align:center}
+.slot b{font-family:var(--f-mono);font-size:.95rem}
+.slot small{font-size:.7rem;color:var(--muted)}
+.slot:hover{border-color:var(--accent)}
+.slot[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.slot[aria-pressed="true"] small{color:inherit}
+.radios{display:flex;flex-wrap:wrap;gap:8px}
+.radios label{border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;display:flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer}
+.radios label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.err{color:var(--x-c);font-weight:600;font-size:.9rem}
+.navw{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+.done{display:grid;gap:16px}
+.done-head{display:flex;gap:14px;align-items:center}
+.done-check{width:46px;height:46px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:1.4rem;flex:none}
+.recap{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:.93rem;background:var(--sunk);padding:14px;border-radius:8px}
+.sms{background:var(--accent-soft);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:.9rem;max-width:520px;white-space:pre-wrap}
+
+/* Secrétariat */
+.tabs{display:flex;gap:4px;align-items:center;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tabs button.t{border:0;background:none;padding:10px 12px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tabs button.t[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--signal)}
+.badge{background:var(--x-c);color:var(--surface);border-radius:999px;font-size:.7rem;padding:0 6px;min-width:18px;text-align:center}
+.tabs .spacer{margin-left:auto}
+.tabs .btn{flex:none;margin-block:4px}
+
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.bar h2{margin-right:auto}
+.legend{display:flex;gap:6px;flex-wrap:wrap}
+.meter{display:flex;align-items:center;gap:8px;font-size:.88rem}
+.meter .load{width:110px;height:8px;border-radius:4px}
+
+.pwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.pgrid{display:grid;grid-template-columns:52px repeat(5,minmax(150px,1fr));min-width:820px}
+.phead{padding:10px;border-bottom:1px solid var(--line);border-left:1px solid var(--line);display:grid;gap:2px}
+.phead b{font-family:var(--f-display);font-size:1.15rem}
+.phead .load{margin-top:4px}
+.ptimes{position:relative;height:calc(var(--row) * 19)}
+.ptimes span{position:absolute;right:6px;font-size:.7rem;transform:translateY(-50%);color:var(--muted)}
+.pbody{position:relative;height:calc(var(--row) * 19);border-left:1px solid var(--line);cursor:copy;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--row) - 1px),var(--line) calc(var(--row) - 1px),var(--line) var(--row));background-size:100% calc(var(--row) * 2)}
+.lunch{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,var(--sunk) 0 8px,var(--bg) 8px 16px);display:grid;place-items:center;font-size:.72rem;color:var(--muted);cursor:default}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--x-c);z-index:3;pointer-events:none}
+.blk{position:absolute;left:4px;right:4px;border-radius:7px;padding:4px 7px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:2px;border:1px solid color-mix(in srgb,currentColor 25%,transparent);z-index:2;text-align:left;font-size:.78rem;line-height:1.25}
+.blk .l1{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.blk .who{color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk .what{color:var(--ink);opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk:hover{filter:brightness(.97);box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 15%,transparent)}
+.blk.hl{animation:pulse 1s ease-in-out 3}
+@keyframes pulse{50%{box-shadow:0 0 0 4px var(--signal)}}
+@media (prefers-reduced-motion:reduce){.blk.hl{animation:none;box-shadow:0 0 0 3px var(--signal)}}
+/* Glisser-déposer : bloc saisi, fantôme qui suit le pointeur, aperçu de la place d'arrivée, barre de jours */
+.blk.mv{cursor:grab;touch-action:pan-x pan-y}
+.blk.drag-src{opacity:.35}
+.dghost{position:fixed;z-index:70;pointer-events:none;opacity:.9;box-shadow:0 8px 24px color-mix(in srgb,var(--ink) 30%,transparent);transform:rotate(-1.5deg);cursor:grabbing}
+.dprev{position:absolute;left:4px;right:4px;border-radius:7px;border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);z-index:4;pointer-events:none;font-size:.72rem;padding:2px 6px;color:var(--ink)}
+.dprev.ko{border-color:var(--x-c);background:color-mix(in srgb,var(--x-c) 12%,transparent)}
+body.dragging,body.dragging *{cursor:grabbing!important;user-select:none}
+.dstrip{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin-bottom:10px}
+.dchip{flex:0 0 auto;display:grid;justify-items:center;gap:3px;min-width:64px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:.78rem;cursor:pointer}
+.dchip .load{width:44px;height:5px;border-radius:3px}
+.dchip[aria-current="date"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.dchip.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
+.dchip.ko{border-color:var(--x-c);background:color-mix(in srgb,var(--x-c) 12%,var(--surface))}
+.hint{font-size:.85rem;color:var(--muted);margin-top:10px}
+
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--sunk)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:grid;gap:12px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.item{display:grid;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:0;padding-top:0}
+.item .l1{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.empty{color:var(--muted);font-size:.9rem;padding:8px 0}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:grid;gap:4px}
+.kpi b{font-family:var(--f-display);font-size:2.1rem;line-height:1}
+.kpi.hi{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kpi.hi .label{color:inherit;opacity:.7}
+.chart{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:end;height:180px;padding-top:10px;border-bottom:1px solid var(--line)}
+.chart .col{display:grid;gap:6px;align-items:end;height:100%;grid-template-rows:1fr auto}
+.chart .barv{background:var(--accent);border-radius:5px 5px 0 0;position:relative;min-height:2px}
+.chart .barv span{position:absolute;top:-20px;left:0;right:0;text-align:center;font-size:.8rem;font-weight:600}
+.chart .barv.hot{background:var(--signal)}
+.xlabels{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;font-size:.8rem;color:var(--muted);text-align:center;padding-top:6px}
+.hbar{display:grid;grid-template-columns:90px 1fr 44px;gap:10px;align-items:center;font-size:.88rem}
+.hbar .load{height:10px;border-radius:5px}
+
+.fiches{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.fiche{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:grid;gap:10px;align-content:start}
+.fiche .analogie{background:var(--sunk);border-left:3px solid var(--signal);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.92rem}
+.fiche ol,.fiche ul{margin:0;padding-left:20px;display:grid;gap:4px;font-size:.92rem}
+.fiche .who{font-size:.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.07em}
+
+/* Tiroir + modale */
+.overlay{position:fixed;inset:0;background:color-mix(in srgb,#000 45%,transparent);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--surface);z-index:41;overflow-y:auto;padding:20px 18px calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:16px;align-content:start;border-left:1px solid var(--line);padding-top:calc(20px + env(safe-area-inset-top,0px))}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
+.dl dt{color:var(--muted)} .dl dd{margin:0;min-width:0}
+.sect{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:14px}
+.checks{display:grid;gap:6px}
+.checks label{display:flex;gap:9px;align-items:flex-start;font-size:.92rem;cursor:pointer}
+.checks input{margin-top:3px;accent-color:var(--accent)}
+.facture{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:6px;font-size:.9rem}
+.facture .ln{display:flex;justify-content:space-between;gap:10px}
+.facture .tot{border-top:1px solid var(--line);padding-top:6px;font-weight:700}
+.confirmbox{background:var(--x-b);border-radius:8px;padding:12px;display:grid;gap:8px}
+
+.modal{position:fixed;inset:0;z-index:41;display:grid;place-items:center;padding:16px;pointer-events:none}
+.modal-box{pointer-events:auto;background:var(--bg);border-radius:14px;width:min(1080px,100%);max-height:calc(100% - 20px);overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;padding:16px}
+.script{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;gap:10px;align-content:start;font-size:.9rem}
+.script ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.script q{font-style:italic}
+.modal-close{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-size:.9rem;max-width:calc(100% - 32px)}
+
+/* Stock des pièces */
+.ptag{font-size:.74rem;font-weight:600;color:var(--t-c)}
+.ptag.wait{color:var(--a-c)}
+.day.pwarn{border-style:dashed;border-color:var(--x-c)}
+.day small.pw{color:var(--x-c);font-weight:600}
+.niv{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.n-rouge{background:var(--x-c)}.n-orange{background:#e8861c}.n-jaune{background:var(--signal)}.n-vert{background:var(--t-c)}
+.alert{border-left:4px solid var(--line);padding:10px 12px;border-radius:0 8px 8px 0;background:var(--sunk);display:grid;gap:6px}
+.alert.rouge{border-left-color:var(--x-c);background:var(--x-b)}.alert.orange{border-left-color:#e8861c;background:var(--a-b)}.alert.jaune{border-left-color:var(--signal)}
+.modes{display:flex;gap:6px}.modes .btn{flex:1;justify-content:center}
+.modes .btn[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#scan-code{font-family:var(--f-mono);font-size:1.05rem;padding:11px 12px}
+.scanmsg{padding:9px 12px;border-radius:8px;font-size:.9rem;background:var(--sunk)}
+.scanmsg.ok{background:var(--t-b)}.scanmsg.warn{background:var(--a-b)}.scanmsg.err{background:var(--x-b)}
+#scan-cam{border-radius:8px;overflow:hidden}
+.urg-box{grid-template-columns:1fr;width:min(600px,100%)}
+.contacts{display:grid;gap:6px}
+.contacts>label,.contacts>div{display:flex;gap:9px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:.92rem;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.contacts>label{justify-content:flex-start;cursor:pointer}
+.reply{background:var(--t-b);border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:.9rem;max-width:520px}
+.pline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.88rem}
+.stk-neg{color:var(--x-c)}
+a.btn{text-decoration:none;color:inherit}
+code.mono{font-size:.8rem;background:var(--sunk);padding:1px 5px;border-radius:4px}
+
+@media (max-width:860px){
+  .client{grid-template-columns:1fr}
+  .client .info{order:2}
+  .modal-box{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .brand span{display:none}
+  .wiz,.info{padding:16px}
+  .info h1{font-size:1.9rem}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>TECH<i>'</i>AUTO</b><span>Kourou · Réparation toutes marques</span></div>
+    <div class="switch" role="group" aria-label="Choisir l'espace">
+      <button data-act="mode" data-mode="client" aria-pressed="true">Espace client</button>
+      <button data-act="mode" data-mode="sec" aria-pressed="false">Secrétariat</button>
+    </div>
+    <span class="demo-tag">Démo · données fictives</span>
+  </div>
+</header>
+
+<main>
+  <section id="v-client" class="client">
+    <aside class="info">
+      <div style="display:grid;gap:8px">
+        <span class="label">Prise de rendez-vous en ligne</span>
+        <h1>Votre véhicule entre de bonnes mains.</h1>
+        <p class="muted">Choisissez la prestation, le jour et l'heure. L'atelier valide votre demande et vous confirme le rendez-vous par message, puis vous prévient quand la voiture est prête.</p>
+      </div>
+      <ul>
+        <li>Devis validé avec vous avant toute intervention supplémentaire</li>
+        <li>Rappel SMS la veille du rendez-vous</li>
+        <li>4 mécaniciens, un chef d'atelier et un magasinier à votre service</li>
+      </ul>
+      <div class="hours">
+        <span class="label">Lun – ven</span><span class="mono">7h30 – 12h00 · 14h00 – 17h00</span>
+        <span class="label">Adresse</span><span>Kourou, Guyane</span>
+      </div>
+      <p class="tip"><b>Conseil d'atelier :</b> sous notre climat, la climatisation travaille toute l'année. Une vérification annuelle évite la panne en pleine saison sèche.</p>
+    </aside>
+    <div id="client-wiz" class="card wiz"></div>
+  </section>
+
+  <section id="v-sec" hidden>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div id="sec-body"></div>
+  </section>
+</main>
+
+<div id="overlay" class="overlay" hidden data-act="close-all"></div>
+<aside id="drawer" class="drawer" hidden aria-label="Détail du rendez-vous"></aside>
+<div id="modal" class="modal" hidden>
+  <div class="modal-box" role="dialog" aria-label="Nouveau rendez-vous">
+    <div class="modal-close"><h2>Nouveau rendez-vous · appel</h2><button class="btn ghost" data-act="close-all">Fermer</button></div>
+    <div id="modal-wiz" class="card wiz"></div>
+    <aside class="script">
+      <span class="label">Script d'appel · 5 questions</span>
+      <ol>
+        <li><b>Plaque</b> <q>Quelle est l'immatriculation du véhicule ?</q><br><span class="muted small">On retrouve l'historique du client.</span></li>
+        <li><b>Le besoin</b> <q>Qu'est-ce qui vous amène : entretien ou souci précis ?</q></li>
+        <li><b>Le symptôme</b> <q>Depuis quand ? Bruit, voyant, odeur ?</q><br><span class="muted small">Notez ses mots exacts : le mécano gagne du temps.</span></li>
+        <li><b>Le créneau</b> <q>Je vous propose mardi 8h ou jeudi 14h.</q><br><span class="muted small">Proposez deux choix, pas une question ouverte.</span></li>
+        <li><b>Le contact</b> <q>Un portable pour le rappel SMS ?</q></li>
+      </ol>
+      <p class="tip">Terminez par la reformulation : jour, heure, prestation, prix indicatif. Le client repart avec une image claire.</p>
+    </aside>
+  </div>
+</div>
+<div id="urg" class="modal" hidden>
+  <div class="modal-box urg-box" role="dialog" aria-label="Pièce en urgence" id="urg-body"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ---------- Données de référence ---------- */
+const MECAS=[
+  // Même équipe et mêmes identifiants que le DMS (Paramètres → Équipe). Remplacée par la vraie liste quand PLANNING_URL est renseignée.
+  {id:'meca1',nom:'Mécano 1',spec:'Entretien · freinage · pneus'},
+  {id:'meca2',nom:'Mécano 2',spec:'Moteur · diesel · distribution'},
+  {id:'meca3',nom:'Mécano 3',spec:'Clim · électricité · diagnostic'},
+  {id:'meca4',nom:'Mécano 4',spec:'4x4 · trains roulants'}
+];
+const PRESTA=[
+  {id:'vid',label:'Vidange + filtre',desc:'Huile moteur et filtre à huile',dur:60,prix:89,pc:[['HUILE-5W30',5],['FH-UNIV',1]]},
+  {id:'rev',label:'Révision constructeur',desc:'Points du carnet, filtres, niveaux',dur:120,prix:189,pc:[['HUILE-5W30',5],['FH-UNIV',1],['FA-UNIV',1],['FHAB-UNIV',1]]},
+  {id:'clm',label:'Recharge climatisation',desc:'Étanchéité, recharge, filtre habitacle',dur:60,prix:79,pc:[['GAZ-R1234',1],['FHAB-UNIV',1]],tag:'Très demandé en Guyane'},
+  {id:'frn',label:'Plaquettes de frein AV',desc:'Remplacement, contrôle des disques',dur:90,prix:149,pc:[['PLAQ-AV',1]]},
+  {id:'pnu',label:'Pneus (x2)',desc:'Montage, valves, équilibrage',dur:60,prix:40,pc:[['PNEU-STD',2]],prixTxt:'dès 40 € + pneus'},
+  {id:'dia',label:'Diagnostic électronique',desc:'Voyant moteur, codes défaut',dur:60,prix:59,pc:[]},
+  {id:'pct',label:'Pré-contrôle technique',desc:'On vérifie avant le passage au CT',dur:30,prix:39,pc:[]},
+  {id:'dis',label:'Courroie de distribution',desc:'Kit complet + pompe à eau',dur:240,prix:650,pc:[['KIT-DIST',1]],prixTxt:'sur devis (≈ 650 €)'}
+];
+const P=Object.fromEntries(PRESTA.map(p=>[p.id,p]));
+const ST={attente:'À confirmer',confirme:'Confirmé',arrive:'Arrivé',encours:'En cours',termine:'Terminé',facture:'Facturé',absent:'Absent',annule:'Annulé'};
+const NEXT={attente:['confirme','Confirmer le RDV'],confirme:['arrive','Véhicule arrivé'],arrive:['encours','Lancer l\'intervention'],encours:['termine','Intervention terminée'],termine:['facture','Marquer facturé']};
+const RECEP=['Kilométrage relevé','Niveau de carburant noté','Tour du véhicule fait (rayures, chocs photographiés)','Objets de valeur retirés','Clés étiquetées avec la plaque','Client d\'accord sur le montant estimé'];
+const MODELES=['Toyota Hilux','Dacia Duster','Renault Clio','Peugeot 208','Toyota Yaris','Nissan Navara','Suzuki Jimny','Ford Ranger','Kia Picanto','Citroën C3','Mitsubishi L200','Renault Kangoo'];
+const NOMS=['Marie Léandre','Jordan Pindard','Sandra Ho-Kong','Wilfried Aubin','Céline Rosamond','Thomas Nguyen','Fabrice Belony','Anaïs Lucas','Steeve Mathurin','Kelly Edwige','Patrice Labonne','Aurélie Sinaï','Jean Bérard','Ruth Galmot','Christophe Lony','Nadège Théodose','Yannick Polony','Laura Félix'];
+const SYMPT=['','','','Bruit en freinant','Clim souffle tiède','Voyant moteur allumé','Vibration à 90 km/h',''];
+const AM0=450,AM1=720,PM0=840,PM1=1020;let DAYCAP=(AM1-AM0+PM1-PM0)*MECAS.length;
+
+/* ---------- Outils ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromISO=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const hm=m=>`${Math.floor(m/60)}h${pad(m%60)}`;
+const dlabel=(s,o={weekday:'short',day:'numeric',month:'short'})=>fromISO(s).toLocaleDateString('fr-FR',o);
+const durTxt=m=>m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?' '+pad(m%60):''}`;
+const eur=n=>n.toLocaleString('fr-FR')+' €';
+const fits=(s,d)=>(s>=AM0&&s+d<=AM1)||(s>=PM0&&s+d<=PM1);
+const NOW=new Date(); const TODAY=iso(NOW); const NOWM=NOW.getHours()*60+NOW.getMinutes();
+function workdays(from,n){const o=[],x=new Date(from);while(o.length<n){if(x.getDay()%6!==0)o.push(iso(x));x.setDate(x.getDate()+1)}return o}
+const WD=workdays(NOW,65); // ≈ 3 mois de dates ouvrées : délai métropole + RDV lointains
+let seed=20261005; const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const L='ABCDEFGHJKLMNPQRSTVWXYZ';
+const plaque=()=>pick(L)+pick(L)+'-'+String(100+Math.floor(rnd()*900))+'-'+pick(L)+pick(L);
+const tel=()=>'0694 '+[0,0,0].map(()=>pad(Math.floor(rnd()*100))).join(' ');
+const plateHTML=(p,sm)=>`<span class="plate${sm?' sm':''}"><span class="eu">F</span><span class="num">${esc(p||'—')}</span><span class="reg">973</span></span>`;
+const pill=s=>`<span class="pill st-${s}">${ST[s]}</span>`;
+const rdvDur=r=>r.presta.reduce((a,id)=>a+P[id].dur,0);
+const rdvPrix=r=>r.presta.reduce((a,id)=>a+P[id].prix,0);
+const prestaTxt=r=>r.presta.map(id=>P[id].label).join(' + ');
+const meca=id=>MECAS.find(m=>m.id===id);
+
+/* ---------- Jeu de données de démonstration ---------- */
+let RDVS=[],NID=1;
+function mkRdv(o){const r={id:NID++,rappel:false,mode:'depot',recep:{},sympt:'',source:'téléphone',...o};r.code='TA-'+r.date.slice(5).replace('-','')+'-'+pad(r.id);r.dur=rdvDur(r);return r}
+(function seedData(){
+  const fill=[.82,.72,.6,.5,.38,.28];
+  const W=[['vid',4],['rev',2],['clm',3],['frn',2],['pnu',2],['dia',2],['pct',1],['dis',.4]];
+  const tot=W.reduce((a,w)=>a+w[1],0);
+  const pickP=()=>{let x=rnd()*tot;for(const[w,v]of W){if((x-=v)<0)return w}return 'vid'};
+  WD.slice(0,6).forEach((d,di)=>{
+    MECAS.forEach(m=>{
+      let t=AM0;
+      while(t<PM1){
+        if(t>=AM1&&t<PM0){t=PM0;continue}
+        let pr=[pickP()]; if(pr[0]==='vid'&&rnd()<.3)pr.push('clm');
+        const dur=pr.reduce((a,id)=>a+P[id].dur,0);
+        if(rnd()<fill[di]&&fits(t,dur)){
+          const sy=pick(SYMPT);
+          if(sy.includes('frein'))pr=['frn'];else if(sy.includes('Clim'))pr=['clm'];else if(sy.includes('Voyant'))pr=['dia'];
+          const r=mkRdv({date:d,start:t,meca:m.id,presta:pr,client:{nom:pick(NOMS),tel:tel()},veh:{plaque:plaque(),modele:pick(MODELES),km:String(Math.round((20+rnd()*160))*1000)},sympt:sy,source:rnd()<.45?'en ligne':'téléphone',statut:rnd()<.8?'confirme':'attente',mode:rnd()<.2?'attente':'depot'});
+          if(d===TODAY){const end=r.start+r.dur;
+            if(end<=NOWM)r.statut=rnd()<.5?'facture':'termine';
+            else if(r.start<=NOWM)r.statut='encours';
+            else if(r.start-NOWM<60&&rnd()<.6)r.statut='arrive';
+            if(r.statut!=='confirme'&&r.statut!=='attente'){r.recep=Object.fromEntries(RECEP.map((_,i)=>[i,true]))}
+          }
+          if(di===1)r.rappel=rnd()<.35;
+          if(di>=3&&r.id%4===0)r.waitlist=true; // clients qui veulent avancer leur RDV en cas de désistement
+          RDVS.push(r); t+=r.dur;
+        } else t+=30;
+      }
+    });
+  });
+})();
+const MAINT=[
+  {nom:'Hervé Constant',tel:'0694 21 48 30',plaque:'FK-482-PL',modele:'Toyota Hilux',presta:['vid'],why:'Dernière vidange il y a 11 mois'},
+  {nom:'Sabrina Michel',tel:'0694 67 12 05',plaque:'GD-117-TR',modele:'Renault Clio',presta:['clm'],why:'Recharge clim il y a 13 mois'},
+  {nom:'Olivier Dacosta',tel:'0694 30 77 91',plaque:'EZ-905-KM',modele:'Ford Ranger',presta:['rev'],why:'Révision des 60 000 km atteinte'},
+  {nom:'Manon Jean-Baptiste',tel:'0694 85 03 66',plaque:'FV-260-BH',modele:'Peugeot 208',presta:['pct'],why:'Contrôle technique à passer dans 5 semaines'},
+  {nom:'Rodrigue Alexis',tel:'0694 14 59 22',plaque:'DS-731-WC',modele:'Nissan Navara',presta:['frn'],why:'Usure plaquettes signalée au dernier passage (30 %)'}
+];
+const MAINTDONE={};
+
+/* ---------- Stock des pièces : même logique que le module Stock du Google Sheet ----------
+   Analogie : le stock est un compte bancaire.
+   Stock = le solde · Réservations des RDV = les chèques déjà signés · Disponible = solde − chèques
+   Délai métropole = la durée d'un virement : on commande AVANT d'être à découvert, pas le jour où on l'est. */
+let LIVE=false; // true quand l'appli lit le vrai planning du DMS
+const MARGE=5; // jours ajoutés au délai fournisseur (douane, octroi de mer, fret retardé)
+const STOCK=[
+  {ref:'HUILE-5W30',ean:'3267025010021',des:'Huile moteur 5W30',u:'L',orig:'Local',delai:2,seuil:20,prix:9.5,empl:'A1',four:'Lubrifiants Cayenne'},
+  {ref:'FH-UNIV',ean:'4009026501052',des:'Filtre à huile',u:'pce',orig:'Métropole',delai:15,seuil:6,prix:12,empl:'B2',four:'Grossiste métropole'},
+  {ref:'FA-UNIV',ean:'4009026501069',des:'Filtre à air',u:'pce',orig:'Métropole',delai:15,seuil:4,prix:18,empl:'B3',four:'Grossiste métropole'},
+  {ref:'FHAB-UNIV',ean:'4009026501076',des:'Filtre habitacle',u:'pce',orig:'Métropole',delai:15,seuil:3,prix:15,empl:'B4',four:'Grossiste métropole'},
+  {ref:'GAZ-R1234',ean:'3700123400019',des:'Gaz clim R1234yf',u:'recharge',orig:'Local',delai:2,seuil:4,prix:38,empl:'Cage gaz',four:'Froid Guyane'},
+  {ref:'PLAQ-AV',ean:'3286064200017',des:'Plaquettes de frein AV',u:'jeu',orig:'Métropole',delai:15,seuil:2,prix:45,empl:'C1',four:'Grossiste métropole'},
+  {ref:'PNEU-STD',ean:'3528701234567',des:'Pneu dimension courante',u:'pce',orig:'Local',delai:3,seuil:8,prix:85,empl:'Râtelier',four:'Pneus Kourou'},
+  {ref:'KIT-DIST',ean:'3359810012345',des:'Kit distribution + pompe à eau',u:'kit',orig:'Métropole',delai:15,seuil:0,prix:320,empl:'D1',four:'Grossiste métropole'}
+];
+const SK=Object.fromEntries(STOCK.map(s=>[s.ref,s]));
+const MAGASIN={nom:'Responsable pièces',tel:'0694 55 12 40'}, GARAGE_TEL='0594 32 10 00';
+const CONFRERES=[
+  {nom:'Pièces Auto Kourou',type:'Revendeur',tel:'0694 41 22 10',info:'Toutes marques · Kourou'},
+  {nom:'Garage du Bourg',type:'Confrère',tel:'0694 38 07 52',info:'Toyota, Nissan · Kourou'},
+  {nom:'Distri Pièces Cayenne',type:'Revendeur',tel:'0694 26 90 31',info:'Livraison dans la journée'},
+  {nom:'Casse Auto Macouria',type:'Casse',tel:'0694 72 15 48',info:'Occasion contrôlée'}
+];
+let MVTS=[],CMDS=[]; const ALERTED=new Set();
+const RESA_ST=['attente','confirme','arrive','encours'];
+const NIV={rouge:0,orange:1,jaune:2,vert:3}, NIVE={rouge:'🔴',orange:'🟠',jaune:'🟡',vert:'🟢'};
+const dd=(a,b)=>Math.round((fromISO(b)-fromISO(a))/864e5);
+const addD=(s,n)=>{const d=fromISO(s);d.setDate(d.getDate()+n);return iso(d)};
+const qtxt=(q,u)=>`${String(Math.round(q*100)/100).replace('.',',')} ${u}`;
+const intl=t=>{const d=String(t).replace(/\D/g,'');if(/^0(694|594|639)/.test(d))return'+594'+d.slice(1);if(/^0[67]/.test(d))return'+33'+d.slice(1);return'+'+d};
+
+// Pièces nécessaires pour une liste de prestations : {ref: quantité}
+function needs(presta){const o={};presta.forEach(id=>(P[id].pc||[]).forEach(([ref,q])=>o[ref]=(o[ref]||0)+q));return o}
+// Réservations actives = RDV à venir pas encore terminés, moins ce qui a déjà été sorti pour eux
+function reservations(){const o=[];RDVS.filter(r=>RESA_ST.includes(r.statut)&&r.date>=TODAY).forEach(r=>{const n=needs(r.presta);for(const ref in n){const q=n[ref]-((r.sorti||{})[ref]||0);if(q>0)o.push({r,ref,q})}});
+  return o.sort((a,b)=>a.r.date.localeCompare(b.r.date)||a.r.start-b.r.start)}
+
+// Le calcul central : pour chaque pièce, on sert les RDV dans l'ordre chronologique (file d'attente au comptoir)
+function analyse(){
+  const F={};STOCK.forEach(s=>F[s.ref]={s,res:[],cmds:CMDS.filter(c=>c.ref===s.ref&&c.statut==='En cours')});
+  reservations().forEach(x=>F[x.ref]&&F[x.ref].res.push(x));
+  Object.values(F).forEach(f=>{const s=f.s,tot=s.delai+MARGE;
+    f.reserve=f.res.reduce((a,x)=>a+x.q,0);f.enCmd=f.cmds.reduce((a,c)=>a+c.q,0);f.dispo=Math.round((s.stock-f.reserve)*100)/100;f.manque=null;
+    let cum=0;f.res.forEach(x=>{cum+=x.q;const arr=f.cmds.filter(c=>c.arrivee<=x.r.date).reduce((a,c)=>a+c.q,0);
+      x.couvert=cum<=s.stock+arr+1e-9;x.parCmd=x.couvert&&cum>s.stock+1e-9;
+      if(!x.couvert&&!f.manque)f.manque={r:x.r,q:Math.round((cum-s.stock-arr)*100)/100}});
+    f.aCmd=Math.max(0,Math.ceil(2*s.seuil+f.reserve-s.stock-f.enCmd)); // on remonte à 2 × le seuil
+    f.limite='';
+    if(f.manque){const lim=addD(f.manque.r.date,-tot),j=dd(TODAY,lim);f.limite=lim;
+      const pour=`${f.manque.r.veh.plaque} du ${dlabel(f.manque.r.date)}`,man=`manque ${qtxt(f.manque.q,s.u)}`;
+      if(j<0){f.niveau='rouge';f.msg=`${man} pour ${pour} : une livraison (${tot} j) n'arrivera pas à temps → dépannage local`}
+      else if(j<=3){f.niveau='orange';f.msg=`Commander aujourd'hui : ${man} pour ${pour}`}
+      else{f.niveau='jaune';f.msg=`À commander avant le ${dlabel(lim)} (${man} pour ${pour})`}
+      if(f.enCmd>0&&f.aCmd===0)f.msg+=' — la commande en cours arrive trop tard';
+      if(!f.aCmd&&!f.enCmd)f.aCmd=Math.ceil(f.manque.q);
+    }else if(s.seuil>0&&f.dispo+f.enCmd<s.seuil){f.niveau=f.dispo<=0?'orange':'jaune';
+      f.msg=`${f.dispo<=0?'Rupture':'Stock bas'} : ${qtxt(f.dispo,s.u)} disponible(s) pour un seuil de ${s.seuil}`+(f.enCmd?` (${f.enCmd} en commande)`:'')}
+    else{f.niveau='vert';f.msg='OK'}
+  });
+  return F;
+}
+// Une nouvelle réservation ne peut prendre que le « disponible » (solde − chèques déjà signés)
+function pieceCheck(presta,day){if(LIVE)return[];const n=needs(presta),res=reservations();
+  return Object.keys(n).map(ref=>{const s=SK[ref],tot=s.delai+MARGE;
+    const promis=res.filter(x=>x.ref===ref).reduce((a,x)=>a+x.q,0);
+    const arr=CMDS.filter(c=>c.ref===ref&&c.statut==='En cours'&&c.arrivee<=day).reduce((a,c)=>a+c.q,0);
+    const libre=s.stock-promis;
+    const etat=libre>=n[ref]?'stock':libre+arr>=n[ref]?'cmd':dd(TODAY,day)>=tot?'acmd':'non';
+    return{ref,s,q:n[ref],etat,tot}})}
+const firstPieceDay=presta=>WD.find(d=>!pieceCheck(presta,d).some(e=>e.etat==='non'));
+const ETAT={stock:'✓ en stock, réservée',cmd:'🚚 commande en route, arrive à temps',acmd:'🛒 à commander, arrivera à temps',non:'⚠ pas là à temps → dépannage confrère'};
+const ETAT_CLI={stock:'✓ en stock, réservée pour vous',cmd:'✓ commandée, arrive avant votre RDV',acmd:'✓ commandée pour votre RDV',non:'⏳ pas disponible à cette date'};
+const ETAT_R={stock:'✓ réservée en stock',cmd:'🚚 commande en route, arrive à temps',non:'❌ manquante à cette date',sorti:'✓ sortie du stock',libre:'— réservation libérée'};
+function pieceListHTML(pc,cli){return pc.length?`<div style="display:grid;gap:4px"><span class="label">Pièces</span>${pc.map(e=>`<div class="pline"><span>${esc(e.s.des)} ×${qtxt(e.q,e.s.u)}</span><span>${(cli?ETAT_CLI:ETAT)[e.etat]}</span></div>`).join('')}</div>`:''}
+function rdvPieces(r){const n=needs(r.presta);if(!Object.keys(n).length)return[];const F=analyse();
+  return Object.keys(n).map(ref=>{const s=SK[ref],done=((r.sorti||{})[ref]||0)>=n[ref],x=F[ref].res.find(x=>x.r===r);
+    const etat=done?'sorti':!RESA_ST.includes(r.statut)?(['termine','facture'].includes(r.statut)?'sorti':'libre'):!x?'sorti':x.couvert?(x.parCmd?'cmd':'stock'):'non';
+    return{ref,s,q:n[ref],etat}})}
+function missingIds(){const F=analyse();return new Set(Object.values(F).flatMap(f=>f.res.filter(x=>!x.couvert).map(x=>x.r.id)))}
+function ptagHTML(id){if(!(P[id].pc||[]).length)return'';const f=firstPieceDay([id]);
+  if(f&&dd(TODAY,f)<=3)return`<span class="ptag">✓ Pièces ${pieceCheck([id],f).every(e=>e.etat==='stock')?'en stock':'disponibles'}</span>`;
+  return`<span class="ptag wait">⏳ Pièce à faire venir${f?' · dès le '+dlabel(f,{day:'numeric',month:'short'}):''}</span>`}
+
+// Mouvement de stock (le « relevé de compte » : rien ne s'efface)
+function mvt(type,ref,q,rdv,motif,recv=true){const s=SK[ref],avant=s.stock;
+  s.stock=Math.round((type==='Inventaire'?q:type==='Entrée'?avant+q:avant-q)*100)/100;
+  MVTS.unshift({date:new Date(),type,ref,delta:Math.round((s.stock-avant)*100)/100,apres:s.stock,rdv:rdv||'',motif:motif||''});
+  if(type==='Entrée'&&recv){let reste=q;CMDS.filter(c=>c.ref===ref&&c.statut==='En cours').forEach(c=>{if(reste<=0)return;if(reste>=c.q){reste-=c.q;c.statut='Reçue'}else{c.q-=reste;reste=0}})}}
+// RDV terminé : les pièces réservées sortent du stock toutes seules
+function consommer(r){const n=needs(r.presta);r.sorti=r.sorti||{};for(const ref in n){const reste=n[ref]-(r.sorti[ref]||0);if(reste>0){mvt('Sortie',ref,reste,r.code,'Fin de réparation (automatique)');r.sorti[ref]=n[ref]}}}
+// Nouvelle alerte rouge/orange -> SMS au responsable pièces (une seule fois, réarmée quand tout redevient vert)
+function checkAlerts(silent){const F=analyse();Object.values(F).forEach(f=>{const k=f.s.ref;
+  if(f.niveau==='rouge'||f.niveau==='orange'){if(!ALERTED.has(k)){ALERTED.add(k);if(!silent){
+    queueSms(MAGASIN.tel,`TECH'AUTO Stock : ${f.niveau==='rouge'?'URGENT ':''}${f.s.des}. ${f.msg}`.slice(0,300),'ALERTE STOCK','');
+    setTimeout(()=>toast(`${NIVE[f.niveau]} Alerte stock envoyée au magasin : ${f.s.des}`),1200)}}}
+  else ALERTED.delete(k)});return F}
+
+(function seedStock(){
+  // Stock de départ calé sur le planning de démo : 1 rouge (il manque 1 jeu de plaquettes), 1 orange (gaz clim), 1 jaune (filtre à air)
+  const res=reservations(),dem=(ref,avant)=>res.filter(x=>x.ref===ref&&(!avant||x.r.date<avant)).reduce((a,x)=>a+x.q,0);
+  const init={'HUILE-5W30':dem('HUILE-5W30')+40,'FH-UNIV':dem('FH-UNIV')+6,'FA-UNIV':dem('FA-UNIV')+1,'FHAB-UNIV':dem('FHAB-UNIV')+3,
+    'GAZ-R1234':dem('GAZ-R1234',WD[5]),'PLAQ-AV':Math.max(0,dem('PLAQ-AV')-1),'PNEU-STD':dem('PNEU-STD')+8,'KIT-DIST':dem('KIT-DIST')};
+  STOCK.forEach(s=>s.stock=init[s.ref]);
+  CMDS.push({ref:'FH-UNIV',q:12,date:addD(TODAY,-6),arrivee:addD(TODAY,14),four:'Grossiste métropole',statut:'En cours'});
+  // Historique du jour : livraison du matin + sorties des réparations déjà terminées
+  const fini=RDVS.filter(r=>r.date===TODAY&&['termine','facture'].includes(r.statut)).sort((a,b)=>a.start-b.start);
+  const tot={};fini.forEach(r=>{const n=needs(r.presta);for(const k in n)tot[k]=(tot[k]||0)+n[k]});
+  const run=Object.fromEntries(STOCK.map(s=>[s.ref,s.stock+(tot[s.ref]||0)]));const h=[];
+  const at=m=>{const d=new Date();d.setHours(Math.floor(m/60),m%60,0,0);return d};
+  if(fini.length)h.push({date:at(440),type:'Entrée',ref:'HUILE-5W30',delta:60,apres:run['HUILE-5W30'],rdv:'',motif:'Livraison fournisseur local'});
+  fini.forEach(r=>{const n=needs(r.presta);r.sorti={...n};for(const k in n){run[k]-=n[k];h.push({date:at(r.start+r.dur),type:'Sortie',ref:k,delta:-n[k],apres:run[k],rdv:r.code,motif:'Fin de réparation (automatique)'})}});
+  MVTS=h.reverse();
+  checkAlerts(true);
+})();
+
+/* ---------- Disponibilités ---------- */
+const active=r=>r.statut!=='annule'&&r.statut!=='absent';
+function isFree(day,mid,s,d,ex){return fits(s,d)&&!RDVS.some(r=>r.id!==ex&&active(r)&&r.date===day&&r.meca===mid&&s<r.start+r.dur&&r.start<s+d)}
+function slotsFor(day,d){const o=[];for(let s=AM0;s<PM1;s+=30){if(day===TODAY&&s<NOWM+30)continue;const n=MECAS.filter(m=>isFree(day,m.id,s,d)).length;if(n)o.push({s,n})}return o}
+const dayLoad=day=>RDVS.filter(r=>r.date===day&&active(r)).reduce((a,r)=>a+r.dur,0)/DAYCAP;
+
+/* ---------- Assistant de réservation (client et secrétariat) ---------- */
+function newWiz(source,host,pre={}){return{source,host,step:0,presta:pre.presta||[],veh:{plaque:'',modele:'',km:'',...(pre.veh||{})},sympt:'',day:pre.day||null,start:pre.start??null,pref:pre.meca||null,mode:'depot',client:{nom:'',tel:'',email:'',...(pre.client||{})},sms:true,err:'',done:null}}
+let wizC=newWiz('en ligne','#client-wiz'), wizS=null;
+const wOf=el=>el.closest('#modal')?wizS:wizC;
+const wDur=w=>w.presta.reduce((a,id)=>a+P[id].dur,0);
+const wPrix=w=>w.presta.reduce((a,id)=>a+P[id].prix,0);
+const STEPS=['Prestation','Véhicule & client','Créneau','Confirmation'];
+
+/* ---------- Fichier clients : retrouvé à partir des RDV passés et à venir ---------- */
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[\s\-.]/g,'');
+function clients(){const m={};
+  [...RDVS].sort((a,b)=>b.date.localeCompare(a.date)).forEach(r=>{const k=r.veh.plaque;if(!m[k])m[k]={nom:r.client.nom,tel:r.client.tel,plaque:k,modele:r.veh.modele,km:r.veh.km||'',last:r,nb:0};m[k].nb++});
+  MAINT.forEach(c=>{if(!m[c.plaque])m[c.plaque]={nom:c.nom,tel:c.tel,plaque:c.plaque,modele:c.modele,km:'',last:null,why:c.why,nb:1}});
+  return Object.values(m)}
+function findClients(q){const n=norm(q),d=String(q).replace(/\D/g,'');if(n.length<2)return[];
+  return clients().filter(c=>norm(c.nom).includes(n)||norm(c.plaque).includes(n)||(d.length>=4&&c.tel.replace(/\D/g,'').includes(d))).slice(0,6)}
+const lastTxt=c=>c.last?`${c.last.date>=TODAY?'prochain RDV':'dernière visite'} ${dlabel(c.last.date,{day:'numeric',month:'short'})} · ${esc(prestaTxt(c.last))}`:esc(c.why||'');
+function foundHTML(w){if(!w.find||norm(w.find).length<2)return'';const L=findClients(w.find);
+  return L.length?L.map(c=>`<button data-act="w-pick" data-p="${esc(c.plaque)}">${plateHTML(c.plaque,1)}<b>${esc(c.nom)}</b><span class="small muted">${esc(c.modele)}</span><span class="meta">${lastTxt(c)}</span></button>`).join('')
+    :'<p class="small muted">Aucun client trouvé. C\'est un nouveau client : remplissez la fiche ci-dessous.</p>'}
+function knownHTML(w){const c=w.known&&clients().find(x=>x.plaque===w.known);if(!c)return'';
+  return`<div class="known">✓ <b>Client connu</b> · ${c.nb} passage${c.nb>1?'s':''} · ${lastTxt(c)}<button class="btn sm ghost" data-act="w-unpick" style="margin-left:auto">Changer</button></div>`}
+// Côté client en ligne : pas de recherche par nom (données personnelles). La plaque + les 4 derniers chiffres du portable suffisent.
+function kboxHTML(w){if(w.source==='téléphone'||w.known)return'';const c=clients().find(x=>x.plaque===w.veh.plaque);if(!c)return'';
+  return`<div class="kbox"><span>🔎 Ce véhicule est déjà venu à l'atelier. Pour retrouver vos coordonnées, saisissez les <b>4 derniers chiffres</b> de votre portable :</span>
+    <div class="row"><input id="w-ver" data-ver inputmode="numeric" maxlength="4" placeholder="••••" aria-label="4 derniers chiffres du portable"><button class="btn sm primary" data-act="w-verify">Retrouver ma fiche</button><span class="small err" id="w-ver-err"></span></div></div>`}
+function fillFrom(w,c){w.veh.plaque=c.plaque;w.veh.modele=c.modele;if(c.km)w.veh.km=c.km;w.client.nom=c.nom;w.client.tel=c.tel;w.known=c.plaque;w.find=''}
+
+/* ---------- Date précise, express, calendrier ---------- */
+const dmy=s=>{const[y,m,d]=s.split('-');return`${d}/${m}/${y}`};
+function dayInfo(w,day){const d=wDur(w),pc=pieceCheck(w.presta,day),sl=slotsFor(day,d);return{day,sl,n:sl.length,pc,pOk:!pc.some(e=>e.etat==='non')}}
+const okInfo=(w,x)=>x.n; // les pièces sont gérées par l'atelier : elles ne bloquent pas un jour
+function applyDate(w,txt){
+  const m=String(txt).trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if(!m){w.dmsg={cls:'err',t:'Date attendue au format JJ/MM/AAAA, par exemple '+dmy(WD[3])+'.'};return}
+  const dt=new Date(+m[3],+m[2]-1,+m[1]);
+  if(dt.getDate()!==+m[1]||dt.getMonth()!==+m[2]-1){w.dmsg={cls:'err',t:`Le ${txt} n'existe pas dans le calendrier.`};return}
+  let day=iso(dt);const last=WD[WD.length-1];
+  if(day<TODAY){w.dmsg={cls:'err',t:'Cette date est déjà passée.'};return}
+  if(day>last){w.dmsg={cls:'err',t:`Les rendez-vous s'ouvrent jusqu'au ${dlabel(last,{day:'numeric',month:'long',year:'numeric'})}. Pour plus tard, laissez vos coordonnées : l'atelier vous rappelle.`};return}
+  let pre='';
+  if(dt.getDay()%6===0){const nx=WD.find(x=>x>=day);pre=`Le garage est fermé le week-end. `;day=nx}
+  const x=dayInfo(w,day);
+  if(okInfo(w,x)){w.day=day;w.start=null;w.cal=false;w.dmsg={cls:pre?'warn':'ok',t:pre+`${dlabel(day,{weekday:'long',day:'numeric',month:'long'})} : ${x.n} créneau${x.n>1?'x':''} libre${x.n>1?'s':''}. Choisissez l'heure.`};return}
+  const i=WD.indexOf(day),after=WD.slice(i+1).find(d=>okInfo(w,dayInfo(w,d))),before=WD.slice(0,i).reverse().find(d=>okInfo(w,dayInfo(w,d)));
+  const why=w.source==='téléphone'?`l'atelier est complet pour ${durTxt(wDur(w))} d'intervention`:`l'atelier est complet`;
+  const alt=[before,after].filter(Boolean).map(d=>`<button class="btn sm" data-act="w-day" data-d="${d}">${dlabel(d,{weekday:'short',day:'numeric',month:'short'})}</button>`).join(' ');
+  w.dmsg={cls:'warn',t:pre+`Le ${dlabel(day,{weekday:'long',day:'numeric',month:'long'})}, ${why}.`,html:alt?`<div class="row" style="margin-top:6px"><span class="small">Jours les plus proches :</span>${alt}</div>`:''};
+  w.day=after||before||w.day;w.start=null;
+}
+function expressPick(w){const d=WD.find(day=>okInfo(w,dayInfo(w,day)));if(!d){w.dmsg={cls:'err',t:'Aucun créneau sur les 3 prochains mois.'};return}
+  const x=dayInfo(w,d),s=x.sl[0].s,mc=MECAS.find(m=>isFree(d,m.id,s,wDur(w)));
+  w.day=d;w.start=s;w.cal=false;w.express=true;
+  w.dmsg={cls:'ok',t:`⚡ Premier créneau disponible : <b>${dlabel(d,{weekday:'long',day:'numeric',month:'long'})} à ${hm(s)}</b>${w.source==='téléphone'&&mc?' avec '+mc.nom:''}.`,raw:true}}
+function calHTML(w,all){
+  const map=Object.fromEntries(all.map(x=>[x.day,x]));
+  const first=WD[0].slice(0,7),last=WD[WD.length-1].slice(0,7);
+  const ym=w.calM||(w.day||WD[0]).slice(0,7);
+  const [y,m]=ym.split('-').map(Number),d1=new Date(y,m-1,1),dl=new Date(y,m,0).getDate();
+  const shift=(d1.getDay()+6)%7; // lundi = 0
+  let cells='';for(let i=0;i<Math.min(shift,5);i++)cells+='<span class="cd out"></span>';
+  for(let dn=1;dn<=dl;dn++){const dt=new Date(y,m-1,dn);if(dt.getDay()%6===0)continue;const day=iso(dt),x=map[day];
+    if(!x){cells+=`<button class="cd" disabled><b>${dn}</b><span>${day<TODAY?'':'fermé'}</span></button>`;continue}
+    const ok=okInfo(w,x),lv=!ok?'':x.n>=12?' lv-hi':' lv-mid',pw=!x.pOk&&w.source==='téléphone';
+    cells+=`<button class="cd${lv}${pw?' pwarn':''}" data-act="w-day" data-d="${day}" aria-pressed="${w.day===day}" ${ok?'':'disabled'} title="${ok?x.n+' créneaux libres'+(pw?' · pièce pas arrivée à temps':''):'Complet'}"><b>${dn}</b><span>${ok?x.n+' libres':'complet'}</span></button>`}
+  const nav=(dir,dis)=>`<button class="btn sm" data-act="w-calm" data-m="${dir}" ${dis?'disabled':''} aria-label="${dir<0?'Mois précédent':'Mois suivant'}">${dir<0?'‹':'›'}</button>`;
+  return`<div class="cal"><div class="cal-head">${nav(-1,ym<=first)}<h3>${d1.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})}</h3>${nav(1,ym>=last)}</div>
+    <div class="cal-grid">${['Lun','Mar','Mer','Jeu','Ven'].map(t=>`<span class="dow">${t}</span>`).join('')}${cells}</div>
+    <div class="cal-legend"><span><i style="background:var(--t-b)"></i>large choix</span><span><i style="background:var(--a-b)"></i>peu de créneaux</span><span><i style="background:var(--sunk)"></i>complet ou fermé</span></div></div>`}
+const SUGG=[[/frein|grince|freinage/i,'frn','Bruit au freinage : on contrôle les plaquettes ?'],[/clim|chaud|tiède|froid/i,'clm','La clim semble faible : ajouter une recharge ?'],[/voyant|moteur|témoin/i,'dia','Un voyant allumé : un diagnostic électronique permet de lire le défaut.'],[/vibr|pneu|crev/i,'pnu','Des vibrations : souvent l\'équilibrage des pneus.']];
+function suggHTML(w){const s=SUGG.find(([re,id])=>re.test(w.sympt)&&!w.presta.includes(id));return s?`<div class="sugg"><span>💡 ${s[2]}</span><button class="btn sm signal" data-act="w-add" data-id="${s[1]}">Ajouter ${esc(P[s[1]].label)}</button></div>`:''}
+
+function renderWiz(w){
+  const host=$(w.host); if(!host)return;
+  const tel=w.source==='téléphone';
+  let h=w.step<4?`<div class="steps">${STEPS.map((s,i)=>`<span class="${i===w.step?'on':i<w.step?'ok':''}">${s}</span>`).join('')}</div>`:'';
+  if(w.step===0){
+    h+=`<div style="display:grid;gap:6px"><h2>${tel?'Que souhaite le client ?':'De quoi votre véhicule a-t-il besoin ?'}</h2><p class="muted small">${tel?'Plusieurs choix possibles. Prix indicatifs, confirmés à l\'accueil.':'Plusieurs choix possibles.'}</p></div>
+    <div class="tiles">${PRESTA.map(p=>`<button class="tile" data-act="w-presta" data-id="${p.id}" aria-pressed="${w.presta.includes(p.id)}">${p.tag?`<span class="tag">${p.tag}</span>`:''}<strong>${p.label}</strong><span class="muted small">${p.desc}</span>${tel?`${ptagHTML(p.id)}<span class="meta"><span class="mono">${durTxt(p.dur)}</span><span>${p.prixTxt||eur(p.prix)}</span></span>`:''}</button>`).join('')}</div>
+    ${tel&&w.presta.length?`<div class="sumbar"><span>Durée atelier : <b class="mono">${durTxt(wDur(w))}</b></span><span>Estimation : <b>${eur(wPrix(w))}</b></span></div>`:''}`;
+  }
+  if(w.step===1){
+    h+=`<h2>${tel?'Le client et son véhicule':'Votre véhicule et vos coordonnées'}</h2>
+    ${tel?`<div class="find"><label class="label" for="w-find">Client déjà venu ? Recherche par nom, plaque ou téléphone</label><input id="w-find" data-find value="${esc(w.find||'')}" placeholder="🔎 ex. Léandre, FK-482, 0694 21…" autocomplete="off"><div class="found" id="w-found">${foundHTML(w)}</div></div>`:''}
+    <div id="w-known">${knownHTML(w)}</div>
+    <span class="sect-label">Véhicule</span>
+    <div class="fields">
+      <div class="field"><label for="w-plaque">Immatriculation</label><input id="w-plaque" data-w="veh.plaque" value="${esc(w.veh.plaque)}" placeholder="AB-123-CD" autocomplete="off" maxlength="9"></div>
+      <div class="field"><label for="w-modele">Marque et modèle</label><input id="w-modele" data-w="veh.modele" value="${esc(w.veh.modele)}" list="dl-mod" placeholder="Toyota Hilux"><datalist id="dl-mod">${MODELES.map(m=>`<option value="${m}">`).join('')}</datalist></div>
+      <div class="field"><label for="w-km">Kilométrage</label><input id="w-km" data-w="veh.km" value="${esc(w.veh.km)}" inputmode="numeric" placeholder="85 000"></div>
+    </div>
+    <div id="w-kbox">${kboxHTML(w)}</div>
+    ${!tel&&!w.known?`<p class="small muted">Déjà client ? Tapez votre plaque : l'atelier retrouve votre fiche. <button class="btn sm ghost" data-act="w-demo-plate">Essayer avec une plaque de démo</button></p>`:''}
+    <span class="sect-label">${tel?'Coordonnées du client':'Vos coordonnées'}</span>
+    <div class="fields">
+      <div class="field"><label for="w-nom-${w.source}">Nom et prénom</label><input id="w-nom-${w.source}" data-w="client.nom" value="${esc(w.client.nom)}" autocomplete="name"></div>
+      <div class="field"><label for="w-tel-${w.source}">Téléphone portable</label><input id="w-tel-${w.source}" data-w="client.tel" value="${esc(w.client.tel)}" inputmode="tel" placeholder="0694 00 00 00"></div>
+      <div class="field"><label for="w-mail-${w.source}">E-mail (facultatif)</label><input id="w-mail-${w.source}" data-w="client.email" value="${esc(w.client.email)}" inputmode="email"></div>
+    </div>
+    <div class="field"><label for="w-sympt">${tel?'Symptômes (mots du client)':'Quelque chose à signaler ?'}</label><textarea id="w-sympt" data-w="sympt" placeholder="Ex. bruit à l'avant quand je freine">${esc(w.sympt)}</textarea>
+    <div class="chips">${['Bruit en freinant','Clim souffle tiède','Voyant moteur allumé','Vibration à 90 km/h'].map(c=>`<button class="chip" data-act="w-chip" data-t="${c}">${c}</button>`).join('')}</div></div>
+    <div id="w-sugg">${suggHTML(w)}</div>`;
+  }
+  if(w.step===2){
+    const d=wDur(w);
+    const cli=!tel;
+    const all=WD.map(day=>{const pc=pieceCheck(w.presta,day);return{day,n:slotsFor(day,d).length,load:dayLoad(day),pc,pOk:!pc.some(e=>e.etat==='non')}});
+    const st0=0;
+    const okDay=x=>x.n;
+    if(!w.day||!all.find(x=>x.day===w.day&&okDay(x))){const f=all.slice(st0).find(okDay);w.day=f?f.day:null;if(!w.day)w.start=null}
+    const iSel=w.day?all.findIndex(x=>x.day===w.day):-1, ws=iSel>=st0+10||(iSel>=0&&iSel<st0)?Math.max(0,iSel-2):st0;
+    const days=all.slice(ws,ws+10);
+    const bl=all.find(x=>!x.pOk), blP=bl?bl.pc.filter(e=>e.etat==='non'):[], selDay=all.find(x=>x.day===w.day);
+    const noteP=bl&&!cli?`<p class="tip small">📦 ${esc(blP.map(e=>e.s.des).join(', '))} : jours en pointillés = la pièce ne sera pas là à temps. Réservable quand même : l'alerte part au magasin, qui lance un dépannage confrère.</p>`:'';
+    const sl=w.day?slotsFor(w.day,d):[];
+    if(w.start!=null&&!sl.find(x=>x.s===w.start))w.start=null;
+    const grp=(a,b,t)=>{const g=sl.filter(x=>x.s>=a&&x.s<b);return g.length?`<div style="display:grid;gap:8px"><span class="label">${t}</span><div class="slots">${g.map(x=>`<button class="slot" data-act="w-slot" data-s="${x.s}" aria-pressed="${w.start===x.s}"><b>${hm(x.s)}</b><small>${x.n} mécano${x.n>1?'s':''} libre${x.n>1?'s':''}</small></button>`).join('')}</div></div>`:''};
+    h+=`<div style="display:grid;gap:6px"><h2>Choisissez le créneau</h2><p class="muted small">${cli?'Seuls les créneaux où un mécanicien est disponible s\'affichent.':`Durée prévue : <b class="mono">${durTxt(d)}</b>. Seuls les créneaux où un mécanicien est libre pendant toute la durée s'affichent.`}</p></div>
+    <div class="dtools">
+      <div class="field"><label for="w-date-${w.source}">Date précise</label><div class="row"><input id="w-date-${w.source}" data-date value="${esc(w.dateTxt||'')}" placeholder="JJ/MM/AAAA" inputmode="numeric" maxlength="10" autocomplete="off"><button class="btn sm" data-act="w-date">Voir</button></div></div>
+      <button class="btn signal" data-act="w-express">⚡ Express : le plus tôt</button>
+      <button class="btn" data-act="w-cal" aria-expanded="${!!w.cal}">📅 ${w.cal?'Fermer le calendrier':'Plus de dates (3 mois)'}</button>
+    </div>
+    ${w.dmsg?`<div class="dmsg ${w.dmsg.cls}">${w.dmsg.raw?w.dmsg.t:esc(w.dmsg.t)}${w.dmsg.html||''}</div>`:''}
+    ${w.cal?calHTML(w,all):''}
+    <div class="days"${w.cal?' hidden':''}>${days.map(x=>{const pw=!x.pOk&&!cli;return`<button class="day${pw?' pwarn':''}" data-act="w-day" data-d="${x.day}" aria-pressed="${w.day===x.day}" ${okDay(x)?'':'disabled'} ${pw?'title="Pièce non disponible à temps"':''}><small>${dlabel(x.day,{weekday:'short'})}</small><b>${dlabel(x.day,{day:'numeric'})}</b><small>${dlabel(x.day,{month:'short'})}</small><span class="load" title="Charge atelier"><i style="width:${Math.min(100,Math.round(x.load*100))}%"></i></span>${pw?'<small class="pw">📦 pièce</small>':''}</button>`}).join('')}</div>
+    ${noteP}
+    ${sl.length?grp(AM0,AM1,'Matin')+grp(PM0,PM1,'Après-midi'):`<p class="empty">Aucun créneau assez long ce jour-là. ${d>=240?'Pour une distribution, nous organisons le planning avec vous : laissez vos coordonnées, on vous rappelle.':''}</p>`}
+    ${!cli&&selDay&&selDay.pc.length&&w.start!=null?`<div class="tip">${pieceListHTML(selDay.pc,cli)}</div>`:''}
+    ${w.start!=null&&w.day!==(all.find(okDay)||{}).day?`<label class="wait"><input type="checkbox" data-w="waitlist" ${w.waitlist?'checked':''}><span><b>🔔 Liste d'attente express</b><br><span class="small">${tel?'Le client accepte d\'être avancé':'Prévenez-moi par SMS'} si un créneau plus tôt se libère (désistement). Il suffit de répondre OUI.</span></span></label>`:''}
+    <div style="display:grid;gap:8px"><span class="label">Pendant l'intervention</span><div class="radios">
+      ${[['depot','Je dépose le véhicule'],['attente','J\'attends sur place'],['courtoisie','Véhicule de courtoisie (sous réserve)']].map(([v,t])=>`<label><input type="radio" name="mode-${w.source}" data-w="mode" value="${v}" ${w.mode===v?'checked':''}>${t}</label>`).join('')}</div></div>`;
+  }
+  if(w.step===3){
+    h+=`<h2>${tel?'Vérifiez et confirmez':'Vérifiez votre demande'}</h2>
+    ${tel?'':'<p class="muted small">Votre demande sera validée par l\'atelier, qui vous enverra un message de confirmation.</p>'}
+    <label class="row small"><input type="checkbox" data-w="sms" ${w.sms?'checked':''}> Recevoir la confirmation, le rappel de la veille et l'avis « véhicule prêt » par SMS</label>
+    <div class="recap"><span class="muted">Créneau</span><b>${dlabel(w.day,{weekday:'long',day:'numeric',month:'long'})} à ${hm(w.start)}</b><span class="muted">Client</span><span>${esc(w.client.nom)} · <span class="mono">${esc(w.client.tel)}</span>${w.known?' · <span class="small">client connu</span>':''}</span>${w.waitlist?'<span class="muted">Express</span><span>🔔 sur liste d\'attente pour un créneau plus tôt</span>':''}<span class="muted">Véhicule</span><span>${plateHTML(w.veh.plaque,1)} ${esc(w.veh.modele)}</span><span class="muted">Prestation</span><span>${w.presta.map(id=>P[id].label).join(' + ')}</span>${tel?`<span class="muted">Estimation</span><b>${eur(wPrix(w))}</b>${(()=>{const pc=pieceCheck(w.presta,w.day);return pc.length?`<span class="muted">Pièces</span><span class="small">${pc.map(e=>`${esc(e.s.des)} — ${ETAT[e.etat]}`).join('<br>')}</span>`:''})()}`:''}</div>`;
+  }
+  if(w.step===4){
+    const r=RDVS.find(x=>x.id===w.done);
+    if(!tel)h+=`<div class="done"><div class="done-head"><div class="done-check">✓</div><div><h2>Demande enregistrée</h2><p class="muted">Référence <b class="mono">${r.code}</b></p></div></div>
+    <p>Votre demande de rendez-vous est bien prise en compte. L'atelier va la valider et vous enverra un message de confirmation${w.sms?' par SMS':''}.</p>
+    <div class="recap"><span class="muted">Créneau demandé</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${prestaTxt(r)}</span></div>
+    ${w.sms?`<div style="display:grid;gap:6px"><span class="label">SMS envoyé au client</span><p class="sms" id="sms-conf-${w.source}">${esc(smsRecu(r))}</p></div>`:''}
+    <div class="row"><button class="btn primary" data-act="w-see" data-id="${r.id}">Voir côté secrétariat →</button><button class="btn" data-act="w-reset">Faire une autre demande</button></div></div>`;
+    else h+=`<div class="done"><div class="done-head"><div class="done-check">✓</div><div><h2>Rendez-vous confirmé</h2><p class="muted">Référence <b class="mono">${r.code}</b> · déjà visible dans le planning de l'atelier</p></div></div>
+    <div class="recap"><span class="muted">Quand</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${prestaTxt(r)} · ${durTxt(r.dur)}</span><span class="muted">Mécanicien</span><span>${meca(r.meca).nom}</span><span class="muted">Estimation</span><b>${eur(rdvPrix(r))}</b></div>
+    ${(()=>{const rp=w.pcAvant||[];if(!rp.length)return'';const miss=rp.some(e=>e.etat==='non');
+      return tel?`<div class="tip" style="display:grid;gap:4px"><span class="label">Pièces réservées automatiquement</span>${rp.map(e=>`<div class="pline"><span>${esc(e.s.des)} ×${qtxt(e.q,e.s.u)}</span><span>${ETAT[e.etat]}</span></div>`).join('')}${miss?'<span class="small"><b>Alerte envoyée au responsable pièces</b> : dépannage confrère à lancer (onglet Stock).</span>':''}</div>`
+        :`<div class="tip small">🔧 ${miss?'Une pièce est en cours d\'approvisionnement : l\'atelier s\'en occupe et vous prévient s\'il faut décaler.':'Les pièces de votre intervention sont réservées pour vous.'}</div>`})()}
+    <div style="display:grid;gap:6px"><span class="label">SMS envoyé au client</span><p class="sms" id="sms-conf-${w.source}">${esc(smsConf(r))}</p></div>
+    <div class="row">${tel?`<button class="btn primary" data-act="w-see" data-id="${r.id}">Voir dans le planning</button><button class="btn" data-act="w-reset">Nouveau RDV</button>`:`<button class="btn primary" data-act="w-see" data-id="${r.id}">Voir côté secrétariat →</button><button class="btn" data-act="w-reset">Prendre un autre RDV</button>`}</div></div>`;
+  }
+  if(w.step<4) h+=`<p class="err" id="w-err-${w.source}">${esc(w.err)}</p><div class="navw">${w.step?'<button class="btn ghost" data-act="w-prev">← Retour</button>':'<span></span>'}<button class="btn primary" data-act="w-next">${w.step===3?(tel?'Confirmer le rendez-vous':'Envoyer ma demande'):'Continuer →'}</button></div>`;
+  host.innerHTML=h;
+}
+function validate(w){
+  if(w.step===0&&!w.presta.length)return'Choisissez au moins une prestation.';
+  if(w.step===1){if(!/^[A-Z]{2}-\d{3}-[A-Z]{2}$/.test(w.veh.plaque))return'Immatriculation attendue au format AB-123-CD.';if(!w.veh.modele.trim())return'Indiquez la marque et le modèle.';
+    if(w.client.nom.trim().length<3)return'Indiquez le nom et le prénom.';if(w.client.tel.replace(/\D/g,'').length<10)return'Numéro de portable incomplet (10 chiffres).'}
+  if(w.step===2&&(w.day==null||w.start==null))return'Choisissez un jour puis une heure.';
+  return'';
+}
+function book(w){const tel=w.source==='téléphone';
+  const d=wDur(w); const order=w.pref?[w.pref,...MECAS.map(m=>m.id).filter(x=>x!==w.pref)]:MECAS.map(m=>m.id);
+  const m=order.find(id=>isFree(w.day,id,w.start,d));
+  if(!m){w.err='Ce créneau vient d\'être pris. Choisissez-en un autre.';w.step=2;return}
+  const r=mkRdv({date:w.day,start:w.start,meca:m,presta:[...w.presta],client:{...w.client},veh:{...w.veh},sympt:w.sympt,source:w.source,mode:w.mode,statut:tel?'confirme':'attente',waitlist:!!w.waitlist});
+  w.pcAvant=pieceCheck(r.presta,r.date); // ce qui était libre au moment de réserver
+  RDVS.push(r); // les pièces sont réservées d'office : la réservation se déduit du planning
+  // Demande en ligne : « À confirmer ». Le SMS de confirmation part quand le secrétariat la passe en « Confirmé ».
+  if(w.sms)queueSms(r.client.tel,tel?smsConf(r):smsRecu(r),tel?'CONFIRMATION':'DEMANDE REÇUE',r.code);
+  if(!tel)envoyerDemande(r,!!w.sms);
+  w.done=r.id; w.step=4; w.err='';
+  checkAlerts();
+}
+function fmtPlate(v){const s=v.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,7);if(!/^[A-Z]{2}/.test(s))return s;return s.slice(0,2)+(s.length>2?'-'+s.slice(2,5):'')+(s.length>5?'-'+s.slice(5):'')}
+
+/* ---------- Envoi de la demande au garage ----------
+   SHEET_URL : URL du webhook n8n de production (…/webhook/rdv-techauto). n8n relaie vers le DMS
+   (POST /api/ext/rdv) : client, véhicule, OR et réservation des pièces sont créés, le RDV apparaît
+   « À confirmer » sur le planning du secrétariat (DMS → Planning RDV). Voir techauto-dms/API-N8N.md.
+   Vide = démo seule, rien ne part. Pas de jeton dans la page publique : le DMS force « À confirmer ». */
+const SHEET_URL='';
+const heureSheet=m=>`${pad(Math.floor(m/60))}h${pad(m%60)}`;
+const piecesTxt=presta=>Object.entries(needs(presta)).map(([ref,q])=>ref+(q!==1?' x'+q:'')).join('; ');
+async function envoyerDemande(r,sms){
+  if(!SHEET_URL)return;
+  const rdv={ref:r.code,date:r.date,heure:heureSheet(r.start),client:r.client.nom,tel:r.client.tel,email:r.client.email||'',plaque:r.veh.plaque,vehicule:r.veh.modele,km:r.veh.km||'',
+    prestation:prestaTxt(r),prestaIds:r.presta,meca:LIVE?r.meca:'',duree:r.dur,canal:'en ligne',symptome:r.sympt||'',mode:r.mode,pieces:piecesTxt(r.presta),sms};
+  try{
+    // text/plain : requête « simple », pas de pré-vérification CORS (voir passation § 6)
+    const res=await fetch(SHEET_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'demande',rdv})});
+    const j=await res.json();
+    if(!j.ok)throw new Error(j.erreur||'refus');
+    r.sheet='ok';
+  }catch(e){r.sheet='erreur';toast('⚠ Demande non transmise à l\'atelier. Merci d\'appeler le '+GARAGE_TEL)}
+}
+
+/* ---------- SMS ---------- */
+const smsConf=r=>`TECH'AUTO Kourou : RDV confirmé le ${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)} pour ${prestaTxt(r)} (${r.veh.plaque}). Réf. ${r.code}. Pour décaler, appelez l'atelier.`;
+const smsRecu=r=>`TECH'AUTO Kourou : votre demande de RDV du ${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)} (${r.veh.plaque}) est bien enregistrée. Réf. ${r.code}. L'atelier la valide et vous confirme par message.`;
+const smsRappel=r=>`TECH'AUTO Kourou : rappel de votre RDV ${dlabel(r.date,{weekday:'long'})} à ${hm(r.start)} pour ${prestaTxt(r)} (${r.veh.plaque}). Répondez OUI pour confirmer ou appelez-nous pour décaler.`;
+const smsPret=r=>`TECH'AUTO Kourou : votre ${r.veh.modele} (${r.veh.plaque}) est prête. Montant : ${eur(rdvPrix(r))}. Retrait jusqu'à 17h. Merci de votre confiance.`;
+const smsMaint=c=>`Bonjour ${c.nom.split(' ')[0]}, ici TECH'AUTO Kourou. ${c.why} sur votre ${c.modele} (${c.plaque}). Souhaitez-vous un créneau cette semaine ? Réponse par SMS ou réservation en ligne.`;
+
+/* ---------- Secrétariat ---------- */
+const S={mode:'client',tab:'planning',planDay:WD[0],drawer:null,q:'',fst:'',fday:'',sortDesc:false,sel:{r:new Set(),a:new Set(),m:new Set()},hl:null,cancelAsk:false,scan:{mode:'Entrée',msg:'',cls:'',unknown:null}};
+try{const m=localStorage.getItem('ta-mode'),t=localStorage.getItem('ta-tab');if(m)S.mode=m;if(t)S.tab=t}catch(e){}
+// Lien depuis la landing (?espace=client) : on ouvre toujours l'espace client
+if(new URLSearchParams(location.search).get('espace')==='client')S.mode='client';
+const TABS=[['planning','Planning'],['liste','Rendez-vous'],['relances','Relances'],['sms','SMS'],['pieces','Stock & pièces'],['bord','Tableau de bord'],['fiches','Fiches pratiques']];
+/* File d'envoi SMS : reflet de l'onglet "SMS" du Google Sheet */
+const OUTBOX=[];
+function queueSms(tel,msg,type,ref){
+  if(ref&&OUTBOX.some(s=>s.ref===ref&&s.type===type&&s.tel===tel&&type!=='MANUEL'))return;
+  const s={id:OUTBOX.length+1,cree:new Date(),tel,msg,type,ref:ref||'',statut:'À envoyer',envoye:null};
+  OUTBOX.unshift(s);toast('SMS ajouté à la file Google Sheets');
+  setTimeout(()=>{s.statut='Envoyé';s.envoye=new Date();if(S.mode==='sec'&&S.tab==='sms')renderSec()},2500);
+}
+const hhmm=d=>d?`${pad(d.getHours())}:${pad(d.getMinutes())}`:'';
+const nextDay=()=>WD[0]===TODAY?WD[1]:WD[0];
+/* Désistement : le créneau libéré est proposé aux clients en liste d'attente express, du plus lointain au plus proche */
+const DESIST=[];
+function freeSlot(r){if(r.date<TODAY)return;
+  const c=RDVS.filter(x=>x.waitlist&&x.id!==r.id&&['attente','confirme'].includes(x.statut)&&x.date>r.date&&x.dur<=r.dur&&!pieceCheck(x.presta,r.date).some(e=>e.etat==='non'))
+    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+  DESIST.unshift({id:DESIST.length+1,date:r.date,start:r.start,dur:r.dur,meca:r.meca,from:r,cands:c.map(x=>x.id),offer:null,reply:false,done:null});
+  setTimeout(()=>toast(c.length?`🔔 Créneau libéré : ${c.length} client${c.length>1?'s':''} en liste d'attente express (onglet Relances)`:'Créneau libéré : aucun client en liste d\'attente pour cette durée'),900)}
+const smsOffer=(x,d)=>`TECH'AUTO Kourou : bonne nouvelle, un créneau s'est libéré ${dlabel(d.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(d.start)} pour ${prestaTxt(x)} (${x.veh.plaque}). Répondez OUI pour avancer votre RDV du ${dlabel(x.date,{day:'numeric',month:'long'})}.`;
+function desistHTML(){const L=DESIST.filter(d=>!d.done||d.done.t>Date.now()-6e5);
+  return`<section class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>⚡ Désistements · créneaux libérés</h3><span class="small muted">${RDVS.filter(r=>r.waitlist&&active(r)&&r.date>=TODAY).length} clients en liste d'attente express</span></div>
+  ${L.length?L.map(d=>{const tag=`<b>${dlabel(d.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(d.start)}</b> · ${durTxt(d.dur)} · ${meca(d.meca).nom} <span class="small muted">(libéré par ${esc(d.from.veh.plaque)})</span>`;
+    if(d.done)return`<div class="desist"><span>${tag}</span><span class="small">✅ Rempli : ${esc(d.done.nom)} avancé au ${dlabel(d.date)} à ${hm(d.start)}. SMS de confirmation envoyé.</span></div>`;
+    const cs=d.cands.map(id=>RDVS.find(r=>r.id===id)).filter(x=>x&&x.waitlist&&['attente','confirme'].includes(x.statut));
+    return`<div class="desist"><span>${tag}</span>${cs.length?cs.map(x=>`<div class="pline"><span>${plateHTML(x.veh.plaque,1)} <b>${esc(x.client.nom)}</b> <span class="small muted">${esc(prestaTxt(x))} · RDV actuel ${dlabel(x.date)}</span></span>
+      ${d.offer===x.id?(d.reply?`<span class="row"><span class="reply small">« OUI »</span><button class="btn sm primary" data-act="desist-move" data-d="${d.id}" data-id="${x.id}">Avancer le RDV</button></span>`:'<span class="small muted">⏳ SMS envoyé, en attente de réponse…</span>'):`<button class="btn sm signal" data-act="desist-offer" data-d="${d.id}" data-id="${x.id}" ${d.offer?'disabled':''}>Proposer par SMS</button>`}</div>`).join('')
+      :'<span class="small muted">Aucun client en attente pour cette durée. Pensez à la liste « Entretiens à proposer ».</span>'}</div>`}).join('')
+    :'<p class="empty">Aucun désistement. Pour tester : ouvrez un RDV du planning → « Annuler le rendez-vous ». Les clients en liste d\'attente express (🔔) qui peuvent être avancés apparaissent ici.</p>'}</section>`}
+
+function counts(){
+  const nd=nextDay();
+  return{relances:RDVS.filter(r=>r.date===nd&&active(r)&&!r.rappel).length+RDVS.filter(r=>r.statut==='attente'&&r.date>=TODAY).length+DESIST.filter(d=>!d.done&&d.cands.length).length,
+    pieces:Object.values(analyse()).filter(f=>f.niveau==='rouge'||f.niveau==='orange').length}
+}
+function upcomingIds(){const lim=WD.slice(0,3);return new Set(RDVS.filter(r=>lim.includes(r.date)&&['attente','confirme','arrive'].includes(r.statut)).map(r=>r.id))}
+function renderTabs(){const c=counts();$('#tabs').innerHTML=TABS.map(([k,t])=>`<button class="t" role="tab" data-act="tab" data-tab="${k}" aria-selected="${S.tab===k}">${t}${c[k]?`<span class="badge">${c[k]}</span>`:''}</button>`).join('')+`<span class="spacer"></span><button class="btn signal" data-act="new-rdv">+ RDV téléphone</button>`}
+
+function renderPlanning(){
+  const d=S.planDay, day=RDVS.filter(r=>r.date===d&&r.statut!=='annule');
+  const ld=dayLoad(d), idx=WD.indexOf(d), miss=missingIds();
+  const times=Array.from({length:19},(_,i)=>AM0+i*30);
+  const rowH=30, top=m=>(m-AM0)/30*rowH;
+  const cols=MECAS.map(m=>{
+    const mine=day.filter(r=>r.meca===m.id); const load=mine.filter(active).reduce((a,r)=>a+r.dur,0)/480;
+    return{m,mine,load};
+  });
+  return`<div class="bar"><h2>${dlabel(d,{weekday:'long',day:'numeric',month:'long'})}</h2>
+    <div class="row"><button class="btn sm" data-act="plan-nav" data-dir="-1" ${idx<=0?'disabled':''} aria-label="Jour précédent">‹</button><button class="btn sm" data-act="plan-nav" data-dir="0">Aujourd'hui</button><button class="btn sm" data-act="plan-nav" data-dir="1" ${idx>=WD.length-1?'disabled':''} aria-label="Jour suivant">›</button></div>
+    <div class="meter">Remplissage <span class="load"><i style="width:${Math.round(ld*100)}%"></i></span><b class="mono">${Math.round(ld*100)} %</b></div></div>
+  <div class="legend" style="margin-bottom:12px">${['attente','confirme','arrive','encours','termine','facture','absent'].map(pill).join('')}</div>
+  <div class="dstrip" aria-label="Jours : cliquez pour afficher, déposez un RDV pour le déplacer">${WD.slice(Math.max(0,idx-2),Math.max(0,idx-2)+10).map(x=>`<button class="dchip" data-act="plan-day" data-day="${x}" ${x===d?'aria-current="date"':''}><b>${dlabel(x,{weekday:'short',day:'numeric'})}</b><span class="load"><i style="width:${Math.round(dayLoad(x)*100)}%"></i></span></button>`).join('')}</div>
+  <div class="pwrap"><div class="pgrid">
+    <div style="border-bottom:1px solid var(--line)"></div>
+    ${cols.map(c=>`<div class="phead"><b>${c.m.nom}</b><span class="muted small">${c.m.spec}</span><span class="load" title="Charge"><i style="width:${Math.min(100,Math.round(c.load*100))}%"></i></span></div>`).join('')}
+    <div class="ptimes">${times.map(t=>t>=AM1&&t<PM0?'':`<span class="mono" style="top:${top(t)+ (t===AM0?8:0)}px">${hm(t)}</span>`).join('')}</div>
+    ${cols.map(c=>`<div class="pbody" data-act="plan-slot" data-meca="${c.m.id}">
+      <div class="lunch" style="top:${top(AM1)}px;height:${(PM0-AM1)/30*rowH}px">Pause déjeuner</div>
+      ${d===TODAY&&NOWM>AM0&&NOWM<PM1?`<div class="nowline" style="top:${top(NOWM)}px"></div>`:''}
+      ${c.mine.map(r=>`<button class="blk st-${r.statut}${S.hl===r.id?' hl':''}${movable(r)?' mv':''}" style="top:${top(r.start)+1}px;height:${r.dur/30*rowH-3}px" data-act="open-rdv" data-id="${r.id}" title="${esc(prestaTxt(r))} · ${esc(r.client.nom)}">
+        <span class="l1"><span class="mono">${hm(r.start)}${miss.has(r.id)?' <span title="Pièce manquante">⚠️</span>':''}${r.waitlist?' <span title="Liste d\'attente express">🔔</span>':''}</span>${plateHTML(r.veh.plaque,1)}</span>
+        ${r.dur>=60?`<span class="who">${esc(r.client.nom)}</span><span class="what">${esc(prestaTxt(r))}</span>`:''}
+      </button>`).join('')}
+    </div>`).join('')}
+  </div></div>
+  <p class="hint">Glissez un rendez-vous (appui long sur mobile) vers un autre créneau ou un autre mécanicien, ou déposez-le sur un jour de la barre du haut pour changer de date. Cliquez sur une case vide pour réserver ce créneau pour ce mécanicien. Cliquez sur un rendez-vous pour le faire avancer : arrivé, en cours, terminé, facturé. ⚠️ = une pièce ne sera pas là à temps (onglet Stock).</p>`;
+}
+
+function renderListe(){
+  const q=S.q.toLowerCase().replace(/\s|-/g,'');
+  const all=RDVS.filter(r=>r.date>=WD[0]), days=[...new Set(all.map(r=>r.date))].sort(), dir=S.sortDesc?-1:1;
+  const rows=all.filter(r=>!S.fday||r.date===S.fday).filter(r=>!S.fst||r.statut===S.fst).filter(r=>!q||(r.client.nom+r.veh.plaque+r.client.tel+r.veh.modele).toLowerCase().replace(/\s|-/g,'').includes(q)).sort((a,b)=>dir*(a.date.localeCompare(b.date)||a.start-b.start));
+  return`<div class="bar"><h2>Rendez-vous</h2><div class="row">
+    <input class="sel" id="q" placeholder="Plaque, nom, téléphone…" value="${esc(S.q)}" style="width:220px">
+    <select class="sel" id="fday" style="width:auto" aria-label="Filtrer par jour"><option value="">Tous les jours</option>${days.map(d=>`<option value="${d}" ${S.fday===d?'selected':''}>${dlabel(d,{weekday:'long',day:'numeric',month:'long'})}</option>`).join('')}</select>
+    <select class="sel" id="fst" style="width:auto"><option value="">Tous les statuts</option>${Object.entries(ST).map(([k,v])=>`<option value="${k}" ${S.fst===k?'selected':''}>${v}</option>`).join('')}</select>
+    <button class="btn sm" data-act="sort-date" title="Inverser l'ordre chronologique">Date ${S.sortDesc?'↓ plus récent':'↑ plus proche'}</button></div></div>
+  <div class="tbl-wrap"><table><thead><tr><th><button class="btn ghost sm" data-act="sort-date" style="border:0;padding:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit">Jour ${S.sortDesc?'▼':'▲'}</button></th><th>Heure</th><th>Véhicule</th><th>Client</th><th>Prestation</th><th>Mécano</th><th>Statut</th><th>Origine</th></tr></thead>
+  <tbody id="list-body">${rows.length?rows.map(r=>`<tr class="click" data-act="open-rdv" data-id="${r.id}"><td>${dlabel(r.date)}</td><td class="mono">${hm(r.start)}</td><td>${plateHTML(r.veh.plaque,1)} <span class="small muted">${esc(r.veh.modele)}</span></td><td>${esc(r.client.nom)}</td><td>${esc(prestaTxt(r))}</td><td>${meca(r.meca).nom}</td><td>${pill(r.statut)}</td><td class="small">${r.source==='en ligne'?'🌐 En ligne':'📞 Téléphone'}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">Aucun rendez-vous ne correspond. Essayez la plaque sans tirets ou un autre statut.</td></tr>`}</tbody></table></div>
+  <p class="hint">${rows.length} rendez-vous affichés.</p>`;
+}
+
+function renderRelances(){
+  const nd=nextDay();
+  const demain=RDVS.filter(r=>r.date===nd&&active(r)).sort((a,b)=>a.start-b.start);
+  const todo=demain.filter(r=>!r.rappel);
+  const attente=RDVS.filter(r=>r.statut==='attente'&&r.date>=TODAY).sort((a,b)=>a.date.localeCompare(b.date)||a.start-b.start);
+  const mOpen=MAINT.map((c,i)=>i).filter(i=>!MAINTDONE[i]);
+  // Sélection par colonne : on ne garde que les éléments encore à traiter
+  const keep=(k,ids)=>{const v=new Set(ids.map(String));S.sel[k].forEach(x=>{if(!v.has(x))S.sel[k].delete(x)})};
+  keep('r',todo.map(r=>r.id));keep('a',attente.map(r=>r.id));keep('m',mOpen);
+  const cb=(k,id)=>`<input type="checkbox" data-sel="${k}" data-id="${id}" ${S.sel[k].has(String(id))?'checked':''} aria-label="Sélectionner" style="accent-color:var(--accent)">`;
+  const selBar=(k,n,act,lbl)=>n?`<div class="row" style="justify-content:space-between;background:var(--sunk);border-radius:8px;padding:6px 10px">
+      <label class="small" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" data-selall="${k}" ${S.sel[k].size===n?'checked':''} style="accent-color:var(--accent)"><b>Tout sélectionner</b> <span class="muted">(${S.sel[k].size}/${n})</span></label>
+      <button class="btn sm primary" data-act="${act}" ${S.sel[k].size?'':'disabled'}>${lbl} (${S.sel[k].size})</button></div>`:'';
+  return`<div class="bar"><h2>Relances du jour</h2><span class="muted small">Un rappel la veille, c'est comme le réveil posé avant de dormir : ça évite la place vide le lendemain.</span></div>
+  ${desistHTML()}
+  <div class="grid2">
+    <section class="panel"><div class="panel-head"><h3>Rappels pour ${dlabel(nd,{weekday:'long',day:'numeric'})}</h3></div>
+      <p class="muted small">${demain.length-todo.length} / ${demain.length} rappels envoyés</p>
+      ${selBar('r',todo.length,'rappel-sel','Envoyer les rappels')}
+      ${demain.length?demain.map(r=>`<div class="item"><div class="l1">${r.rappel?'':cb('r',r.id)}<span class="mono">${hm(r.start)}</span>${plateHTML(r.veh.plaque,1)}<b>${esc(r.client.nom)}</b>${r.rappel?'<span class="pill st-termine">Envoyé</span>':''}</div>
+        ${r.rappel?'':`<p class="sms small" id="sms-r-${r.id}">${esc(smsRappel(r))}</p><div class="row"><button class="btn sm primary" data-act="rappel" data-id="${r.id}">Envoyer le rappel</button><span class="mono small muted">${esc(r.client.tel)}</span></div>`}</div>`).join(''):'<p class="empty">Aucun rendez-vous ce jour-là.</p>'}
+    </section>
+    <section class="panel"><div class="panel-head"><h3>À confirmer</h3><span class="pill st-attente">${attente.length}</span></div>
+      <p class="muted small">Rendez-vous sans confirmation du client. Un appel de 30 secondes sécurise le créneau.</p>
+      ${selBar('a',attente.length,'confirm-sel','Confirmer')}
+      ${attente.length?attente.map(r=>`<div class="item"><div class="l1">${cb('a',r.id)}<span class="small">${dlabel(r.date)} · <span class="mono">${hm(r.start)}</span></span>${plateHTML(r.veh.plaque,1)}<b>${esc(r.client.nom)}</b></div><div class="row"><span class="mono small">${esc(r.client.tel)}</span><button class="btn sm primary" data-act="set-st" data-id="${r.id}" data-st="confirme">Confirmé</button><button class="btn sm" data-act="open-rdv" data-id="${r.id}">Détail</button></div></div>`).join(''):'<p class="empty">Tout est confirmé.</p>'}
+    </section>
+    <section class="panel"><div class="panel-head"><h3>Entretiens à proposer</h3></div>
+      <p class="muted small">Clients dont l'entretien arrive à échéance. C'est du chiffre d'affaires qui attend juste un message.</p>
+      ${selBar('m',mOpen.length,'maint-sel','Envoyer les SMS')}
+      ${MAINT.map((c,i)=>`<div class="item"><div class="l1">${MAINTDONE[i]?'':cb('m',i)}${plateHTML(c.plaque,1)}<b>${esc(c.nom)}</b><span class="small muted">${esc(c.modele)}</span>${MAINTDONE[i]?`<span class="pill st-termine">${MAINTDONE[i]}</span>`:''}</div><span class="small">${esc(c.why)} → <b>${P[c.presta[0]].label}</b></span>
+        ${MAINTDONE[i]?'':`<p class="sms small" id="sms-m-${i}">${esc(smsMaint(c))}</p><div class="row"><button class="btn sm" data-act="maint-copy" data-i="${i}">Envoyer le SMS</button><button class="btn sm primary" data-act="maint-book" data-i="${i}">Créer le RDV</button></div>`}</div>`).join('')}
+    </section>
+  </div>`;
+}
+
+function renderSms(){
+  const nE=OUTBOX.filter(s=>s.statut==='Envoyé').length,nA=OUTBOX.length-nE;
+  return`<div class="bar"><h2>SMS · Google Sheets</h2><span class="muted small">Le Google Sheet joue le rôle de boîte aux lettres : l'app y dépose les SMS, le script les poste toutes les 5 minutes.</span></div>
+  <div class="kpis"><div class="kpi"><span class="label">En attente</span><b>${nA}</b></div><div class="kpi"><span class="label">Envoyés aujourd'hui</span><b>${nE}</b></div><div class="kpi"><span class="label">Mode d'envoi</span><b style="font-size:1.4rem">Android du garage</b><span class="muted small">ou Brevo, au choix</span></div></div>
+  <div class="grid2" style="margin-bottom:18px">
+    <section class="panel"><h3>Ce qui part tout seul</h3>
+      <div class="item"><div class="l1">${pill('confirme')}<b>SMS de confirmation</b></div><span class="small muted">Dès qu'un RDV est réservé en ligne ou passé en « Confirmé ».</span></div>
+      <div class="item"><div class="l1"><span class="pill st-attente">17h00</span><b>Rappel de la veille</b></div><span class="small muted">Chaque soir, pour tous les RDV du prochain jour ouvré. Le vendredi prépare le lundi.</span></div>
+      <div class="item"><div class="l1">${pill('termine')}<b>Véhicule prêt</b></div><span class="small muted">Dès que le statut passe à « Terminé », avec le montant.</span></div>
+      <p class="small muted">Aucun SMS ne part avant 7h ni après 20h : ils attendent le matin.</p></section>
+    <section class="panel"><h3>Tester maintenant</h3><p class="small muted">Ouvrez un RDV du planning et faites-le passer à « Terminé », ou réservez côté client. La ligne apparaît ci-dessous puis passe en « Envoyé ».</p>
+      <div class="row"><button class="btn primary" data-act="tab" data-tab="planning">Aller au planning</button><button class="btn" data-act="mode" data-mode="client">Réserver côté client</button></div></section>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>Créé le</th><th>Téléphone</th><th>Message</th><th>Type</th><th>Réf RDV</th><th>Statut</th><th>Envoyé le</th></tr></thead><tbody>
+  ${OUTBOX.length?OUTBOX.map(s=>`<tr><td class="mono small">${hhmm(s.cree)}</td><td class="mono small">${esc(s.tel)}</td><td class="small" style="min-width:280px">${esc(s.msg)}</td><td class="small">${s.type}</td><td class="mono small">${esc(s.ref)}</td><td>${s.statut==='Envoyé'?'<span class="pill st-termine">Envoyé</span>':'<span class="pill st-attente">À envoyer</span>'}</td><td class="mono small">${hhmm(s.envoye)}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">La file est vide. Confirmez, terminez ou réservez un RDV pour voir le premier SMS arriver.</td></tr>'}
+  </tbody></table></div>
+  <p class="hint">Démo : l'envoi est simulé. En production, ce tableau est l'onglet « SMS » du Google Sheet du garage.</p>`;
+}
+
+function renderPieces(){
+  const F=analyse(),L=Object.values(F),sc=S.scan,k=n=>L.filter(f=>f.niveau===n).length;
+  const val=Math.round(STOCK.reduce((a,s)=>a+Math.max(0,s.stock)*s.prix,0));
+  const al=L.filter(f=>f.niveau!=='vert').sort((a,b)=>NIV[a.niveau]-NIV[b.niveau]);
+  const allL=L.flatMap(f=>f.res.map(x=>({...x,s:f.s}))).sort((a,b)=>a.r.date.localeCompare(b.r.date)||a.r.start-b.r.start);
+  const lines=[...allL.filter(x=>!x.couvert),...allL.filter(x=>x.couvert&&x.r.date<=WD[1])].slice(0,30), autres=allL.length-lines.length;
+  const cmds=CMDS.map((c,i)=>({c,i})).filter(x=>x.c.statut==='En cours');
+  const qLab={Entrée:'Quantité reçue',Sortie:'Quantité sortie',Inventaire:'Quantité comptée en rayon'}[sc.mode];
+  const rdvOpts=RDVS.filter(r=>r.date===WD[0]&&RESA_ST.includes(r.statut)&&Object.keys(needs(r.presta)).length);
+  const unk=sc.unknown!=null?`<div class="sect"><h3>Nouvelle pièce</h3><p class="small muted">Code inconnu : créez la fiche une fois, les prochains bips la reconnaîtront.</p>
+    <div class="fields"><div class="field"><label for="nk-ref">Référence</label><input id="nk-ref" placeholder="FA-HILUX"></div><div class="field"><label for="nk-ean">Code-barres</label><input id="nk-ean" class="mono" value="${esc(sc.unknown)}"></div>
+    <div class="field" style="grid-column:1/-1"><label for="nk-des">Désignation</label><input id="nk-des" placeholder="Filtre à air Toyota Hilux"></div>
+    <div class="field"><label for="nk-orig">Origine</label><select id="nk-orig"><option>Métropole</option><option>Local</option></select></div><div class="field"><label for="nk-delai">Délai (jours)</label><input id="nk-delai" type="number" min="0" placeholder="15"></div>
+    <div class="field"><label for="nk-stock">Stock actuel</label><input id="nk-stock" type="number" min="0" value="1"></div><div class="field"><label for="nk-seuil">Seuil mini</label><input id="nk-seuil" type="number" min="0" value="1"></div>
+    <div class="field"><label for="nk-u">Unité</label><input id="nk-u" value="pce"></div><div class="field"><label for="nk-prix">Prix d'achat €</label><input id="nk-prix" type="number" min="0" step="0.01"></div></div>
+    <div class="row"><button class="btn primary" data-act="sk-create">Créer la pièce</button><button class="btn ghost" data-act="sk-uncancel">Annuler</button></div></div>`:'';
+  return`<div class="bar"><h2>Stock & pièces</h2><span class="muted small">Le planning réserve les pièces, le délai métropole déclenche les alertes.</span><button class="btn signal" data-act="urg-open">🚨 Urgence pièce</button></div>
+  <div class="kpis">
+    <div class="kpi"><span class="label">🔴 Délai dépassé</span><b style="color:var(--x-c)">${k('rouge')}</b><span class="muted small">dépannage confrère</span></div>
+    <div class="kpi"><span class="label">🟠 À commander</span><b>${k('orange')}</b><span class="muted small">aujourd'hui</span></div>
+    <div class="kpi"><span class="label">🟡 À surveiller</span><b>${k('jaune')}</b><span class="muted small">stock bas ou à prévoir</span></div>
+    <div class="kpi"><span class="label">Valeur du stock</span><b>${eur(val)}</b><span class="muted small">${STOCK.length} références</span></div>
+  </div>
+  <div class="grid2" style="margin-bottom:18px">
+    <section class="panel"><div class="panel-head"><h3>Scanner une pièce</h3><span class="muted small">Douchette, caméra ou saisie</span></div>
+      <div class="modes">${[['Entrée','⬇️ Entrée'],['Sortie','⬆️ Sortie'],['Inventaire','🔢 Comptage']].map(([m,t])=>`<button class="btn sm" data-act="sk-mode" data-m="${m}" aria-pressed="${sc.mode===m}">${t}</button>`).join('')}</div>
+      <form id="scanf" style="display:grid;gap:10px" autocomplete="off">
+        <input id="scan-code" class="sel" placeholder="Bipez ou tapez le code-barres / la référence" aria-label="Code-barres ou référence">
+        <div class="fields"><div class="field"><label for="scan-q">${qLab}</label><input id="scan-q" type="number" min="0" step="0.5" value="1"></div>
+        ${sc.mode==='Sortie'?`<div class="field"><label for="scan-rdv">Pour le RDV (facultatif)</label><select id="scan-rdv"><option value="">—</option>${rdvOpts.map(r=>`<option value="${r.code}">${hm(r.start)} · ${esc(r.veh.plaque)} · ${esc(prestaTxt(r))}</option>`).join('')}</select></div>`:''}</div>
+        <div class="row"><button class="btn primary" type="submit">Valider</button><button class="btn" type="button" data-act="sk-cam">📷 Caméra</button><button class="btn" type="button" data-act="sk-bip">🔫 Simuler un bip</button></div>
+      </form>
+      <div id="scan-cam"></div>
+      ${sc.msg?`<p class="scanmsg ${sc.cls}">${esc(sc.msg)}</p>`:''}${unk}
+    </section>
+    <section class="panel"><div class="panel-head"><h3>À commander · à surveiller</h3><span class="muted small">Délai + ${MARGE} j de marge</span></div>
+      ${al.length?al.map(f=>`<div class="alert ${f.niveau}"><div class="pline"><b>${NIVE[f.niveau]} ${esc(f.s.des)}</b><span class="mono small muted">${esc(f.s.ref)}</span></div>
+        <span class="small">${esc(f.msg)}</span>
+        <span class="small muted">Stock ${qtxt(f.s.stock,f.s.u)} · réservé ${f.reserve} · en commande ${f.enCmd} · ${f.s.orig} ${f.s.delai} j</span>
+        <div class="row">${f.aCmd>0?`<button class="btn sm" data-act="sk-cmd" data-ref="${f.s.ref}">🛒 Commander ${f.aCmd}</button>`:''}${f.niveau==='rouge'||f.niveau==='orange'?`<button class="btn sm signal" data-act="urg-open" data-ref="${f.s.ref}">🚨 Urgence confrères</button>`:''}${f.manque?`<button class="btn sm ghost" data-act="open-rdv" data-id="${f.manque.r.id}">Voir le RDV</button>`:''}</div></div>`).join(''):'<p class="empty">✅ Rien à commander : toutes les réparations prévues sont couvertes.</p>'}
+    </section>
+  </div>
+  <section class="panel" style="margin-bottom:18px"><div class="panel-head"><h3>Pièces réservées par le planning</h3><span class="muted small">Manquantes d'abord, puis les 2 prochains jours</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Jour</th><th>Heure</th><th>Véhicule</th><th>Pièce</th><th>Qté</th><th>Couvert ?</th></tr></thead><tbody>
+    ${lines.length?lines.map(x=>`<tr class="click" data-act="open-rdv" data-id="${x.r.id}"><td>${dlabel(x.r.date)}</td><td class="mono">${hm(x.r.start)}</td><td>${plateHTML(x.r.veh.plaque,1)} <span class="small muted">${esc(x.r.veh.modele)}</span></td><td><b>${esc(x.s.des)}</b></td><td class="mono">${qtxt(x.q,x.s.u)}</td><td>${x.couvert?(x.parCmd?'🚚 commande à temps':'✅ en stock'):'<b style="color:var(--x-c)">❌ manquant</b>'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Aucune pièce réservée.</td></tr>'}
+    </tbody></table></div>${autres>0?`<p class="small muted">+ ${autres} autres pièces réservées et couvertes sur les semaines suivantes. Chaque RDV réserve ses pièces dès sa création.</p>`:''}</section>
+  <div class="grid2" style="margin-bottom:18px">
+    <section class="panel"><h3>Commandes en cours</h3>
+      ${cmds.length?`<div class="tbl-wrap"><table><thead><tr><th>Pièce</th><th>Qté</th><th>Fournisseur</th><th>Arrivée</th><th></th></tr></thead><tbody>${cmds.map(({c,i})=>`<tr><td>${esc(SK[c.ref].des)}</td><td class="mono">${c.q}</td><td class="small">${esc(c.four)}</td><td>${c.arrivee===TODAY?'<b>aujourd\'hui</b>':dlabel(c.arrivee)}</td><td><button class="btn sm" data-act="sk-recv" data-i="${i}">📦 Reçue</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Aucune commande en attente.</p>'}
+      <p class="small muted">Un bip en « Entrée » solde aussi la commande tout seul.</p></section>
+    <section class="panel"><h3>Derniers mouvements</h3>
+      ${MVTS.length?`<div class="tbl-wrap"><table><thead><tr><th>Heure</th><th>Mouvement</th><th>Pièce</th><th>Stock après</th></tr></thead><tbody>${MVTS.slice(0,10).map(m=>`<tr><td class="mono small">${iso(m.date)===TODAY?hhmm(m.date):dlabel(iso(m.date))}</td><td class="small">${{Entrée:'⬇️',Sortie:'⬆️',Inventaire:'🔢'}[m.type]} ${m.delta>0?'+':''}${String(m.delta).replace('.',',')}${m.rdv?` <span class="mono muted">${esc(m.rdv)}</span>`:''}<br><span class="muted">${esc(m.motif)}</span></td><td class="small">${esc(SK[m.ref].des)}</td><td class="mono">${String(m.apres).replace('.',',')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty">Aucun mouvement aujourd\'hui.</p>'}</section>
+  </div>
+  <section class="panel"><h3>Stock</h3>
+    <div class="tbl-wrap"><table><thead><tr><th></th><th>Pièce</th><th>Empl.</th><th>Stock</th><th>Réservé</th><th>Dispo</th><th>Seuil</th><th>Délai</th></tr></thead><tbody>
+    ${L.sort((a,b)=>NIV[a.niveau]-NIV[b.niveau]||a.s.des.localeCompare(b.s.des)).map(f=>`<tr><td><span class="niv n-${f.niveau}" title="${f.niveau}"></span></td><td><b>${esc(f.s.des)}</b><br><span class="mono small muted">${esc(f.s.ref)} · ${esc(f.s.ean)}</span></td><td class="small">${esc(f.s.empl)}</td><td class="mono">${qtxt(f.s.stock,f.s.u)}</td><td class="mono">${f.reserve||''}</td><td class="mono${f.dispo<0?' stk-neg':''}"><b>${String(f.dispo).replace('.',',')}</b></td><td class="mono">${f.s.seuil}</td><td class="small">${f.s.delai} j<br><span class="muted">${f.s.orig}</span></td></tr>`).join('')}
+    </tbody></table></div></section>
+  <p class="hint">Le stock fonctionne comme un compte bancaire : chaque RDV signe un chèque (la réservation), « Dispo » c'est le solde moins les chèques signés. Le délai métropole, c'est la durée du virement : on commande avant d'être à découvert. En production, ces données vivent dans les onglets Pièces, Réservations, Commandes et Mouvements du Google Sheet.</p>`;
+}
+
+/* ---------- Scan ---------- */
+function bip(ok){try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator();o.frequency.value=ok?880:220;o.connect(a.destination);o.start();setTimeout(()=>{o.stop();a.close()},ok?120:350)}catch(e){}}
+function doScan(code){
+  code=String(code||'').trim();if(!code)return;
+  const sc=S.scan,q=Number(($('#scan-q')||{}).value),rc=(($('#scan-rdv')||{}).value||'').trim();
+  const s=STOCK.find(x=>x.ean===code||x.ref===code.toUpperCase());
+  const fin=(msg,cls,ok)=>{sc.msg=msg;sc.cls=cls;bip(ok);renderSec();const c=$('#scan-code');c&&c.focus()};
+  if(!s){sc.unknown=code;return fin('Code inconnu : '+code+'. Créez la fiche ci-dessous.','warn',false)}
+  if(isNaN(q)||q<0||(q===0&&sc.mode!=='Inventaire'))return fin('Quantité invalide.','err',false);
+  const r=rc?RDVS.find(x=>x.code===rc):null, avant=s.stock;
+  mvt(sc.mode,s.ref,q,r?r.code:'',r?'Sortie pour le RDV':'Scan');
+  if(r){r.sorti=r.sorti||{};r.sorti[s.ref]=(r.sorti[s.ref]||0)+q}
+  const f=checkAlerts()[s.ref];sc.unknown=null;
+  fin(`${{Entrée:'⬇️',Sortie:'⬆️',Inventaire:'🔢'}[sc.mode]} ${sc.mode} : ${s.des} — stock ${qtxt(avant,s.u)} → ${qtxt(s.stock,s.u)}`+(f.niveau!=='vert'?` · ${f.msg}`:' · ✓ stock OK')+(s.stock<0?' · ⚠️ stock négatif : faites un comptage':''),f.niveau==='vert'?'ok':'warn',true);
+}
+let QR=null;
+async function camToggle(){
+  const box=$('#scan-cam');
+  if(QR){await QR.stop().catch(()=>{});QR=null;if(box)box.innerHTML='';return}
+  if(!window.Html5Qrcode)await new Promise(ok=>{const s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';s.onload=ok;s.onerror=ok;document.head.appendChild(s)});
+  if(!window.Html5Qrcode){S.scan.msg='Lecteur caméra non chargé (pas d\'internet ?). Utilisez la douchette ou « Simuler un bip ».';S.scan.cls='err';renderSec();return}
+  QR=new Html5Qrcode('scan-cam');
+  try{await QR.start({facingMode:'environment'},{fps:10,qrbox:{width:260,height:120}},async txt=>{await QR.stop().catch(()=>{});QR=null;$('#scan-cam').innerHTML='';const c=$('#scan-code');if(c)c.value=txt;doScan(txt)})}
+  catch(e){QR=null;if(box)box.innerHTML='';S.scan.msg='Caméra inaccessible ('+e+'). Utilisez une douchette Bluetooth ou « Simuler un bip ».';S.scan.cls='err';renderSec()}
+}
+
+/* ---------- Urgence pièce : SMS aux confrères ---------- */
+let U=null;
+function openUrg(ref){const F=analyse(),f=ref?F[ref]:null,s=f&&f.s;
+  const urgQ=f?Math.ceil(f.res.filter(x=>!x.couvert&&dd(TODAY,x.r.date)<f.s.delai+MARGE).reduce((a,x)=>a+x.q,0)):0;
+  U={ref:ref||'',piece:s?`${s.des} (réf. ${s.ref})`:'',q:urgQ||(f&&f.manque?Math.ceil(f.manque.q):1),date:f&&f.manque?f.manque.r.date:TODAY,veh:f&&f.manque?f.manque.r.veh.modele:'',checked:CONFRERES.map(()=>true),msg:'',edited:false,sent:false,reply:null};
+  majUrgMsg();$('#overlay').hidden=false;$('#urg').hidden=false;renderUrg()}
+function majUrgMsg(){if(!U||U.edited)return;const d=U.date?fromISO(U.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}):'';
+  U.msg=`TECH'AUTO Kourou cherche en urgence : ${U.piece||'…'} x${U.q}${U.veh?' pour '+U.veh:''}, besoin ${d?'le '+d:'au plus vite'}. Vous l'avez ? Rappelez-nous au ${GARAGE_TEL}. Merci !`}
+function renderUrg(){const b=$('#urg-body');if(!U||!b)return;
+  const head=`<div class="modal-close"><h2>🚨 Pièce en urgence</h2><button class="btn ghost" data-act="close-all">Fermer</button></div>`;
+  if(!U.sent){b.innerHTML=head+`<p class="muted small">Un SMS part vers chaque confrère ou revendeur coché. En production, la liste vient de l'onglet « Contacts » du Google Sheet.</p>
+    <div class="fields"><div class="field" style="grid-column:1/-1"><label for="u-piece">Pièce recherchée</label><input id="u-piece" data-u="piece" value="${esc(U.piece)}"></div>
+    <div class="field"><label for="u-q">Quantité</label><input id="u-q" data-u="q" type="number" min="1" value="${U.q}"></div>
+    <div class="field"><label for="u-date">Besoin pour le</label><input id="u-date" data-u="date" type="date" value="${U.date}"></div>
+    <div class="field" style="grid-column:1/-1"><label for="u-veh">Véhicule</label><input id="u-veh" data-u="veh" value="${esc(U.veh)}" placeholder="Toyota Hilux 2.4 D 2019"></div></div>
+    <div class="contacts">${CONFRERES.map((c,i)=>`<label><input type="checkbox" data-u="c${i}" ${U.checked[i]?'checked':''}><span><b>${esc(c.nom)}</b> <span class="small muted">${c.type} · ${esc(c.info)}</span></span></label>`).join('')}</div>
+    <div class="field"><label for="u-msg">Message envoyé</label><textarea id="u-msg" data-u="msg">${esc(U.msg)}</textarea></div>
+    <p class="err" id="u-err"></p><div class="navw"><span></span><button class="btn signal" data-act="urg-send">Envoyer les SMS</button></div>`;return}
+  const sel=CONFRERES.filter((_,i)=>U.checked[i]);
+  b.innerHTML=head+`<p class="scanmsg ok">✅ ${sel.length} SMS ajoutés à la file d'envoi (onglet SMS). Vous pouvez aussi les joindre tout de suite :</p>
+    <div class="contacts">${sel.map(c=>{const n=intl(c.tel);return`<div><b>${esc(c.nom)}</b><span class="row"><a class="btn sm" href="https://wa.me/${n.slice(1)}?text=${encodeURIComponent(U.msg)}" target="_blank" rel="noopener">💬 WhatsApp</a><a class="btn sm" href="tel:${n}">📞 Appeler</a></span></div>`}).join('')}</div>
+    ${U.reply?`<div style="display:grid;gap:8px"><span class="label">Réponse reçue</span><p class="reply"><b>${esc(U.reply.c.nom)}</b> : ${esc(U.reply.txt)}</p>
+      ${U.reply.ok?(()=>{const f=analyse()[U.ref];return f&&f.niveau==='rouge'?`<p class="scanmsg warn">✓ Dépannage noté (${U.q} aujourd'hui). Il reste un manque : ${esc(f.msg)}</p>`:'<p class="scanmsg ok">✓ Dépannage noté : la pièce arrive aujourd\'hui, l\'alerte rouge est levée et les RDV sont couverts.</p>'})():U.ref&&SK[U.ref]?`<div class="row"><button class="btn primary" data-act="urg-ok">Réserver chez ${esc(U.reply.c.nom)} · arrive aujourd'hui</button></div>`:''}</div>`
+      :'<p class="muted small">⏳ En attente de réponse…</p>'}`}
+function renderBord(){
+  const five=WD.slice(0,5), rs=RDVS.filter(r=>five.includes(r.date)&&active(r));
+  const online=rs.filter(r=>r.source==='en ligne').length, rappels=RDVS.filter(r=>r.rappel).length;
+  const ca=rs.reduce((a,r)=>a+rdvPrix(r),0);
+  const gain=Math.round((online*7+rappels*3+rs.length*2)/6)/10;
+  const loads=five.map(d=>dayLoad(d));
+  const todayR=RDVS.filter(r=>r.date===WD[0]&&active(r));
+  return`<div class="bar"><h2>Tableau de bord</h2><span class="muted small">Semaine du ${dlabel(five[0],{day:'numeric',month:'long'})}</span></div>
+  <div class="kpis">
+    <div class="kpi hi"><span class="label">Temps gagné estimé</span><b>≈ ${String(gain).replace('.',',')} h</b><span class="small" style="opacity:.75">cette semaine pour la secrétaire</span></div>
+    <div class="kpi"><span class="label">Remplissage ${WD[0]===TODAY?'aujourd\'hui':dlabel(WD[0])}</span><b>${Math.round(loads[0]*100)} %</b><span class="muted small">${todayR.length} véhicules</span></div>
+    <div class="kpi"><span class="label">RDV sur 5 jours</span><b>${rs.length}</b><span class="muted small">${Math.round(online/rs.length*100)} % réservés en ligne</span></div>
+    <div class="kpi"><span class="label">CA prévisionnel</span><b>${eur(ca)}</b><span class="muted small">prix indicatifs, hors pneus</span></div>
+    ${(()=>{const A=Object.values(analyse()).filter(f=>f.niveau!=='vert');return`<div class="kpi click" data-act="tab" data-tab="pieces" style="cursor:pointer"><span class="label">Pièces en alerte</span><b>${A.length}</b><span class="muted small">${A.filter(f=>f.niveau==='rouge').length} en dépannage urgent →</span></div>`})()}
+  </div>
+  <div class="grid2">
+    <section class="panel"><h3>Remplissage de l'atelier</h3>
+      <div class="chart">${loads.map((l,i)=>`<div class="col"><div class="barv${l>.8?' hot':''}" style="height:${Math.max(2,Math.round(l*100))}%"><span class="mono">${Math.round(l*100)}%</span></div></div>`).join('')}</div>
+      <div class="xlabels">${five.map(d=>`<span>${dlabel(d,{weekday:'short',day:'numeric'})}</span>`).join('')}</div>
+      <p class="muted small">Jaune au-delà de 80 % : proposez plutôt les jours suivants au téléphone.</p></section>
+    <section class="panel"><h3>Charge par mécanicien · ${dlabel(WD[0],{weekday:'long'})}</h3>
+      ${MECAS.map(m=>{const l=todayR.filter(r=>r.meca===m.id).reduce((a,r)=>a+r.dur,0)/480;return`<div class="hbar"><span>${m.nom}</span><span class="load"><i style="width:${Math.min(100,Math.round(l*100))}%"></i></span><span class="mono small">${Math.round(l*100)} %</span></div>`}).join('')}
+      <p class="muted small">Un mécano sous 50 % peut absorber une urgence sans décaler les autres.</p></section>
+  </div>
+  <p class="hint">Calcul du temps gagné : 7 min par réservation en ligne (appel évité), 3 min par rappel préparé, 2 min par rendez-vous (saisie unique, pas de double cahier). Hypothèses de démonstration à ajuster avec vos chiffres réels lors de l'audit.</p>`;
+}
+
+function renderFiches(){
+  return`<div class="bar"><h2>Fiches pratiques</h2><span class="muted small">Pour former un remplaçant en une matinée et que chacun fasse pareil.</span></div>
+  <div class="fiches">
+    <article class="fiche"><span class="who">Secrétariat</span><h3>Lire le planning</h3><p class="analogie">Le planning, c'est un parking. Chaque mécanicien est une place, chaque rendez-vous une voiture garée pour une durée. On ne gare jamais deux voitures sur la même place : l'outil le refuse tout seul.</p><ul><li>Une colonne = un mécanicien et sa spécialité</li><li>Hauteur du bloc = durée de l'intervention</li><li>Ligne rouge = l'heure actuelle</li><li>Case vide = créneau à proposer</li></ul></article>
+    <article class="fiche"><span class="who">Secrétariat</span><h3>RDV au téléphone en 2 minutes</h3><p class="analogie">Comme un médecin qui prend la carte vitale d'abord : la plaque en premier, tout le reste en découle.</p><ol><li>Plaque, puis besoin, puis symptôme avec les mots du client</li><li>Proposer deux créneaux, pas « quand voulez-vous ? »</li><li>Portable pour le SMS</li><li>Reformuler : jour, heure, prestation, prix indicatif</li></ol></article>
+    <article class="fiche"><span class="who">Accueil</span><h3>Réception du véhicule</h3><p class="analogie">C'est l'état des lieux d'une location : deux minutes à l'arrivée évitent un litige au départ.</p><ul><li>Kilométrage et carburant notés</li><li>Tour du véhicule, photos des chocs</li><li>Objets de valeur rendus au client</li><li>Clés étiquetées avec la plaque</li></ul><p class="small muted">La checklist apparaît dans la fiche RDV dès le statut « Arrivé ».</p></article>
+    <article class="fiche"><span class="who">Chef d'atelier</span><h3>Retard ou absence</h3><ul><li>15 min de retard : appeler le client, garder le créneau si le mécano peut décaler</li><li>30 min : passer le RDV en « Absent », proposer un nouveau créneau</li><li>Créneau libéré : appeler un client de la liste « Entretiens à proposer »</li></ul></article>
+    <article class="fiche"><span class="who">Suivi pièces</span><h3>Le stock suit le planning</h3><p class="analogie">Le stock, c'est un compte bancaire : chaque RDV signe un chèque (la réservation) et le délai métropole, c'est la durée d'un virement. On commande avant d'être à découvert, pas le jour où on l'est.</p><ol><li>Chaque matin, onglet Stock : traiter les 🔴 puis les 🟠</li><li>🔴 = la livraison n'arrivera pas à temps → « Urgence confrères »</li><li>À la livraison : bip en « Entrée », la commande se solde toute seule</li><li>RDV « Terminé » : les pièces sortent du stock automatiquement</li></ol></article>
+    <article class="fiche"><span class="who">Secrétariat</span><h3>Facturer le jour même</h3><ul><li>Statut « Terminé » : vérifier les lignes, envoyer le SMS « véhicule prêt »</li><li>Au retrait : encaisser, passer en « Facturé »</li><li>Mention obligatoire en Guyane : TVA non applicable, art. 294 du CGI</li></ul></article>
+  </div>`;
+}
+
+function renderSec(){renderTabs();const f={planning:renderPlanning,liste:renderListe,relances:renderRelances,pieces:renderPieces,bord:renderBord,fiches:renderFiches,sms:renderSms}[S.tab]||renderPlanning;$('#sec-body').innerHTML=f()}
+
+/* ---------- Fiche RDV ---------- */
+function renderDrawer(){
+  const r=RDVS.find(x=>x.id===S.drawer); const dr=$('#drawer'); if(!r){dr.hidden=true;return}
+  const free=MECAS.filter(m=>m.id===r.meca||isFree(r.date,m.id,r.start,r.dur,r.id));
+  const nx=NEXT[r.statut];
+  const recepDone=RECEP.filter((_,i)=>r.recep[i]).length;
+  // RDV pas encore commencé : le secrétariat peut compléter la fiche
+  const ed=['attente','confirme'].includes(r.statut);
+  const inp=(k,v,o='')=>`<input class="sel" data-chg="info" data-k="${k}" value="${esc(v||'')}" ${o}>`;
+  let h=`<div class="row" style="justify-content:space-between"><div class="row">${plateHTML(r.veh.plaque)}<b>${esc(r.veh.modele)}</b></div><button class="btn sm ghost" data-act="close-all">Fermer</button></div>
+  <div class="row">${pill(r.statut)}<span class="mono small muted">${r.code}</span></div>
+  <dl class="dl">
+    <dt>Quand</dt><dd><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})}</b>, ${hm(r.start)} → ${hm(r.start+r.dur)}</dd>
+    <dt>Mécano</dt><dd><select class="sel" data-chg="meca" style="width:auto">${free.map(m=>`<option value="${m.id}" ${m.id===r.meca?'selected':''}>${m.nom} · ${m.spec}</option>`).join('')}</select></dd>
+    ${ed?`<dt>Client</dt><dd>${inp('client.nom',r.client.nom,'autocomplete="off"')}</dd>
+    <dt>Téléphone</dt><dd>${inp('client.tel',r.client.tel,'inputmode="tel"')}</dd>
+    <dt>E-mail</dt><dd>${inp('client.email',r.client.email,'inputmode="email" placeholder="facultatif"')}</dd>
+    <dt>Modèle</dt><dd>${inp('veh.modele',r.veh.modele)}</dd>
+    <dt>Kilométrage</dt><dd>${inp('veh.km',r.veh.km,'inputmode="numeric" placeholder="85 000"')}</dd>`
+    :`<dt>Client</dt><dd>${esc(r.client.nom)}</dd>
+    <dt>Téléphone</dt><dd class="mono">${esc(r.client.tel)}</dd>
+    <dt>Kilométrage</dt><dd class="mono">${r.veh.km?Number(String(r.veh.km).replace(/\D/g,'')).toLocaleString('fr-FR')+' km':'—'}</dd>`}
+    <dt>Prestation</dt><dd>${esc(prestaTxt(r))} · ${durTxt(r.dur)}</dd>
+    <dt>Symptôme</dt><dd>${ed?`<textarea class="sel" data-chg="info" data-k="sympt" rows="2">${esc(r.sympt||'')}</textarea>`:r.sympt?`« ${esc(r.sympt)} »`:'<span class="muted">—</span>'}</dd>
+    <dt>Véhicule</dt><dd>${{depot:'Déposé',attente:'Client attend sur place',courtoisie:'Véhicule de courtoisie demandé'}[r.mode]}</dd>
+    <dt>Origine</dt><dd>${r.source==='en ligne'?'Réservé en ligne':'Pris au téléphone'}${r.rappel?' · rappel envoyé':''}${r.waitlist?' · 🔔 liste d\'attente express':''}</dd>
+  </dl>`;
+  const rp=rdvPieces(r);
+  if(rp.length){const nm=rp.find(e=>e.etat==='non');h+=`<div class="sect"><div class="pline"><h3>Pièces</h3>${nm?`<button class="btn sm signal" data-act="urg-open" data-ref="${nm.ref}">🚨 Urgence confrères</button>`:''}</div>
+    ${rp.map(e=>`<div class="pline"><span>${esc(e.s.des)} ×${qtxt(e.q,e.s.u)}</span><span>${ETAT_R[e.etat]}</span></div>`).join('')}
+    <span class="small muted">Google Sheet, colonne « Pièces prévues » : <code class="mono">${esc(rp.map(e=>e.ref+(e.q!==1?' x'+e.q:'')).join('; '))}</code></span></div>`}
+  if(nx)h+=`<div class="row"><button class="btn primary" data-act="set-st" data-id="${r.id}" data-st="${nx[0]}">${nx[1]} →</button>${['attente','confirme'].includes(r.statut)?`<button class="btn" data-act="set-st" data-id="${r.id}" data-st="absent">Absent</button>`:''}</div>`;
+  if(['arrive','encours'].includes(r.statut)||recepDone)h+=`<div class="sect"><div class="row" style="justify-content:space-between"><h3>Réception du véhicule</h3><span class="mono small">${recepDone}/${RECEP.length}</span></div><div class="checks">${RECEP.map((t,i)=>`<label><input type="checkbox" data-chg="recep" data-i="${i}" ${r.recep[i]?'checked':''}>${t}</label>`).join('')}</div></div>`;
+  if(['termine','facture'].includes(r.statut)){
+    h+=`<div class="sect"><h3>Facture</h3><div class="facture">${r.presta.map(id=>`<div class="ln"><span>${P[id].label}${id==='pnu'?' (main-d\'œuvre)':''}</span><span class="mono">${eur(P[id].prix)}</span></div>`).join('')}<div class="ln tot"><span>Total</span><span class="mono">${eur(rdvPrix(r))}</span></div><span class="small muted">TVA non applicable, art. 294 du CGI</span></div>
+    <span class="label">SMS « véhicule prêt »</span><p class="sms small" id="sms-p-${r.id}">${esc(smsPret(r))}</p><div class="row"><button class="btn sm" data-act="sms-send" data-id="${r.id}">Renvoyer le SMS</button><span class="small muted">Envoyé automatiquement au passage en « Terminé »</span></div></div>`;
+  }
+  if(['attente','confirme'].includes(r.statut)){
+    h+=`<div class="sect"><span class="label">SMS de rappel</span><p class="sms small" id="sms-d-${r.id}">${esc(smsRappel(r))}</p><div class="row"><button class="btn sm" data-act="rappel" data-id="${r.id}">Envoyer le rappel</button></div></div>`;
+    h+=S.cancelAsk?`<div class="confirmbox"><b>Annuler ce rendez-vous ?</b><span class="small">Le créneau redevient libre pour les autres clients.</span><div class="row"><button class="btn sm danger" data-act="set-st" data-id="${r.id}" data-st="annule">Oui, annuler</button><button class="btn sm" data-act="cancel-no">Garder</button></div></div>`:`<div><button class="btn sm ghost danger" data-act="cancel-ask">Annuler le rendez-vous</button></div>`;
+  }
+  dr.innerHTML=h;
+}
+
+/* ---------- Navigation globale ---------- */
+function setMode(m){S.mode=m;try{localStorage.setItem('ta-mode',m)}catch(e){}
+  document.querySelectorAll('[data-act="mode"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+  $('#v-client').hidden=m!=='client';$('#v-sec').hidden=m!=='sec';
+  if(m==='client')renderWiz(wizC);else renderSec(); window.scrollTo({top:0});}
+function openDrawer(id){S.drawer=id;S.cancelAsk=false;$('#overlay').hidden=false;$('#drawer').hidden=false;renderDrawer()}
+function closeAll(){S.drawer=null;$('#drawer').hidden=true;$('#modal').hidden=true;$('#urg').hidden=true;U=null;$('#overlay').hidden=true;wizS=null;if(S.mode==='sec')renderSec()}
+function openModal(pre){wizS=newWiz('téléphone','#modal-wiz',pre);$('#overlay').hidden=false;$('#modal').hidden=false;renderWiz(wizS);$('#modal .modal-box').scrollTop=0}
+let tT;function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(tT);tT=setTimeout(()=>e.hidden=true,2600)}
+function copyText(txt,node){
+  const fb=()=>{if(node){const rg=document.createRange();rg.selectNodeContents(node);const s=getSelection();s.removeAllRanges();s.addRange(rg)}toast('Copie bloquée par le navigateur : le texte est sélectionné, faites Ctrl+C.')};
+  try{navigator.clipboard.writeText(txt).then(()=>toast('Texte copié, prêt à coller dans votre outil SMS.'),fb)}catch(e){fb()}
+}
+
+const ACT={
+  'mode':a=>setMode(a.dataset.mode),
+  'tab':a=>{S.tab=a.dataset.tab;try{localStorage.setItem('ta-tab',S.tab)}catch(e){}renderSec()},
+  'w-presta':a=>{const w=wOf(a),id=a.dataset.id;w.presta=w.presta.includes(id)?w.presta.filter(x=>x!==id):[...w.presta,id];w.err='';renderWiz(w)},
+  'w-add':a=>{const w=wOf(a);if(!w.presta.includes(a.dataset.id))w.presta.push(a.dataset.id);$('#w-sugg')&&(a.closest('[id="w-sugg"]').innerHTML=suggHTML(w));toast(P[a.dataset.id].label+' ajouté')},
+  'w-chip':a=>{const w=wOf(a);w.sympt=(w.sympt?w.sympt.replace(/\s*$/,'')+'. ':'')+a.dataset.t;const ta=a.closest('.wiz').querySelector('#w-sympt');ta.value=w.sympt;a.closest('.wiz').querySelector('#w-sugg').innerHTML=suggHTML(w)},
+  'w-day':a=>{const w=wOf(a);w.day=a.dataset.d;w.start=null;w.cal=false;w.dmsg=null;renderWiz(w)},
+  'w-date':a=>{const w=wOf(a),inp=a.closest('.wiz').querySelector('[data-date]');w.dateTxt=inp.value;applyDate(w,inp.value);renderWiz(w)},
+  'w-express':a=>{const w=wOf(a);expressPick(w);renderWiz(w)},
+  'w-cal':a=>{const w=wOf(a);w.cal=!w.cal;w.calM=(w.day||WD[0]).slice(0,7);renderWiz(w)},
+  'w-calm':a=>{const w=wOf(a),[y,m]=w.calM.split('-').map(Number),d=new Date(y,m-1+Number(a.dataset.m),1);w.calM=iso(d).slice(0,7);renderWiz(w)},
+  'w-pick':a=>{const w=wOf(a),c=clients().find(x=>x.plaque===a.dataset.p);if(c){fillFrom(w,c);toast(`Fiche de ${c.nom} reprise : véhicule et coordonnées remplis`)}renderWiz(w)},
+  'w-unpick':a=>{const w=wOf(a);w.known=null;w.veh={plaque:'',modele:'',km:''};w.client={nom:'',tel:'',email:''};renderWiz(w)},
+  'w-verify':a=>{const w=wOf(a),c=clients().find(x=>x.plaque===w.veh.plaque),v=(a.closest('.kbox').querySelector('[data-ver]').value||'').replace(/\D/g,'');
+    if(c&&v.length===4&&c.tel.replace(/\D/g,'').endsWith(v)){fillFrom(w,c);toast('Bon retour chez TECH\'AUTO : vos informations sont remplies');renderWiz(w)}
+    else{const e=a.closest('.kbox').querySelector('#w-ver-err');if(e)e.textContent='Les chiffres ne correspondent pas. Remplissez simplement la fiche.'}},
+  'w-demo-plate':a=>{const w=wOf(a),c=MAINT[0];w.veh.plaque=c.plaque;renderWiz(w);toast(`Démo : plaque ${c.plaque}, portable finissant par ${c.tel.replace(/\D/g,'').slice(-4)}`)},
+  'desist-offer':a=>{const d=DESIST.find(x=>x.id===+a.dataset.d),x=RDVS.find(r=>r.id===+a.dataset.id);d.offer=x.id;queueSms(x.client.tel,smsOffer(x,d),'DÉSISTEMENT',x.code);renderSec();
+    setTimeout(()=>{d.reply=true;toast(`📩 ${x.client.nom} a répondu OUI`);if(S.mode==='sec'&&S.tab==='relances')renderSec()},3000)},
+  'desist-move':a=>{const d=DESIST.find(x=>x.id===+a.dataset.d),x=RDVS.find(r=>r.id===+a.dataset.id);
+    const m=[d.meca,...MECAS.map(k=>k.id)].find(id=>isFree(d.date,id,d.start,x.dur,x.id));
+    if(!m){toast('Le créneau a été repris entre-temps.');return}
+    const old=x.date;x.date=d.date;x.start=d.start;x.meca=m;x.waitlist=false;x.rappel=false;
+    d.done={nom:x.client.nom,t:Date.now()};queueSms(x.client.tel,smsConf(x),'CONFIRMATION',x.code+'-avance');checkAlerts(true);
+    toast(`✅ ${x.veh.plaque} avancé du ${dlabel(old)} au ${dlabel(x.date)} à ${hm(x.start)}`);renderSec()},
+  'w-slot':a=>{const w=wOf(a);w.start=+a.dataset.s;w.err='';renderWiz(w)},
+  'w-prev':a=>{const w=wOf(a);w.step--;w.err='';renderWiz(w)},
+  'w-next':a=>{const w=wOf(a);const e=validate(w);if(e){w.err=e;renderWiz(w);return}w.err='';if(w.step===3){book(w);if(S.mode==='sec')renderSec();toast(w.step===4?'Rendez-vous enregistré':'Créneau indisponible')}else w.step++;renderWiz(w);$(w.host).scrollIntoView({block:'nearest'})},
+  'w-reset':a=>{const w=wOf(a);if(w===wizC){wizC=newWiz('en ligne','#client-wiz');renderWiz(wizC)}else{wizS=newWiz('téléphone','#modal-wiz');renderWiz(wizS)}},
+  'w-see':a=>{const r=RDVS.find(x=>x.id===+a.dataset.id);closeAll();S.tab='planning';S.planDay=r.date;S.hl=r.id;if(wOf(a)===wizC||S.mode==='client'){wizC=newWiz('en ligne','#client-wiz')}setMode('sec');setTimeout(()=>{const b=document.querySelector('.blk.hl');b&&b.scrollIntoView({block:'center',inline:'center'})},50);setTimeout(()=>{S.hl=null},3500)},
+  'open-rdv':a=>openDrawer(+a.dataset.id),
+  'close-all':()=>closeAll(),
+  'new-rdv':()=>openModal({}),
+  'plan-nav':a=>{const d=+a.dataset.dir,i=WD.indexOf(S.planDay);S.planDay=d===0?WD[0]:WD[Math.max(0,Math.min(WD.length-1,i+d))];renderSec()},
+  'plan-day':a=>{S.planDay=a.dataset.day;renderSec()},
+  'plan-slot':(a,e)=>{const y=e.clientY-a.getBoundingClientRect().top;const s=AM0+Math.floor(y/30)*30;if(s>=AM1&&s<PM0)return;if(S.planDay===TODAY&&s<NOWM){toast('Ce créneau est déjà passé.');return}openModal({day:S.planDay,start:s,meca:a.dataset.meca});toast(`Créneau ${hm(s)} pré-réservé pour ${meca(a.dataset.meca).nom} : choisissez la prestation.`)},
+  'set-st':a=>{const r=RDVS.find(x=>x.id===+a.dataset.id);const was=r.statut;r.statut=a.dataset.st;S.cancelAsk=false;toast(`${r.veh.plaque} : ${ST[r.statut]}`);
+    if(['annule','absent'].includes(r.statut)&&!['annule','absent'].includes(was))freeSlot(r);
+    if(r.statut==='confirme')queueSms(r.client.tel,smsConf(r),'CONFIRMATION',r.code);
+    if(r.statut==='termine'){queueSms(r.client.tel,smsPret(r),'PRET',r.code);consommer(r)}
+    checkAlerts();renderDrawer();renderSec()},
+  'cancel-ask':()=>{S.cancelAsk=true;renderDrawer()},
+  'cancel-no':()=>{S.cancelAsk=false;renderDrawer()},
+  'copy':a=>{const n=document.getElementById(a.dataset.t);copyText(n.innerText,n)},
+  'rappel':a=>{const r=RDVS.find(x=>x.id===+a.dataset.id);queueSms(r.client.tel,smsRappel(r),'RAPPEL',r.code);r.rappel=true;renderSec();renderDrawer()},
+  'rappel-all':()=>{const nd=nextDay();const l=RDVS.filter(r=>r.date===nd&&active(r)&&!r.rappel);l.forEach(r=>{queueSms(r.client.tel,smsRappel(r),'RAPPEL',r.code);r.rappel=true});toast(`${l.length} rappels ajoutés à la file Google Sheets`);renderSec()},
+  'rappel-sel':()=>{const l=RDVS.filter(r=>S.sel.r.has(String(r.id))&&!r.rappel);l.forEach(r=>{queueSms(r.client.tel,smsRappel(r),'RAPPEL',r.code);r.rappel=true});S.sel.r.clear();toast(`${l.length} rappel${l.length>1?'s':''} ajouté${l.length>1?'s':''} à la file Google Sheets`);renderSec()},
+  'confirm-sel':()=>{const l=RDVS.filter(r=>S.sel.a.has(String(r.id))&&r.statut==='attente');l.forEach(r=>{r.statut='confirme';queueSms(r.client.tel,smsConf(r),'CONFIRMATION',r.code)});S.sel.a.clear();checkAlerts();toast(`${l.length} rendez-vous confirmé${l.length>1?'s':''} · SMS de confirmation en file`);renderSec()},
+  'maint-sel':()=>{const l=[...S.sel.m].map(Number).filter(i=>!MAINTDONE[i]);l.forEach(i=>{const c=MAINT[i];queueSms(c.tel,smsMaint(c),'ENTRETIEN','');MAINTDONE[i]='SMS envoyé'});S.sel.m.clear();toast(`${l.length} SMS d'entretien ajouté${l.length>1?'s':''} à la file Google Sheets`);renderSec()},
+  'sort-date':()=>{S.sortDesc=!S.sortDesc;renderSec()},
+  'maint-copy':a=>{const i=+a.dataset.i,c=MAINT[i];queueSms(c.tel,smsMaint(c),'ENTRETIEN','');MAINTDONE[i]='SMS envoyé';renderSec()},
+  'sms-send':a=>{const r=RDVS.find(x=>x.id===+a.dataset.id);queueSms(r.client.tel,smsPret(r),'MANUEL',r.code);renderDrawer()},
+  'maint-book':a=>{const c=MAINT[+a.dataset.i];MAINTDONE[+a.dataset.i]='RDV en cours';openModal({presta:[...c.presta],veh:{plaque:c.plaque,modele:c.modele},client:{nom:c.nom,tel:c.tel}})},
+  'sk-mode':a=>{S.scan.mode=a.dataset.m;S.scan.msg='';renderSec();const c=$('#scan-code');c&&c.focus()},
+  'sk-cam':()=>camToggle(),
+  'sk-bip':()=>{let s=null,q=1;const sc=S.scan;
+    if(sc.mode==='Entrée'){const c=CMDS.find(c=>c.statut==='En cours');if(c){s=SK[c.ref];q=c.q}}
+    if(sc.mode==='Sortie'){const x=reservations().find(x=>x.r.date===WD[0]);if(x){s=SK[x.ref];q=x.q;const sel=$('#scan-rdv');if(sel)sel.value=x.r.code}}
+    s=s||STOCK[Math.floor(Math.random()*STOCK.length)];if(sc.mode==='Inventaire')q=Math.max(0,Math.round(s.stock));
+    $('#scan-code').value=s.ean;$('#scan-q').value=q;setTimeout(()=>doScan(s.ean),250)},
+  'sk-cmd':a=>{const f=analyse()[a.dataset.ref],s=f.s,q=f.aCmd||1,arr=addD(TODAY,s.delai+MARGE);CMDS.push({ref:s.ref,q,date:TODAY,arrivee:arr,four:s.four,statut:'En cours'});checkAlerts();toast(`🛒 Commande notée : ${q} ${s.u} · ${s.des}, arrivée prévue le ${dlabel(arr)}`);renderSec()},
+  'sk-recv':a=>{const c=CMDS[+a.dataset.i];c.statut='Reçue';mvt('Entrée',c.ref,c.q,'','Réception · '+c.four,false);checkAlerts();toast(`📦 Reçu : ${c.q} ${SK[c.ref].u} · ${SK[c.ref].des}`);renderSec()},
+  'sk-create':()=>{const v=id=>(($('#'+id)||{}).value||'').trim(),sc=S.scan,ref=v('nk-ref').toUpperCase(),des=v('nk-des'),orig=v('nk-orig');
+    if(!ref||!des){sc.msg='Référence et désignation obligatoires.';sc.cls='err';renderSec();return}
+    if(SK[ref]){sc.msg='La référence '+ref+' existe déjà.';sc.cls='err';renderSec();return}
+    const s={ref,ean:v('nk-ean'),des,u:v('nk-u')||'pce',orig,delai:Number(v('nk-delai'))||(orig==='Local'?2:15),seuil:Number(v('nk-seuil'))||0,prix:Number(v('nk-prix'))||0,empl:'—',four:orig==='Local'?'Fournisseur local':'Grossiste métropole',stock:0};
+    STOCK.push(s);SK[ref]=s;const st=Number(v('nk-stock'))||0;if(st>0)mvt('Inventaire',ref,st,'','Création de la pièce');
+    sc.unknown=null;sc.msg='➕ Pièce créée : '+des+'. Les prochains bips la reconnaîtront.';sc.cls='ok';checkAlerts();renderSec()},
+  'sk-uncancel':()=>{S.scan.unknown=null;S.scan.msg='';renderSec()},
+  'urg-open':a=>openUrg(a.dataset.ref||''),
+  'urg-send':()=>{const sel=CONFRERES.filter((_,i)=>U.checked[i]),err=$('#u-err');
+    if(!sel.length){err.textContent='Cochez au moins un contact.';return}if(!U.msg.trim()||!U.piece.trim()){err.textContent='Indiquez la pièce recherchée.';return}
+    sel.forEach(c=>queueSms(c.tel,U.msg,'URGENCE PIÈCE',U.ref||'URGENCE'));U.sent=true;renderUrg();
+    const u=U;setTimeout(()=>{u.reply={c:sel[0],txt:`Oui, on l'a (${u.q}). Passez la prendre à 14h, on vous la met de côté.`};if(U===u)renderUrg();toast(`📩 Réponse de ${sel[0].nom} : pièce disponible`)},4000)},
+  'urg-ok':()=>{CMDS.push({ref:U.ref,q:U.q,date:TODAY,arrivee:TODAY,four:U.reply.c.nom+' (dépannage)',statut:'En cours'});U.reply.ok=true;checkAlerts();renderUrg();if(S.mode==='sec')renderSec();toast('Dépannage noté : pièce attendue aujourd\'hui')}
+};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const f=ACT[a.dataset.act];if(f){f(a,e)}});
+
+/* ---------- Planning : glisser-déposer façon kanban ----------
+   Dans la grille : change l'heure (pas de 30 min) et/ou le mécanicien. Sur la barre de jours : change la date
+   (même heure et même mécanicien si possible, sinon la première place libre du jour). Souris : on tire directement ;
+   tactile : appui long 350 ms pour ne pas gêner le défilement. */
+const PAST=(day,s)=>day<TODAY||(day===TODAY&&s<NOWM);
+function movable(r){return['attente','confirme'].includes(r.statut)&&!PAST(r.date,r.start)}
+function dropSpot(r,day){const pref=[r.meca,...MECAS.map(m=>m.id).filter(id=>id!==r.meca)];
+  if(!PAST(day,r.start)&&isFree(day,r.meca,r.start,r.dur,r.id))return{meca:r.meca,start:r.start};
+  for(const mid of pref)for(let s=AM0;s<PM1;s+=30)if(!PAST(day,s)&&isFree(day,mid,s,r.dur,r.id))return{meca:mid,start:s};return null}
+function moveRdv(r,day,mid,s){if(r.date===day&&r.meca===mid&&r.start===s)return;
+  const old={date:r.date,start:r.start,meca:r.meca};Object.assign(r,{date:day,meca:mid,start:s});
+  if(old.date!==day||old.start!==s){r.rappel=false;if(r.statut==='confirme')queueSms(r.client.tel,smsConf(r),'CONFIRMATION',r.code)}
+  checkAlerts();S.hl=r.id;setTimeout(()=>{S.hl=null},3500);
+  toast(`↔ ${r.veh.plaque} : ${dlabel(day)} à ${hm(s)} avec ${meca(mid).nom}`+(r.statut==='confirme'&&(old.date!==day||old.start!==s)?' · SMS au client en file':''));
+  if(old.date!==day)S.planDay=day;renderSec()}
+let DG=null,dragEnded=0;
+function dgTarget(x,y){const el=document.elementFromPoint(x,y);if(!el)return{};
+  const chip=el.closest('.dchip');if(chip)return{chip};const col=el.closest('.pbody');if(!col)return{};
+  const s=AM0+Math.round((y-DG.dy-col.getBoundingClientRect().top)/30)*30;return{col,s}}
+function dgMove(x,y){const g=DG;g.ghost.style.left=x-g.dx+'px';g.ghost.style.top=y-g.dy+'px';
+  const t=dgTarget(x,y),r=g.r;document.querySelectorAll('.dchip.over,.dchip.ko').forEach(c=>c.classList.remove('over','ko'));g.prev.remove();g.drop=null;
+  if(t.chip){const day=t.chip.dataset.day,sp=dropSpot(r,day);t.chip.classList.add(sp?'over':'ko');if(sp)g.drop={day,...sp}}
+  else if(t.col){const mid=t.col.dataset.meca,s=t.s,ok=!PAST(S.planDay,s)&&isFree(S.planDay,mid,s,r.dur,r.id);
+    g.prev.className='dprev'+(ok?'':' ko');g.prev.style.top=(s-AM0)+1+'px';g.prev.style.height=r.dur-3+'px';
+    g.prev.textContent=ok?`${hm(s)} · ${meca(mid).nom}`:(fits(s,r.dur)?'Occupé':'Hors horaires');t.col.appendChild(g.prev);if(ok)g.drop={day:S.planDay,meca:mid,start:s}}}
+function dgStart(){const g=DG,b=g.el.getBoundingClientRect();g.on=true;g.ghost=g.el.cloneNode(true);g.ghost.classList.add('dghost');g.ghost.classList.remove('hl');
+  Object.assign(g.ghost.style,{width:b.width+'px',height:b.height+'px',right:'auto'});document.body.appendChild(g.ghost);g.prev=document.createElement('div');
+  g.el.classList.add('drag-src');document.body.classList.add('dragging');if(navigator.vibrate&&g.touch)navigator.vibrate(15);dgMove(g.x,g.y)}
+function dgEnd(drop){const g=DG;DG=null;clearTimeout(g.timer);if(!g.on)return;dragEnded=Date.now();
+  g.ghost.remove();g.prev.remove();document.body.classList.remove('dragging');g.el.classList.remove('drag-src');
+  document.querySelectorAll('.dchip.over,.dchip.ko').forEach(c=>c.classList.remove('over','ko'));
+  if(!drop)return;if(g.drop)moveRdv(g.r,g.drop.day,g.drop.meca,g.drop.start);else toast('Place indisponible : le rendez-vous n\'a pas bougé.')}
+document.addEventListener('pointerdown',e=>{const el=e.target.closest('.blk.mv');if(!el||e.button>0||DG)return;
+  const r=RDVS.find(x=>x.id===+el.dataset.id),b=el.getBoundingClientRect();
+  DG={el,r,x:e.clientX,y:e.clientY,dx:e.clientX-b.left,dy:e.clientY-b.top,touch:e.pointerType!=='mouse',on:false};
+  if(DG.touch)DG.timer=setTimeout(()=>DG&&!DG.on&&dgStart(),350)});
+document.addEventListener('pointermove',e=>{if(!DG)return;const far=Math.hypot(e.clientX-DG.x,e.clientY-DG.y)>6;
+  if(!DG.on){if(DG.touch){if(far){clearTimeout(DG.timer);DG=null}return}if(!far)return;DG.x=e.clientX;DG.y=e.clientY;dgStart()}
+  e.preventDefault();dgMove(e.clientX,e.clientY)});
+document.addEventListener('touchmove',e=>{if(DG&&DG.on)e.preventDefault()},{passive:false}); // bloque le défilement pendant le glisser tactile
+document.addEventListener('pointerup',()=>DG&&dgEnd(true));
+document.addEventListener('pointercancel',()=>DG&&dgEnd(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&DG)dgEnd(false)});
+document.addEventListener('contextmenu',e=>{if(DG&&DG.touch)e.preventDefault()});
+// Le clic qui suit un dépôt ne doit ni ouvrir la fiche ni pré-réserver la case
+document.addEventListener('click',e=>{if(Date.now()-dragEnded<300){e.stopPropagation();e.preventDefault()}},true);
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='q'){S.q=t.value;const pos=t.selectionStart;renderSec();const n=$('#q');n.focus();n.setSelectionRange(pos,pos);return}
+  if(t.dataset.u&&U){const k=t.dataset.u;
+    if(/^c\d+$/.test(k))U.checked[+k.slice(1)]=t.checked;
+    else if(k==='msg'){U.msg=t.value;U.edited=true}
+    else{U[k]=k==='q'?Math.max(1,Number(t.value)||1):t.value;majUrgMsg();const m=$('#u-msg');if(m)m.value=U.msg}
+    return}
+  if(t.dataset.find!==undefined){const w=wOf(t);w.find=t.value;const box=t.closest('.wiz').querySelector('#w-found');if(box)box.innerHTML=foundHTML(w);return}
+  if(t.dataset.date!==undefined){const w=wOf(t);let v=t.value.replace(/\D/g,'').slice(0,8);
+    if(v.length>4)v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);else if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);
+    t.value=v;w.dateTxt=v;if(v.length===10){applyDate(w,v);renderWiz(w);const n=$(w.host).querySelector('[data-date]');if(n){n.focus();n.setSelectionRange(10,10)}}return}
+  if(t.dataset.ver!==undefined)return;
+  if(!t.dataset.w)return;const w=wOf(t);const path=t.dataset.w.split('.');
+  let v=t.type==='checkbox'?t.checked:t.value;
+  if(t.dataset.w==='veh.plaque'){v=fmtPlate(v);t.value=v;if(w.known&&v!==w.known){w.known=null;const k=t.closest('.wiz').querySelector('#w-known');if(k)k.innerHTML=''}}
+  if(path.length===2)w[path[0]][path[1]]=v;else w[path[0]]=v;
+  if(t.dataset.w==='sympt'){const box=t.closest('.wiz').querySelector('#w-sugg');if(box)box.innerHTML=suggHTML(w)}
+  if(t.dataset.w==='veh.plaque'){const kb=t.closest('.wiz').querySelector('#w-kbox');if(kb)kb.innerHTML=kboxHTML(w)}
+});
+document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter')return;
+  if(t.dataset&&t.dataset.date!==undefined){e.preventDefault();const b=t.closest('.wiz').querySelector('[data-act="w-date"]');b&&b.click()}
+  if(t.dataset&&t.dataset.ver!==undefined){e.preventDefault();const b=t.closest('.kbox').querySelector('[data-act="w-verify"]');b&&b.click()}});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='fst'){S.fst=t.value;renderSec();return}
+  if(t.id==='fday'){S.fday=t.value;renderSec();return}
+  if(t.dataset.sel){const s=S.sel[t.dataset.sel];t.checked?s.add(t.dataset.id):s.delete(t.dataset.id);renderSec();return}
+  if(t.dataset.selall){const k=t.dataset.selall,s=S.sel[k];s.clear();
+    if(t.checked)document.querySelectorAll(`[data-sel="${k}"]`).forEach(x=>s.add(x.dataset.id));renderSec();return}
+  if(t.dataset.w==='mode'){wOf(t).mode=t.value;return}
+  const c=t.dataset.chg;if(!c)return;
+  if(c==='meca'){const r=RDVS.find(x=>x.id===S.drawer);r.meca=t.value;toast(`Réaffecté à ${meca(t.value).nom}`);renderDrawer();renderSec()}
+  if(c==='info'){const r=RDVS.find(x=>x.id===S.drawer),[a,b]=t.dataset.k.split('.');if(b)r[a][b]=t.value.trim();else r[a]=t.value.trim();toast('Fiche mise à jour');renderSec()}
+  if(c==='recep'){const r=RDVS.find(x=>x.id===S.drawer);r.recep[t.dataset.i]=t.checked;renderDrawer()}
+});
+document.addEventListener('submit',e=>{if(e.target.id==='scanf'){e.preventDefault();doScan($('#scan-code').value)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(!$('#drawer').hidden||!$('#modal').hidden||!$('#urg').hidden))closeAll()});
+renderWiz(wizC);setMode(S.mode);
+
+/* ---------- Branchement au planning du DMS (production) ----------
+   PLANNING_URL : webhook n8n (GET) qui relaie GET /api/ext/planning du DMS (aucune donnée client :
+   seulement les mécaniciens et les places déjà prises). Vide = démo avec données fictives.
+   Rempli = vrais créneaux libres ; l'espace Secrétariat est masqué (il vit dans le DMS). */
+const PLANNING_URL='';
+(async function brancherDMS(){
+  if(!PLANNING_URL)return;
+  try{
+    const j=await(await fetch(PLANNING_URL+(PLANNING_URL.includes('?')?'&':'?')+'du='+TODAY,{cache:'no-store'})).json();
+    if(!j.mecanos||!j.mecanos.length)throw new Error('planning vide');
+    const mn=h=>{const m=String(h).match(/(\d{1,2})\D(\d{2})/);return m?+m[1]*60+ +m[2]:0};
+    MECAS.splice(0,MECAS.length,...j.mecanos);DAYCAP=(AM1-AM0+PM1-PM0)*MECAS.length;
+    RDVS=(j.occupation||[]).map((o,i)=>({id:-(i+1),date:o.date,start:mn(o.heure),dur:+o.duree||60,meca:o.meca,statut:'confirme',presta:[],client:{nom:''},veh:{plaque:'',modele:''},recep:{}}));
+    LIVE=true;S.mode='client';
+    document.querySelector('.switch').hidden=true;document.querySelector('.demo-tag').hidden=true;
+    wizC=newWiz('en ligne','#client-wiz');setMode('client');
+  }catch(e){console.warn('Planning du garage indisponible : mode démo',e)}
+})();
+</script>
+</body>
+</html>

@@ -72,6 +72,8 @@ Et, au cœur de tout ça :
 |---|---|
 | `index.html` | L'application (l'écran que voient les 5 postes) |
 | `server.js` | Le serveur local qui partage les données entre les postes |
+| `mecano.html` | L'appli des mécaniciens (tablette / téléphone) : `http://IP-DU-SERVEUR:8080/mecano` |
+| `pieces.js` | Les règles communes : stock réservé, commandes, planning, fin d'intervention |
 | `demarrer.bat` | Double-clic pour lancer le serveur sous Windows |
 | `import.js` | Script d'import de la base existante (clients, véhicules, pièces) |
 | `modeles-import/` | 3 modèles CSV à remplir : `clients.csv`, `vehicules.csv`, `articles.csv` |
@@ -135,6 +137,8 @@ Prenez le PC qui **reste allumé toute la journée**, en général celui de l'ac
 
 ## 5. Premiers réglages
 
+> **Paramètres → 👥 Équipe** : 4 mécanos, un chef d'atelier et un magasinier sont créés d'office. Renommez-les, réglez leur spécialité, cochez **Au planning** pour ceux qui ont une colonne. **Paramètres → 📅 Planning, prestations & SMS** : horaires (7h30-12h / 14h-17h), catalogue des prestations (durée, prix, pièces du stock) et texte du SMS « véhicule prêt ».
+
 Menu **⚙️ Paramètres**, à faire **avant la première facture** :
 
 | Réglage | À renseigner |
@@ -197,6 +201,29 @@ Menu **⚙️ Paramètres**, à faire **avant la première facture** :
 - **Graphique du CA sur 12 mois.**
 - Listes : véhicules en cours, **stock sous le minimum**, **prêts en cours** (avec retards en rouge).
 - Boutons rapides : + Devis, + OR, + Facture comptoir.
+
+### 📅 Planning RDV — secrétariat et chef d'atelier
+Le planning, c'est un parking : **une colonne par mécanicien**, un bloc par rendez-vous. On ne gare jamais deux voitures sur la même place : le logiciel refuse tout chevauchement et tout débordement sur la pause.
+- **Prendre un RDV** : cliquez une case vide (ou « + Nouveau RDV »). Tapez la plaque : un client déjà venu est reconnu. Cochez les prestations : la durée se calcule, seules les heures libres sont proposées.
+- **Le stock décide** : si toutes les pièces sont réservées, le RDV est **confirmé**. S'il en manque, il reste **à confirmer** (jaune) et la fiche propose **🔎 Lancer Trouve-tout**.
+- **Couleurs** : 🟡 à confirmer · 🔵 confirmé · 🟠 en cours (le mécano a démarré) · 🟢 prêt à encaisser · gris = facturé.
+- **Cliquer un bloc** : confirmer, déplacer (autre heure, autre jour, autre mécano), marquer absent ou annuler, voir les photos de l'atelier, **ouvrir la facture**.
+- **Bandeau « À traiter »** en haut :
+  - ✅ **Véhicules prêts — à encaisser** : le mécano a appuyé sur « Terminé ». La facture est préparée en brouillon : vérifiez, **validez**, encaissez.
+  - 🔧 **Travaux signalés par l'atelier** : bouton **Devis** (le devis s'ouvre avec le constat du mécano).
+  - 📞 **Demandes de rappel** du site vitrine : rappeler, puis **Placer** au planning.
+  - 🌐 **RDV en ligne à confirmer**.
+- Des **annonces sonores** s'affichent en bas à droite sur tous les postes : véhicule terminé, travail signalé, nouvelle demande.
+
+### 📱 Appli mécano (tablette ou téléphone)
+Sur le Wi-Fi du garage, ouvrez `http://IP-DU-SERVEUR:8080/mecano` (adresse affichée par `demarrer.bat`), puis « Ajouter à l'écran d'accueil ».
+1. **Connexion** : toucher son nom, taper son code à 4 chiffres (**0000** la première fois, puis chacun choisit le sien). Le code se change aussi dans Paramètres → Équipe → 🔑.
+2. **Mes véhicules** : les RDV du jour du mécano, plus « À prendre » (véhicules sans mécano). Le chef d'atelier voit tout l'atelier.
+3. **Prise en charge** : kilométrage, carburant, contrôles à l'arrivée, remarques et **photos de l'état** → **▶ Démarrer**. Le planning passe en orange.
+4. **Intervention** : cocher chaque opération, **📷 photos** (pièce usée, travail fini), compte rendu, **⚠ Signaler un travail supplémentaire** (arrive tout de suite au secrétariat), **🔎 Pièce manquante** (prévient le magasin / Trouve-tout).
+5. **✅ Terminé — véhicule prêt** : en un geste, le planning passe au vert, **la facture brouillon est prête au comptoir** et **le SMS « véhicule prêt »** part au client (via n8n ; sinon le secrétariat a le texte à envoyer).
+
+La tablette ne voit pas les prix et ne peut ni facturer ni commander : ces actions restent au comptoir.
 
 ### 🔧 Atelier (temps réel)
 - 3 colonnes : **En attente / En cours / Terminé — à facturer**.
