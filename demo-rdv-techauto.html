@@ -419,7 +419,9 @@ const PRESTA=[
   {id:'pnu',label:'Pneus (x2)',desc:'Montage, valves, équilibrage',dur:60,prix:40,pc:[['PNEU-STD',2]],prixTxt:'dès 40 € + pneus'},
   {id:'dia',label:'Diagnostic électronique',desc:'Voyant moteur, codes défaut',dur:60,prix:59,pc:[]},
   {id:'pct',label:'Pré-contrôle technique',desc:'On vérifie avant le passage au CT',dur:30,prix:39,pc:[]},
-  {id:'dis',label:'Courroie de distribution',desc:'Kit complet + pompe à eau',dur:240,prix:650,pc:[['KIT-DIST',1]],prixTxt:'sur devis (≈ 650 €)'}
+  {id:'dis',label:'Courroie de distribution',desc:'Kit complet + pompe à eau',dur:240,prix:650,pc:[['KIT-DIST',1]],prixTxt:'sur devis (≈ 650 €)'},
+  // « Autre » : le client écrit lui-même son besoin (r.autre), chiffré par l'accueil
+  {id:'aut',label:'Autre',desc:'Écrivez ce dont vous avez besoin',dur:60,prix:0,pc:[],prixTxt:'sur devis'}
 ];
 const P=Object.fromEntries(PRESTA.map(p=>[p.id,p]));
 const ST={attente:'À confirmer',confirme:'Confirmé',arrive:'Arrivé',encours:'En cours',termine:'Terminé',facture:'Facturé',absent:'Absent',annule:'Annulé'};
@@ -453,7 +455,8 @@ const plateHTML=(p,sm)=>`<span class="plate${sm?' sm':''}"><span class="eu">F</s
 const pill=s=>`<span class="pill st-${s}">${ST[s]}</span>`;
 const rdvDur=r=>r.presta.reduce((a,id)=>a+P[id].dur,0);
 const rdvPrix=r=>r.presta.reduce((a,id)=>a+P[id].prix,0);
-const prestaTxt=r=>r.presta.map(id=>P[id].label).join(' + ');
+const prestaLbl=(id,o)=>id==='aut'&&o&&o.autre&&o.autre.trim()?'Autre : '+o.autre.trim():P[id].label;
+const prestaTxt=r=>r.presta.map(id=>prestaLbl(id,r)).join(' + ');
 const meca=id=>MECAS.find(m=>m.id===id);
 
 /* ---------- Jeu de données de démonstration ---------- */
@@ -699,6 +702,7 @@ function renderWiz(w){
   if(w.step===0){
     h+=`<div style="display:grid;gap:6px"><h2>${tel?'Que souhaite le client ?':'De quoi votre véhicule a-t-il besoin ?'}</h2><p class="muted small">${tel?'Plusieurs choix possibles. Prix indicatifs, confirmés à l\'accueil.':'Plusieurs choix possibles.'}</p></div>
     <div class="tiles">${PRESTA.map(p=>`<button class="tile" data-act="w-presta" data-id="${p.id}" aria-pressed="${w.presta.includes(p.id)}">${p.tag?`<span class="tag">${p.tag}</span>`:''}<strong>${p.label}</strong><span class="muted small">${p.desc}</span>${tel?`${ptagHTML(p.id)}<span class="meta"><span class="mono">${durTxt(p.dur)}</span><span>${p.prixTxt||eur(p.prix)}</span></span>`:''}</button>`).join('')}</div>
+    ${w.presta.includes('aut')?`<div class="field"><label for="w-autre-${w.source==='téléphone'?'t':'c'}">${tel?'Besoin du client (autre)':'Votre besoin'}</label><textarea id="w-autre-${w.source==='téléphone'?'t':'c'}" data-w="autre" placeholder="Ex. changer les essuie-glaces, contrôle avant un long trajet, bruit de suspension…">${esc(w.autre||'')}</textarea></div>`:''}
     ${tel&&w.presta.length?`<div class="sumbar"><span>Durée atelier : <b class="mono">${durTxt(wDur(w))}</b></span><span>Estimation : <b>${eur(wPrix(w))}</b></span></div>`:''}`;
   }
   if(w.step===1){
@@ -757,17 +761,17 @@ function renderWiz(w){
     h+=`<h2>${tel?'Vérifiez et confirmez':'Vérifiez votre demande'}</h2>
     ${tel?'':'<p class="muted small">Votre demande sera validée par l\'atelier, qui vous enverra un message de confirmation.</p>'}
     <label class="row small"><input type="checkbox" data-w="sms" ${w.sms?'checked':''}> Recevoir la confirmation, le rappel de la veille et l'avis « véhicule prêt » par SMS</label>
-    <div class="recap"><span class="muted">Créneau</span><b>${dlabel(w.day,{weekday:'long',day:'numeric',month:'long'})} à ${hm(w.start)}</b><span class="muted">Client</span><span>${esc(w.client.nom)} · <span class="mono">${esc(w.client.tel)}</span>${w.known?' · <span class="small">client connu</span>':''}</span>${w.waitlist?'<span class="muted">Express</span><span>🔔 sur liste d\'attente pour un créneau plus tôt</span>':''}<span class="muted">Véhicule</span><span>${plateHTML(w.veh.plaque,1)} ${esc(w.veh.modele)}</span><span class="muted">Prestation</span><span>${w.presta.map(id=>P[id].label).join(' + ')}</span>${tel?`<span class="muted">Estimation</span><b>${eur(wPrix(w))}</b>${(()=>{const pc=pieceCheck(w.presta,w.day);return pc.length?`<span class="muted">Pièces</span><span class="small">${pc.map(e=>`${esc(e.s.des)} — ${ETAT[e.etat]}`).join('<br>')}</span>`:''})()}`:''}</div>`;
+    <div class="recap"><span class="muted">Créneau</span><b>${dlabel(w.day,{weekday:'long',day:'numeric',month:'long'})} à ${hm(w.start)}</b><span class="muted">Client</span><span>${esc(w.client.nom)} · <span class="mono">${esc(w.client.tel)}</span>${w.known?' · <span class="small">client connu</span>':''}</span>${w.waitlist?'<span class="muted">Express</span><span>🔔 sur liste d\'attente pour un créneau plus tôt</span>':''}<span class="muted">Véhicule</span><span>${plateHTML(w.veh.plaque,1)} ${esc(w.veh.modele)}</span><span class="muted">Prestation</span><span>${esc(w.presta.map(id=>prestaLbl(id,w)).join(' + '))}</span>${tel?`<span class="muted">Estimation</span><b>${eur(wPrix(w))}</b>${(()=>{const pc=pieceCheck(w.presta,w.day);return pc.length?`<span class="muted">Pièces</span><span class="small">${pc.map(e=>`${esc(e.s.des)} — ${ETAT[e.etat]}`).join('<br>')}</span>`:''})()}`:''}</div>`;
   }
   if(w.step===4){
     const r=RDVS.find(x=>x.id===w.done);
     if(!tel)h+=`<div class="done"><div class="done-head"><div class="done-check">✓</div><div><h2>Demande enregistrée</h2><p class="muted">Référence <b class="mono">${r.code}</b></p></div></div>
     <p>Votre demande de rendez-vous est bien prise en compte. L'atelier va la valider et vous enverra un message de confirmation${w.sms?' par SMS':''}.</p>
-    <div class="recap"><span class="muted">Créneau demandé</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${prestaTxt(r)}</span></div>
+    <div class="recap"><span class="muted">Créneau demandé</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${esc(prestaTxt(r))}</span></div>
     ${w.sms?`<div style="display:grid;gap:6px"><span class="label">SMS envoyé au client</span><p class="sms" id="sms-conf-${w.source}">${esc(smsRecu(r))}</p></div>`:''}
     <div class="row"><button class="btn primary" data-act="w-see" data-id="${r.id}">Voir côté secrétariat →</button><button class="btn" data-act="w-reset">Faire une autre demande</button></div></div>`;
     else h+=`<div class="done"><div class="done-head"><div class="done-check">✓</div><div><h2>Rendez-vous confirmé</h2><p class="muted">Référence <b class="mono">${r.code}</b> · déjà visible dans le planning de l'atelier</p></div></div>
-    <div class="recap"><span class="muted">Quand</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${prestaTxt(r)} · ${durTxt(r.dur)}</span><span class="muted">Mécanicien</span><span>${meca(r.meca).nom}</span><span class="muted">Estimation</span><b>${eur(rdvPrix(r))}</b></div>
+    <div class="recap"><span class="muted">Quand</span><b>${dlabel(r.date,{weekday:'long',day:'numeric',month:'long'})} à ${hm(r.start)}</b><span class="muted">Véhicule</span><span>${plateHTML(r.veh.plaque,1)} ${esc(r.veh.modele)}</span><span class="muted">Prestation</span><span>${esc(prestaTxt(r))} · ${durTxt(r.dur)}</span><span class="muted">Mécanicien</span><span>${meca(r.meca).nom}</span><span class="muted">Estimation</span><b>${eur(rdvPrix(r))}</b></div>
     ${(()=>{const rp=w.pcAvant||[];if(!rp.length)return'';const miss=rp.some(e=>e.etat==='non');
       return tel?`<div class="tip" style="display:grid;gap:4px"><span class="label">Pièces réservées automatiquement</span>${rp.map(e=>`<div class="pline"><span>${esc(e.s.des)} ×${qtxt(e.q,e.s.u)}</span><span>${ETAT[e.etat]}</span></div>`).join('')}${miss?'<span class="small"><b>Alerte envoyée au responsable pièces</b> : dépannage confrère à lancer (onglet Stock).</span>':''}</div>`
         :`<div class="tip small">🔧 ${miss?'Une pièce est en cours d\'approvisionnement : l\'atelier s\'en occupe et vous prévient s\'il faut décaler.':'Les pièces de votre intervention sont réservées pour vous.'}</div>`})()}
@@ -779,6 +783,7 @@ function renderWiz(w){
 }
 function validate(w){
   if(w.step===0&&!w.presta.length)return'Choisissez au moins une prestation.';
+  if(w.step===0&&w.presta.includes('aut')&&!(w.autre||'').trim())return'Écrivez votre besoin dans la case « Autre ».';
   if(w.step===1){if(!/^[A-Z]{2}-\d{3}-[A-Z]{2}$/.test(w.veh.plaque))return'Immatriculation attendue au format AB-123-CD.';if(!w.veh.modele.trim())return'Indiquez la marque et le modèle.';
     if(w.client.nom.trim().length<3)return'Indiquez le nom et le prénom.';if(w.client.tel.replace(/\D/g,'').length<10)return'Numéro de portable incomplet (10 chiffres).'}
   if(w.step===2&&(w.day==null||w.start==null))return'Choisissez un jour puis une heure.';
@@ -788,7 +793,7 @@ function book(w){const tel=w.source==='téléphone';
   const d=wDur(w); const order=w.pref?[w.pref,...MECAS.map(m=>m.id).filter(x=>x!==w.pref)]:MECAS.map(m=>m.id);
   const m=order.find(id=>isFree(w.day,id,w.start,d));
   if(!m){w.err='Ce créneau vient d\'être pris. Choisissez-en un autre.';w.step=2;return}
-  const r=mkRdv({date:w.day,start:w.start,meca:m,presta:[...w.presta],client:{...w.client},veh:{...w.veh},sympt:w.sympt,source:w.source,mode:w.mode,statut:tel?'confirme':'attente',waitlist:!!w.waitlist});
+  const r=mkRdv({date:w.day,start:w.start,meca:m,presta:[...w.presta],autre:w.presta.includes('aut')?(w.autre||'').trim():'',client:{...w.client},veh:{...w.veh},sympt:w.sympt,source:w.source,mode:w.mode,statut:tel?'confirme':'attente',waitlist:!!w.waitlist});
   w.pcAvant=pieceCheck(r.presta,r.date); // ce qui était libre au moment de réserver
   RDVS.push(r); // les pièces sont réservées d'office : la réservation se déduit du planning
   // Demande en ligne : « À confirmer ». Le SMS de confirmation part quand le secrétariat la passe en « Confirmé ».
@@ -1153,7 +1158,7 @@ function renderDrawer(){
   if(nx)h+=`<div class="row"><button class="btn primary" data-act="set-st" data-id="${r.id}" data-st="${nx[0]}">${nx[1]} →</button>${['attente','confirme'].includes(r.statut)?`<button class="btn" data-act="set-st" data-id="${r.id}" data-st="absent">Absent</button>`:''}</div>`;
   if(['arrive','encours'].includes(r.statut)||recepDone)h+=`<div class="sect"><div class="row" style="justify-content:space-between"><h3>Réception du véhicule</h3><span class="mono small">${recepDone}/${RECEP.length}</span></div><div class="checks">${RECEP.map((t,i)=>`<label><input type="checkbox" data-chg="recep" data-i="${i}" ${r.recep[i]?'checked':''}>${t}</label>`).join('')}</div></div>`;
   if(['termine','facture'].includes(r.statut)){
-    h+=`<div class="sect"><h3>Facture</h3><div class="facture">${r.presta.map(id=>`<div class="ln"><span>${P[id].label}${id==='pnu'?' (main-d\'œuvre)':''}</span><span class="mono">${eur(P[id].prix)}</span></div>`).join('')}<div class="ln tot"><span>Total</span><span class="mono">${eur(rdvPrix(r))}</span></div><span class="small muted">TVA non applicable, art. 294 du CGI</span></div>
+    h+=`<div class="sect"><h3>Facture</h3><div class="facture">${r.presta.map(id=>`<div class="ln"><span>${esc(prestaLbl(id,r))}${id==='pnu'?' (main-d\'œuvre)':''}</span><span class="mono">${eur(P[id].prix)}</span></div>`).join('')}<div class="ln tot"><span>Total</span><span class="mono">${eur(rdvPrix(r))}</span></div><span class="small muted">TVA non applicable, art. 294 du CGI</span></div>
     <span class="label">SMS « véhicule prêt »</span><p class="sms small" id="sms-p-${r.id}">${esc(smsPret(r))}</p><div class="row"><button class="btn sm" data-act="sms-send" data-id="${r.id}">Renvoyer le SMS</button><span class="small muted">Envoyé automatiquement au passage en « Terminé »</span></div></div>`;
   }
   if(['attente','confirme'].includes(r.statut)){
