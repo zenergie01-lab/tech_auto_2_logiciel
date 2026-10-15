@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aide-mémoire TECH'AUTO</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#14171c;--mute:#5d6470;--line:#d9d6cf;--acc:#ea580c;--acc2:#fff1e6;--ok:#15803d;--warn:#b45309;--warn2:#fef3c7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1a1d23;--ink:#eceae6;--mute:#9aa1ad;--line:#2c3038;--acc2:#3a2112;--warn2:#3a2a0c}}
+:root[data-theme="dark"]{--bg:#111317;--card:#1a1d23;--ink:#eceae6;--mute:#9aa1ad;--line:#2c3038;--acc2:#3a2112;--warn2:#3a2a0c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.page{max-width:900px;margin:0 auto;padding:24px 16px 40px}
+header{border-bottom:3px solid var(--acc);padding-bottom:10px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:26px;letter-spacing:-.01em}
+h1 span{color:var(--acc)}
+.date{color:var(--mute);font-size:13px}
+h2{font-size:17px;margin:22px 0 8px;padding:4px 10px;background:var(--acc2);border-left:4px solid var(--acc);border-radius:4px;break-after:avoid}
+h3{font-size:15px;margin:14px 0 4px}
+table{width:100%;border-collapse:collapse;background:var(--card);font-size:13.5px;break-inside:auto}
+th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+th{background:var(--acc2);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+tr{break-inside:avoid}
+code{font:12.5px/1.4 ui-monospace,Consolas,monospace;background:var(--acc2);padding:1px 4px;border-radius:3px;overflow-wrap:anywhere}
+a{color:var(--acc);overflow-wrap:anywhere}
+ol,ul{margin:4px 0 4px;padding-left:22px}
+li{margin:2px 0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;break-inside:avoid}
+.warn{background:var(--warn2);border-color:var(--warn)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.chk li{list-style:"☐  "}
+.mute{color:var(--mute)}
+.noprint{margin-bottom:14px}
+.noprint button{font:inherit;padding:8px 16px;border:0;border-radius:6px;background:var(--acc);color:#fff;cursor:pointer}
+.break{break-before:page}
+@media print{
+  :root{--bg:#fff;--card:#fff;--ink:#000;--mute:#444;--line:#999;--acc2:#f3f3f3;--warn2:#fff7e0}
+  body{font-size:11pt}
+  .page{max-width:none;padding:0}
+  .noprint{display:none}
+  a{color:#000;text-decoration:none}
+  @page{size:A4;margin:14mm 12mm}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="noprint"><button onclick="print()">🖨 Imprimer</button> <span class="mute">Format A4. Les liens de fichiers ne s'ouvrent que sur ce PC.</span></div>
+
+<header>
+  <h1>TECH'AUTO <span>· aide-mémoire</span></h1>
+  <span class="date">État au 15 octobre 2026 · dossier projet : <code>C:\Users\Vince\Documents\10_PROJETS\tech_auto_2_logiciel</code></span>
+</header>
+
+<h2>1. Les adresses</h2>
+<table>
+  <tr><th style="width:30%">Quoi</th><th>Adresse</th><th style="width:28%">Remarque</th></tr>
+  <tr><td><b>Site public</b> (accueil)</td><td><a href="https://techauto-one.vercel.app">https://techauto-one.vercel.app</a></td><td>En ligne, accessible partout</td></tr>
+  <tr><td><b>Prise de RDV en ligne</b></td><td><a href="https://techauto-one.vercel.app/demo-rdv-techauto.html">https://techauto-one.vercel.app/demo-rdv-techauto.html</a></td><td>Mode démo (pas encore relié au DMS)</td></tr>
+  <tr><td><b>DMS</b> sur ce PC</td><td><a href="http://localhost:8080">http://localhost:8080</a></td><td>Serveur lancé obligatoire</td></tr>
+  <tr><td><b>DMS</b> depuis un autre poste</td><td><a href="http://192.168.1.24:8080">http://192.168.1.24:8080</a></td><td>Même Wi-Fi que ce PC</td></tr>
+  <tr><td><b>Appli mécano</b> (téléphone)</td><td><a href="http://192.168.1.24:8080/mecano">http://192.168.1.24:8080/mecano</a></td><td>Mécano 1 · code <b>0000</b></td></tr>
+  <tr><td>DMS vu par n8n (Tailscale)</td><td><code>http://100.88.105.84:8080</code></td><td>Pour la liaison n8n</td></tr>
+  <tr><td><b>n8n</b> (automatisations, SMS)</td><td><a href="https://n8n.srv999617.hstgr.cloud">https://n8n.srv999617.hstgr.cloud</a></td><td>Serveur Hostinger</td></tr>
+  <tr><td>Code sur GitHub (projet complet)</td><td><a href="https://github.com/zenergie01-lab/tech_auto_2_logiciel">github.com/zenergie01-lab/tech_auto_2_logiciel</a></td><td>Branche <code>main</code></td></tr>
+  <tr><td>Code sur GitHub (site en ligne)</td><td><a href="https://github.com/zenergie01-lab/TECH_AUTO">github.com/zenergie01-lab/TECH_AUTO</a></td><td>Vercel publie ce dépôt tout seul</td></tr>
+</table>
+
+<h2>2. Les fichiers et leur emplacement</h2>
+<p class="mute" style="margin:0 0 6px">Tous les chemins partent du dossier projet <code>C:\Users\Vince\Documents\10_PROJETS\tech_auto_2_logiciel\</code></p>
+<table>
+  <tr><th style="width:38%">Fichier</th><th>À quoi il sert</th></tr>
+  <tr><td><a href="presentation-pdg.html"><code>presentation-pdg.html</code></a></td><td><b>Fiche de présentation au PDG</b> (fil conducteur de la réunion)</td></tr>
+  <tr><td><a href="aide-memoire.html"><code>aide-memoire.html</code></a></td><td>Cette page</td></tr>
+  <tr><td><a href="index.html"><code>index.html</code></a></td><td>Site public, page d'accueil</td></tr>
+  <tr><td><a href="demo-rdv-techauto.html"><code>demo-rdv-techauto.html</code></a></td><td>Prise de RDV en ligne (client) + vue secrétariat de démo</td></tr>
+  <tr><td><a href="techauto-dms/demarrer.bat"><code>techauto-dms\demarrer.bat</code></a></td><td><b>Double-clic = lance le serveur DMS</b> (laisser la fenêtre ouverte)</td></tr>
+  <tr><td><code>techauto-dms\server.js</code></td><td>Le serveur du DMS (port 8080)</td></tr>
+  <tr><td><code>techauto-dms\index.html</code></td><td>L'écran du DMS (planning, stock, factures, paramètres)</td></tr>
+  <tr><td><code>techauto-dms\mecano.html</code></td><td>L'appli mécano (servie sur <code>/mecano</code>)</td></tr>
+  <tr><td><code>techauto-dms\pieces.js</code></td><td>Règles communes (stock, planning, devis → facture)</td></tr>
+  <tr><td><code>techauto-dms\data\db.json</code></td><td><b>Toutes les données</b> du DMS</td></tr>
+  <tr><td><code>techauto-dms\data\config.json</code></td><td>Clé API (pour n8n) et codes PIN · <b>ne jamais supprimer, ne jamais partager</b></td></tr>
+  <tr><td><code>techauto-dms\data\sauvegardes\</code></td><td>Copie automatique de la base, une par jour (60 jours)</td></tr>
+  <tr><td><code>techauto-dms\data\photos\</code></td><td>Photos prises par les mécaniciens</td></tr>
+  <tr><td><code>techauto-dms\n8n\techauto-liaison-dms.json</code></td><td><b>Workflow à importer dans n8n</b></td></tr>
+  <tr><td><code>techauto-dms\API-N8N.md</code> · <code>NOTICE-TECHAUTO-DMS.md</code> · <code>LISEZMOI.md</code></td><td>Documentation (liaison n8n, notice d'utilisation, installation)</td></tr>
+  <tr><td><code>techauto-dms\modeles-import\</code> · <code>import.js</code></td><td>Modèles pour importer les vraies données du garage plus tard</td></tr>
+  <tr><td><code>archives\</code></td><td>Anciennes versions, à ne plus utiliser</td></tr>
+</table>
+
+<h2 class="break">3. Présentation au PDG</h2>
+<div class="cols">
+<div class="box">
+  <h3>La veille</h3>
+  <ol class="chk">
+    <li>Double-cliquer <code>techauto-dms\demarrer.bat</code>, laisser la fenêtre ouverte</li>
+    <li>Ouvrir <a href="http://localhost:8080">localhost:8080</a> : la journée type est-elle là ?<br><span class="mute">Sinon : Paramètres → 📅 Charger une journée type</span></li>
+    <li>Téléphone sur le même Wi-Fi → <code>192.168.1.24:8080/mecano</code> → Mécano 1, code 0000</li>
+    <li>Ouvrir <code>presentation-pdg.html</code> dans le navigateur</li>
+    <li>Ouvrir le site <code>techauto-one.vercel.app</code> dans un onglet</li>
+  </ol>
+</div>
+<div class="box">
+  <h3>Repartir de zéro (si besoin)</h3>
+  <ol>
+    <li>Fermer la fenêtre du serveur</li>
+    <li>Dans <code>techauto-dms\data</code>, supprimer tout <b>sauf <code>config.json</code></b></li>
+    <li>Relancer <code>demarrer.bat</code></li>
+    <li>Paramètres → 📅 Charger une journée type</li>
+  </ol>
+</div>
+</div>
+
+<h3>Déroulé (environ 10 minutes)</h3>
+<table>
+  <tr><th style="width:4%">#</th><th style="width:20%">Où</th><th>Ce qu'on montre</th></tr>
+  <tr><td>1</td><td>Site public</td><td>« Demander un rendez-vous » (nouvel onglet) · choix de la prestation, case <b>Autre</b> · créneau · confirmation</td></tr>
+  <tr><td>2</td><td>DMS · Planning</td><td>La journée de Mécano 1, 2, 3 et du Chef d'atelier · les couleurs · le bandeau « À traiter »</td></tr>
+  <tr><td>3</td><td>DMS · bureau</td><td>Clio « prête » → <b>Vérifier → facture</b> · 2 ajouts du mécanicien surlignés · prix de l'ampoule · <b>Confirmer en facture</b></td></tr>
+  <tr><td>4</td><td>Téléphone</td><td>Peugeot 208 « en cours » → ➕ 0,5 h de main d'œuvre · compte rendu dicté au 🎤 · photo · <b>Terminé</b></td></tr>
+  <tr><td>5</td><td>DMS · bureau</td><td>L'annonce « devis mis à jour » arrive en quelques secondes</td></tr>
+  <tr><td>6</td><td>DMS · Stock</td><td>Kit distribution manquant → <b>Trouve-tout</b> cherche, une personne valide la commande</td></tr>
+</table>
+
+<div class="box warn">
+  <b>À dire honnêtement :</b> les données sont fictives (en attendant celles du garage) · la réservation en ligne n'est pas encore reliée au DMS (prochaine étape : n8n) · le DMS n'a pas encore de mot de passe, il reste sur le réseau du garage.
+</div>
+
+<h2>4. Ce qui est fait</h2>
+<ul>
+  <li><b>Site et RDV en ligne</b> : harmonisés avec le DMS (équipe Mécano 1-3 + Chef d'atelier, horaires 7h30-12h / 14h-17h, mêmes prestations), case « Autre » en texte libre, RDV en nouvel onglet.</li>
+  <li><b>DMS</b> : clients, véhicules, stock, devis, OR, factures, planning RDV du secrétariat, bandeau « À traiter », Trouve-tout, journée type de démo.</li>
+  <li><b>Appli mécano</b> : connexion nom + code, prise en charge, photos, opérations, ajouts sans prix, dictée vocale, « Terminé » = devis mis à jour au bureau → la secrétaire confirme en facture → SMS au client.</li>
+  <li><b>n8n</b> : workflow prêt (RDV entrants, planning, SMS Brevo), pas encore activé.</li>
+</ul>
+
+<h2>5. Prochaine étape : relier le site au DMS</h2>
+<div class="cols">
+<div class="box">
+  <h3>À faire par toi dans n8n</h3>
+  <ol class="chk">
+    <li>Supprimer l'ancien workflow, importer <code>techauto-liaison-dms.json</code></li>
+    <li>Identifiant <b>« TECH'AUTO DMS – clé API »</b> : Header Auth, nom <code>X-API-Key</code>, valeur = ligne <code>apiKey</code> de <code>data\config.json</code></li>
+    <li>Identifiant <b>« Brevo – clé API »</b> : nom <code>api-key</code> (pour les SMS)</li>
+    <li>Nœud « Choisir le SMS » : <code>NUMERO_CHEF</code>, <code>NUMERO_ACCUEIL</code></li>
+    <li>Tailscale sur le serveur Hostinger (même compte que ce PC)</li>
+    <li>Activer le workflow</li>
+    <li>DMS → Paramètres → Webhook n8n :<br><code>https://n8n.srv999617.hstgr.cloud/webhook/dms-evenements</code></li>
+  </ol>
+</div>
+<div class="box">
+  <h3>Ensuite, avec Claude</h3>
+  <ul>
+    <li>Dire « le workflow est activé »</li>
+    <li>Claude met les adresses n8n dans le site, publie sur les deux dépôts GitHub</li>
+    <li>Essai réel : une réservation sur le site arrive dans le planning du DMS</li>
+  </ul>
+  <h3>Plus tard</h3>
+  <ul>
+    <li>Mot de passe pour le DMS</li>
+    <li>Libérer les pièces réservées quand un RDV est annulé</li>
+    <li>Importer les vraies données du garage</li>
+  </ul>
+</div>
+</div>
+<p class="mute" style="font-size:12px;margin-top:14px">En fonctionnement réel, le PC de l'accueil reste allumé avec le serveur lancé : sinon ni les mécaniciens ni les réservations en ligne n'atteignent le DMS.</p>
+</div>
+</body>
+</html>
