@@ -406,6 +406,14 @@
   P.horaires = d => ((d.settings || {}).horaires || [[450, 720], [840, 1020]]);      // 7h30-12h, 14h-17h
   P.personnel = d => ((d.settings || {}).personnel || []).filter(p => p.actif !== false);
   P.mecanos = d => P.personnel(d).filter(p => p.planning);                            // colonnes du planning
+  // Équipe au planning : Mécano 1 à 3 + chef d'atelier. Une base créée avec « Mécano 4 » passe sa colonne
+  // et ses RDV au chef d'atelier (une seule fois). Renvoie true si la base a changé.
+  P.migrerEquipe = d => {
+    const s = d && d.settings; if (!s || !s.personnel || s.equipeChef) return false;
+    const m4 = s.personnel.find(p => p.id === 'meca4' && p.nom === 'Mécano 4'), chef = s.personnel.find(p => p.id === 'chef');
+    if (m4 && chef) { m4.actif = false; m4.planning = false; chef.planning = true; (d.rdvs || []).forEach(r => { if (r.meca === 'meca4') r.meca = 'chef'; }); }
+    s.equipeChef = true; return true;
+  };
   P.nomPers = (d, id) => (P.personnel(d).find(p => p.id === id) || {}).nom || '';
   const occupe = r => r.date && r.heure && r.meca && !['annule', 'absent'].includes(r.statut);
   P.occupe = occupe;

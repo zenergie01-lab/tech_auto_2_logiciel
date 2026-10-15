@@ -188,8 +188,7 @@ function defaultDB() {
         {id:'meca1', nom:'Mécano 1', role:'mecano', spec:'Entretien · freinage · pneus', planning:true, actif:true},
         {id:'meca2', nom:'Mécano 2', role:'mecano', spec:'Moteur · diesel · distribution', planning:true, actif:true},
         {id:'meca3', nom:'Mécano 3', role:'mecano', spec:'Clim · électricité · diagnostic', planning:true, actif:true},
-        {id:'meca4', nom:'Mécano 4', role:'mecano', spec:'4x4 · trains roulants', planning:true, actif:true},
-        {id:'chef', nom:"Chef d'atelier", role:'chef', spec:'Réception · contrôle · diagnostic', planning:false, actif:true},
+        {id:'chef', nom:"Chef d'atelier", role:'chef', spec:'Réception · contrôle · diagnostic', planning:true, actif:true},
         {id:'mag', nom:'Magasinier', role:'magasinier', spec:'Stock · commandes · Trouve-tout', planning:false, actif:true}
       ],
       horaires:[[450, 720], [840, 1020]],               // en minutes : 7h30-12h00 et 14h00-17h00, lundi au vendredi
@@ -234,6 +233,8 @@ function migrate(d) {
   const base = defaultDB();
   for (const k in base) if (d[k] === undefined) d[k] = base[k];
   for (const k in base.settings) if (d.settings[k] === undefined) d.settings[k] = base.settings[k];
+  // Équipe au planning : Mécano 1 à 3 + chef d'atelier (l'ancienne colonne « Mécano 4 » passe au chef, une seule fois)
+  Pieces.migrerEquipe(d);
   // La liste « Technicien » des OR suit l'équipe (mécanos et chef d'atelier)
   d.settings.techniciens = d.settings.personnel.filter(p => p.actif !== false && ['mecano', 'chef'].includes(p.role)).map(p => p.nom);
   return d;
@@ -1177,14 +1178,14 @@ async function demoJournee() {
     [j0, 'meca3', '09:00', ['dia'], 'GM-603-DT', 'Steeve MATHURIN', '0694 29 58 41', 'Nissan Navara', 141800],
     [j0, 'meca3', '14:00', ['clm'], 'FW-482-LC', 'Ruth GALMOT', '0694 77 14 36', 'Suzuki Jimny', 33900],
     [j0, 'meca3', '15:30', ['vid'], 'GN-350-HY', 'Yannick POLONY', '0694 44 80 57', 'Renault Clio V', 27600],
-    [j0, 'meca4', '07:30', ['pnu'], 'GP-778-ZE', 'Patrice LABONNE', '0694 15 66 92', 'Mitsubishi L200', 187300],
-    [j0, 'meca4', '09:00', ['frn'], 'GR-019-FO', 'Aurélie SINAÏ', '0694 93 27 08', 'Toyota Hilux', 96500],
-    [j0, 'meca4', '14:00', ['rev'], 'GS-864-WU', 'Jean BÉRARD', '0694 58 31 73', 'Ford Ranger', 112900],
+    [j0, 'chef', '07:30', ['pnu'], 'GP-778-ZE', 'Patrice LABONNE', '0694 15 66 92', 'Mitsubishi L200', 187300],
+    [j0, 'chef', '09:00', ['frn'], 'GR-019-FO', 'Aurélie SINAÏ', '0694 93 27 08', 'Toyota Hilux', 96500],
+    [j0, 'chef', '14:00', ['rev'], 'GS-864-WU', 'Jean BÉRARD', '0694 58 31 73', 'Ford Ranger', 112900],
     [j1, 'meca1', '08:00', ['rev'], 'GT-427-CI', 'Christophe LONY', '0694 26 74 19', 'Dacia Duster', 88800],
     [j1, 'meca2', '07:30', ['clm'], 'GU-591-XB', 'Nadège THÉODOSE', '0694 67 49 52', 'Renault Clio IV', 64100],
     [j1, 'meca2', '09:00', ['vid'], 'GV-306-JK', 'Laura FÉLIX', '0694 81 20 63', 'Kia Picanto', 21900, 'en ligne'],
     [j1, 'meca3', '10:00', ['dia'], 'GW-735-OP', 'Jordan PINDARD', '0694 37 95 28', 'Toyota Yaris', 102300],
-    [j1, 'meca4', '14:00', ['frn'], 'GX-148-QS', 'Marie LÉANDRE', '0694 54 62 87', 'Citroën C3', 77400],
+    [j1, 'chef', '14:00', ['frn'], 'GX-148-QS', 'Marie LÉANDRE', '0694 54 62 87', 'Citroën C3', 77400],
     [j3, 'meca2', '07:30', ['dis'], 'GY-962-AT', 'Wilfried AUBIN', '0694 21 43 65', 'Renault Mégane', 151200]
   ];
   const ors = {};

@@ -49,6 +49,7 @@ function save() {
   fs.writeFileSync(tmp, JSON.stringify(state));
   fs.renameSync(tmp, DBF);
 }
+if (state.data && Pieces.migrerEquipe(state.data)) save();      // « Mécano 4 » → chef d'atelier au planning
 
 // Sauvegarde quotidienne automatique (une par jour, 60 jours conservés)
 function backup() {
